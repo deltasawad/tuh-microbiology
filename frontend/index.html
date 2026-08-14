@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MICROBIOLOGY THAMMASAT HOSPITAL - ระบบรายงานผลตรวจสิ่งแวดล้อม</title>
+  <title>ระบบรายงานผลตรวจสิ่งแวดล้อม - รพ.ธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -11,511 +11,457 @@
 </head>
 <body>
 
-  <header class="app-header">
-    <a href="dashboard.html" class="brand-section">
-      <img src="assets/tuh_logo.png" alt="TUH Logo" style="width: 38px; height: 38px; object-fit: contain;">
-      <div class="brand-text-container">
-        <span class="brand-main-title">MICROBIOLOGY</span>
-        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
+  <!-- 1. Universal Top Navigation Header -->
+  <header class="navbar">
+    <a href="index.html" class="nav-brand">
+      <img src="assets/tuh_logo.png" alt="TUH Logo" class="nav-logo-img">
+      <div class="nav-brand-text">
+        <span class="nav-brand-title">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</span>
+        <span class="nav-brand-subtitle">Environmental Microbiology Reporting System (ISO 15189)</span>
       </div>
     </a>
 
     <nav>
-      <ul class="header-nav">
-        <li>
-          <a href="dashboard.html" class="header-nav-btn">
-            <span class="icon">📊</span> แดชบอร์ด
-          </a>
-        </li>
-        <li>
-          <a href="booking.html" class="header-nav-btn">
-            <span class="icon">📅</span> ปฏิทินจองวัน
-          </a>
-        </li>
-        <li>
-          <a href="#recent-submissions-section" class="header-nav-btn">
-            <span class="icon">📑</span> E-Report
-          </a>
-        </li>
-        <li>
-          <a href="#manual-section" class="header-nav-btn" onclick="openManualModal()">
-            <span class="icon">📖</span> คู่มือ
-          </a>
-        </li>
-        <li id="auth-nav-container">
-          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">
-            เข้าสู่ระบบ
-          </a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link active">📋 บริการส่งตรวจ (8)</a></li>
+        <li><a href="#tracking-section" class="nav-link">📑 ติดตามผลตรวจ (E-Report)</a></li>
+        <li><a href="booking.html" class="nav-link">📅 ปฏิทินจองวัน</a></li>
+        <li><a href="dashboard.html" class="nav-link">📊 สถิติ & แดชบอร์ด</a></li>
+        <li id="auth-nav-item">
+          <a href="login.html" class="btn btn-gold btn-sm">เข้าสู่ระบบ</a>
         </li>
       </ul>
     </nav>
   </header>
 
-  <!-- Main Content Body -->
-  <main class="main-wrapper">
+  <!-- 2. Main Container -->
+  <main class="container">
 
-    <!-- Search & Filter Hero Card matching UX/UI Mockup -->
-    <div class="search-filter-card">
-      <div class="search-input-group">
-        <span class="search-icon">🔍</span>
-        <input 
-          type="text" 
-          id="service-search-input" 
-          class="search-input-field" 
-          placeholder="ค้นหาบริการส่งตรวจ..."
-          oninput="handleSearchFilter()"
-        >
-      </div>
-
-      <div class="filter-pills-group">
-        <button class="filter-pill active" id="tab-all" onclick="filterServices('all')">ทั้งหมด</button>
-        <button class="filter-pill" id="tab-routine" onclick="filterServices('routine')">งานประจำ</button>
-        <button class="filter-pill" id="tab-special" onclick="filterServices('special')">โครงการพิเศษ</button>
-      </div>
-
-      <button class="btn-search-gold" onclick="handleSearchFilter()">ค้นหา</button>
-    </div>
-
-    <!-- Section Header: รายการส่งตรวจ (8) -->
-    <div class="section-header-bar">
-      <div class="section-heading-title">
-        <span>รายการส่งตรวจ</span>
-        <span id="service-count-badge" style="color: var(--text-muted); font-weight: 600;">(8)</span>
-      </div>
-
-      <div class="section-tools">
-        <button class="tool-btn" onclick="toggleSort()">
-          <span>🎛️</span> ตัวกรอง
-        </button>
-        <div style="position: relative;">
-          <select id="type-select-dropdown" class="tool-btn" onchange="filterServicesByDropdown(this.value)" style="cursor: pointer;">
-            <option value="all">ประเภทงาน ▾</option>
-            <option value="air">อากาศ (Air)</option>
-            <option value="water">น้ำ (Water)</option>
-            <option value="food">อาหาร (Food)</option>
-            <option value="drug">ยา (Drug)</option>
-            <option value="blood">ธนาคารเลือด (Blood)</option>
-          </select>
+    <!-- Hero Banner with 2 Big Clear Action Buttons -->
+    <section class="hero-banner">
+      <div class="hero-text-side">
+        <span class="hero-badge-tag">มาตรฐานสากล ISO 15189 Accredited Laboratory</span>
+        <h1 class="hero-title">ระบบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อมออนไลน์</h1>
+        <p class="hero-desc">
+          บริการตรวจวิเคราะห์คุณภาพอากาศ, น้ำ, อาหาร, ยา และความปลอดเชื้อ สำหรับทุกหน่วยงานในโรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ สะดวก รวดเร็ว ติดตามผลและพิมพ์ใบรายงานผลทางการได้ทันที
+        </p>
+        <div class="hero-buttons-group">
+          <a href="#services-section" class="btn btn-gold">
+            ➕ ส่งสิ่งส่งตรวจใหม่ (เลือกจาก 8 บริการ)
+          </a>
+          <a href="#tracking-section" class="btn btn-white">
+            🔍 ติดตามผลตรวจ / พิมพ์รายงานผล PDF
+          </a>
         </div>
       </div>
-    </div>
-
-    <!-- 8 Services 2-Column Grid matching UX/UI Mockup -->
-    <section class="services-mockup-grid" id="services-mockup-list">
-      
-      <!-- 1. AIR-01 -->
-      <div class="service-card-item" data-category="routine" data-type="air" data-name="air sampling ตรวจคุณภาพอากาศ งานอาชีวอนามัย">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">💨</span>
-            <span class="service-code-text">AIR-01</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Air Sampling</h3>
-            <p class="service-dept-subtitle">สำหรับงานอาชีวอนามัย</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
+      <div class="hero-art-side">
+        <img src="assets/tuh_logo.png" alt="TUH Seal" class="hero-seal-img">
       </div>
-
-      <!-- 2. STR-02 -->
-      <div class="service-card-item" data-category="routine" data-type="blood" data-name="sterility ความปลอดเชื้อ ถุงเลือด งานธนาคารเลือด">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">🛡️</span>
-            <span class="service-code-text">STR-02</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Sterility</h3>
-            <p class="service-dept-subtitle">สำหรับงานธนาคารเลือด</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=STR-02" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 3. WTS-03 -->
-      <div class="service-card-item" data-category="routine" data-type="water" data-name="water surface ตรวจน้ำ พื้นผิว งานควบคุมโรคติดเชื้อ ic">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">💧</span>
-            <span class="service-code-text">WTS-03</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Water or Surface</h3>
-            <p class="service-dept-subtitle">งานควบคุมโรคติดเชื้อ</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=WTS-03" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 4. WTO-04 -->
-      <div class="service-card-item" data-category="routine" data-type="water" data-name="water or ห้องผ่าตัด ตรวจน้ำ">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">💧</span>
-            <span class="service-code-text">WTO-04</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Water (OR)</h3>
-            <p class="service-dept-subtitle">สำหรับห้องผ่าตัด OR</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=WTO-04" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 5. WTM-05 -->
-      <div class="service-card-item" data-category="routine" data-type="water" data-name="water med thamc ศูนย์การแพทย์ธรรมศาสตร์ ตรวจน้ำ">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">💧</span>
-            <span class="service-code-text">WTM-05</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Water (Med)</h3>
-            <p class="service-dept-subtitle">ศูนย์การแพทย์ธรรมศาสตร์</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=WTM-05" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 6. FOD-06 -->
-      <div class="service-card-item" data-category="routine" data-type="food" data-name="food อาหาร การปนเปื้อน งานโภชนาการ">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">🍴</span>
-            <span class="service-code-text">FOD-06</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Food</h3>
-            <p class="service-dept-subtitle">สำหรับงานโภชนาการ</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=FOD-06" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 7. DRG-07 -->
-      <div class="service-card-item" data-category="special" data-type="drug" data-name="drug ปลอดเชื้อ งานผลิตยา 1 ยาเตรียม sterile">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">💊</span>
-            <span class="service-code-text">DRG-07</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Drug (ปลอดเชื้อ)</h3>
-            <p class="service-dept-subtitle">สำหรับงานผลิตยา 1</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=DRG-07" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
-      <!-- 8. DRG-08 -->
-      <div class="service-card-item" data-category="special" data-type="drug" data-name="drug ปนเปื้อน งานผลิตยา 2 microbial contamination">
-        <div class="service-card-left">
-          <div class="service-icon-box">
-            <span class="service-icon-glyph">🧪</span>
-            <span class="service-code-text">DRG-08</span>
-          </div>
-          <div class="service-info-text">
-            <h3 class="service-title-name">Drug (ปนเปื้อน)</h3>
-            <p class="service-dept-subtitle">สำหรับงานผลิตยา 2</p>
-          </div>
-        </div>
-        <div class="service-card-right">
-          <div class="service-tat-container">
-            <span class="tat-label">ระยะเวลา</span>
-            <span class="tat-value">3-5 วันทำการ</span>
-          </div>
-          <a href="air.html?service=DRG-08" class="btn-send-gold">ส่งตรวจ</a>
-        </div>
-      </div>
-
     </section>
 
-    <!-- Section: E-Report (Recent Submissions List & Live Search) -->
-    <div class="card" id="recent-submissions-section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+    <!-- 4 Key Summary KPI Row -->
+    <section class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-icon">📦</div>
         <div>
-          <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-dark);">
-            📑 รายการส่งตรวจและรายงานผล (E-Report & Submissions)
-          </h2>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">
-            ติดตามสถานะการตรวจวิเคราะห์ และดาวน์โหลด/พิมพ์รายงานผล (ISO 15189)
-          </p>
+          <div class="kpi-num" id="kpi-total-num">80</div>
+          <div class="kpi-label">สิ่งส่งตรวจทั้งหมด</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: #e6f9f0; color: #059669;">✅</div>
+        <div>
+          <div class="kpi-num" style="color: #059669;" id="kpi-reported-num">76</div>
+          <div class="kpi-label">ออกผลตรวจสมบูรณ์แล้ว</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: #faf5ff; color: #7c3aed;">🔬</div>
+        <div>
+          <div class="kpi-num" style="color: #7c3aed;" id="kpi-progress-num">4</div>
+          <div class="kpi-label">กำลังตรวจวิเคราะห์</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon" style="background: #f0f9ff; color: #0284c7;">📅</div>
+        <div>
+          <div class="kpi-num" style="color: #0284c7;" id="kpi-bookings-num">134</div>
+          <div class="kpi-label">คิวจองล่วงหน้าในปฏิทิน</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: 8 Services Grid -->
+    <section id="services-section" style="margin-bottom: 3rem;">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📋 รายการบริการส่งตรวจ (8 บริการ)</h2>
+          <p class="section-desc">เลือกบริการที่ต้องการเพื่อเข้าสู่แบบฟอร์มบันทึกและส่งตรวจวิเคราะห์</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="filter-tabs-group">
+          <button class="filter-tab-btn active" id="tab-btn-all" onclick="filterCategory('all')">ทั้งหมด (8)</button>
+          <button class="filter-tab-btn" id="tab-btn-routine" onclick="filterCategory('routine')">งานประจำ (6)</button>
+          <button class="filter-tab-btn" id="tab-btn-special" onclick="filterCategory('special')">โครงการพิเศษ (2)</button>
+        </div>
+      </div>
+
+      <!-- 8 Services Cards Grid -->
+      <div class="services-grid" id="services-grid-list">
+        
+        <!-- 1. AIR-01 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">💨</span>
+              <span class="service-code-badge">AIR-01</span>
+            </div>
+            <div>
+              <h3 class="service-name">Air Sampling</h3>
+              <p class="service-dept">สำหรับงานอาชีวอนามัย / หอผู้ป่วย</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 2. STR-02 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">🛡️</span>
+              <span class="service-code-badge">STR-02</span>
+            </div>
+            <div>
+              <h3 class="service-name">Sterility Test</h3>
+              <p class="service-dept">สำหรับงานธนาคารเลือด (ถุงเลือด/ผลิตภัณฑ์)</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=STR-02" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 3. WTS-03 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">💧</span>
+              <span class="service-code-badge">WTS-03</span>
+            </div>
+            <div>
+              <h3 class="service-name">Water or Surface</h3>
+              <p class="service-dept">งานควบคุมและป้องกันการติดเชื้อ (IC)</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=WTS-03" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 4. WTO-04 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">💧</span>
+              <span class="service-code-badge">WTO-04</span>
+            </div>
+            <div>
+              <h3 class="service-name">Water (OR)</h3>
+              <p class="service-dept">สำหรับห้องผ่าตัด OR</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=WTO-04" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 5. WTM-05 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">💧</span>
+              <span class="service-code-badge">WTM-05</span>
+            </div>
+            <div>
+              <h3 class="service-name">Water (Med)</h3>
+              <p class="service-dept">ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=WTM-05" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 6. FOD-06 -->
+        <div class="service-card" data-cat="routine">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">🍴</span>
+              <span class="service-code-badge">FOD-06</span>
+            </div>
+            <div>
+              <h3 class="service-name">Food Contamination</h3>
+              <p class="service-dept">สำหรับงานโภชนาการ</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=FOD-06" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 7. DRG-07 -->
+        <div class="service-card" data-cat="special">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">💊</span>
+              <span class="service-code-badge">DRG-07</span>
+            </div>
+            <div>
+              <h3 class="service-name">Drug (ปราศจากเชื้อ)</h3>
+              <p class="service-dept">สำหรับงานผลิตยา 1 (Sterile preparations)</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=DRG-07" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+        <!-- 8. DRG-08 -->
+        <div class="service-card" data-cat="special">
+          <div class="service-left">
+            <div class="service-icon-box">
+              <span class="service-icon-emoji">🧪</span>
+              <span class="service-code-badge">DRG-08</span>
+            </div>
+            <div>
+              <h3 class="service-name">Drug (ปนเปื้อน)</h3>
+              <p class="service-dept">สำหรับงานผลิตยา 2 (Contamination test)</p>
+            </div>
+          </div>
+          <div class="service-right">
+            <div class="service-tat-box">
+              <span class="service-tat-label">ระยะเวลา (TAT)</span>
+              <div class="service-tat-value">3-5 วันทำการ</div>
+            </div>
+            <a href="air.html?service=DRG-08" class="btn btn-gold btn-sm">📝 กรอกใบส่งตรวจ</a>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 2: Live Tracking & E-Report Table -->
+    <section id="tracking-section">
+      <div class="section-header">
+        <div>
+          <h2 class="section-title">📑 ติดตามสถานะและดาวน์โหลดผลตรวจ (E-Report)</h2>
+          <p class="section-desc">ค้นหาเลขที่ส่งตรวจเพื่อติดตามสถานะการตรวจวิเคราะห์ และดาวน์โหลดใบรายงานผลทางการ (ISO 15189)</p>
+        </div>
+      </div>
+
+      <!-- Search & Status Filter Bar -->
+      <div class="search-filter-box">
+        <div class="search-input-wrap">
+          <span>🔍</span>
+          <input 
+            type="text" 
+            id="report-search-input" 
+            placeholder="พิมพ์ค้นหาเลขที่ส่งตรวจ, ชื่อหน่วยงาน, หรือหอผู้ป่วย..."
+            oninput="handleReportSearch()"
+          >
         </div>
 
         <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <input 
-            type="text" 
-            id="sub-search" 
-            class="form-control" 
-            placeholder="ค้นหาเลขที่, ผู้ส่ง..." 
-            style="width: 220px;"
-          >
-          <select id="sub-status-filter" class="form-control" style="width: 160px;">
+          <select id="status-filter-select" class="form-control" style="width: 170px;" onchange="handleReportSearch()">
             <option value="">ทุกสถานะ</option>
-            <option value="SUBMITTED">กำลังส่งตรวจ (Submitted)</option>
-            <option value="RECEIVED">รับแล้ว (Received)</option>
-            <option value="IN_PROGRESS">กำลังตรวจ (In Progress)</option>
-            <option value="COMPLETED">ตรวจแล้ว (Completed)</option>
-            <option value="REPORTED">ออกรายงานแล้ว (Reported)</option>
+            <option value="SUBMITTED">กำลังส่งตรวจ</option>
+            <option value="RECEIVED">รับตัวอย่างแล้ว</option>
+            <option value="IN_PROGRESS">กำลังตรวจวิเคราะห์</option>
+            <option value="REPORTED">ออกรายงานแล้ว</option>
           </select>
         </div>
       </div>
 
-      <div class="table-responsive">
-        <table class="table">
+      <!-- Results Table -->
+      <div class="table-wrap">
+        <table class="app-table">
           <thead>
             <tr>
               <th>เลขที่ส่งตรวจ</th>
               <th>บริการ</th>
               <th>หน่วยงานส่งตรวจ</th>
               <th>วันที่ส่งตรวจ</th>
-              <th>จำนวนตัวอย่าง</th>
+              <th>จุดตรวจ</th>
               <th>สถานะ</th>
               <th>ผู้ตรวจ / ผู้อนุมัติ</th>
-              <th>การจัดการ</th>
+              <th style="text-align: right;">ใบรายงานผล</th>
             </tr>
           </thead>
-          <tbody id="submissions-tbody">
+          <tbody id="reports-table-body">
             <tr>
-              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+              <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
                 กำลังโหลดข้อมูลจริงจากฐานข้อมูล Supabase...
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
 
   </main>
 
-  <!-- Modal: คู่มือการใช้งาน -->
-  <div class="modal-backdrop" id="manual-modal" style="display: none;">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 class="modal-title">📖 คู่มือการใช้งานระบบรายงานผลตรวจสิ่งแวดล้อม</h3>
-        <button class="close-btn" onclick="closeManualModal()">&times;</button>
-      </div>
-      <div style="font-size: 0.9rem; line-height: 1.7; color: var(--text-dark);">
-        <h4 style="color: var(--primary); margin-bottom: 0.4rem;">ขั้นตอนการส่งตรวจ (สำหรับหน่วยงานผู้ส่งตรวจ):</h4>
-        <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
-          <li>เลือกบริการที่ต้องการส่งตรวจ (เช่น Air Sampling, Water, Food) แล้วกดปุ่มสีทอง <strong>"ส่งตรวจ"</strong></li>
-          <li>กรอกข้อมูลหน่วยงาน, วันที่ส่งตรวจ และระบุจำนวนจุดเก็บตัวอย่าง</li>
-          <li>เลือกหอผู้ป่วย (Ward) และระบุตำแหน่งที่เก็บตัวอย่างให้ชัดเจน</li>
-          <li>กดบันทึกข้อมูล ระบบจะออกรหัสใบส่งตรวจ (เช่น <code>SUB-AIR-YYMM-XXX</code>)</li>
-        </ol>
-
-        <h4 style="color: var(--primary); margin-bottom: 0.4rem;">ขั้นตอนการตรวจและออกรายงาน (สำหรับเจ้าหน้าที่ห้องแล็บ):</h4>
-        <ol style="margin-left: 1.5rem; margin-bottom: 1rem;">
-          <li>เมื่อรับสิ่งส่งตรวจ ให้เปลี่ยนสถานะเป็น <strong>"รับตัวอย่างแล้ว (Received)"</strong></li>
-          <li>เมื่อเริ่มบ่มเพาะเชื้อ ให้เปลี่ยนเป็น <strong>"กำลังตรวจวิเคราะห์ (In Progress)"</strong></li>
-          <li>บันทึกผลการนับโคโลนี (Bacteria CFU / Fungus CFU)</li>
-          <li>นักเทคนิคการแพทย์เลือกชื่อผู้รายงานผล และหัวหน้าห้องแล็บตรวจสอบอนุมัติผล</li>
-          <li>กดปุ่ม <strong>"📄 ใบรายงานผล"</strong> เพื่อดูผลที่ถูกต้องคมชัด และสั่งพิมพ์หรือบันทึกเป็น PDF ได้ทันที</li>
-        </ol>
-      </div>
-    </div>
-  </div>
-
   <!-- Footer -->
-  <footer>
-    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  <footer class="app-footer">
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | ห้องปฏิบัติการมาตรฐาน ISO 15189 Accredited Laboratory</p>
   </footer>
 
   <script src="js/api.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      checkUserAuth();
-      loadRealSubmissions();
+    let allSubmissions = [];
 
-      document.getElementById('sub-search').addEventListener('input', debounce(loadRealSubmissions, 400));
-      document.getElementById('sub-status-filter').addEventListener('change', loadRealSubmissions);
+    document.addEventListener('DOMContentLoaded', async () => {
+      checkAuth();
+      await loadRealData();
     });
 
-    function checkUserAuth() {
+    function checkAuth() {
       const user = Api.getUser();
-      const authContainer = document.getElementById('auth-nav-container');
+      const authContainer = document.getElementById('auth-nav-item');
       if (user) {
         authContainer.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
-            <button onclick="logout()" class="header-nav-btn" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">ออก</button>
+          <div class="nav-user-badge">
+            <span>👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.reload();" style="background:transparent; border:none; color:#f87171; cursor:pointer; font-weight:700; margin-left:4px;">(ออก)</button>
           </div>
         `;
       }
     }
 
-    function logout() {
-      Api.clearAuth();
-      window.location.href = 'login.html';
-    }
-
-    function filterServices(category) {
-      document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
-      const activeBtn = document.getElementById(`tab-${category}`);
+    function filterCategory(cat) {
+      document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`tab-btn-${cat}`);
       if (activeBtn) activeBtn.classList.add('active');
 
-      const items = document.querySelectorAll('.service-card-item');
-      let visibleCount = 0;
-
-      items.forEach(item => {
-        const itemCat = item.getAttribute('data-category');
-        if (category === 'all' || itemCat === category) {
-          item.style.display = 'flex';
-          visibleCount++;
+      const cards = document.querySelectorAll('.service-card');
+      cards.forEach(card => {
+        const c = card.getAttribute('data-cat');
+        if (cat === 'all' || c === cat) {
+          card.style.display = 'flex';
         } else {
-          item.style.display = 'none';
+          card.style.display = 'none';
         }
       });
-
-      document.getElementById('service-count-badge').innerText = `(${visibleCount})`;
     }
 
-    function filterServicesByDropdown(type) {
-      const items = document.querySelectorAll('.service-card-item');
-      let visibleCount = 0;
-
-      items.forEach(item => {
-        const itemType = item.getAttribute('data-type');
-        if (type === 'all' || itemType === type) {
-          item.style.display = 'flex';
-          visibleCount++;
-        } else {
-          item.style.display = 'none';
-        }
-      });
-
-      document.getElementById('service-count-badge').innerText = `(${visibleCount})`;
-    }
-
-    function handleSearchFilter() {
-      const keyword = document.getElementById('service-search-input').value.toLowerCase().trim();
-      const items = document.querySelectorAll('.service-card-item');
-      let visibleCount = 0;
-
-      items.forEach(item => {
-        const text = item.getAttribute('data-name').toLowerCase();
-        if (!keyword || text.includes(keyword)) {
-          item.style.display = 'flex';
-          visibleCount++;
-        } else {
-          item.style.display = 'none';
-        }
-      });
-
-      document.getElementById('service-count-badge').innerText = `(${visibleCount})`;
-    }
-
-    async function loadRealSubmissions() {
-      const tbody = document.getElementById('submissions-tbody');
-      const search = document.getElementById('sub-search').value.trim();
-      const status = document.getElementById('sub-status-filter').value;
-
+    async function loadRealData() {
       try {
-        const submissions = await Api.getSubmissions({ search, status });
-        if (submissions.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">ยังไม่มีรายการส่งตรวจในระบบ</td></tr>`;
-          return;
-        }
+        const [summary, submissions] = await Promise.all([
+          Api.getDashboardSummary(),
+          Api.getSubmissions({ limit: 50 })
+        ]);
 
-        tbody.innerHTML = submissions.map(s => {
-          const statusClass = `badge-${s.status.toLowerCase()}`;
-          const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-          const staffText = s.reporter_name ? `${s.reporter_name}` : 'ทนพ.มานพ (ทน.17500)';
-          
-          return `
-            <tr>
-              <td>
-                <strong>${s.submission_no}</strong> 
-                ${s.is_amended ? '<span class="badge badge-rejected" style="font-size: 0.65rem;">AMENDED</span>' : ''}
-              </td>
-              <td><span style="font-weight: 700; color: var(--primary);">${s.service_code}</span></td>
-              <td>${s.department_name}</td>
-              <td>${thDate}</td>
-              <td>${s.sample_count} จุด</td>
-              <td><span class="badge ${statusClass}">${s.status}</span></td>
-              <td style="font-size: 0.85rem;">${staffText}</td>
-              <td>
-                <div style="display: flex; gap: 0.35rem;">
-                  <a href="report_view.html?id=${s.id}" class="btn-send-gold" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; text-decoration: none;">
-                    📄 ใบรายงานผล
-                  </a>
-                  <a href="air.html?id=${s.id}" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;">
-                    ✏️ แก้ไข
-                  </a>
-                </div>
-              </td>
-            </tr>
-          `;
-        }).join('');
+        const m = summary.metrics;
+        document.getElementById('kpi-total-num').innerText = m.total;
+        document.getElementById('kpi-reported-num').innerText = m.reported;
+        document.getElementById('kpi-progress-num').innerText = m.in_progress + m.submitted + m.received;
+        document.getElementById('kpi-bookings-num').innerText = m.today_bookings + m.upcoming_bookings;
+
+        allSubmissions = submissions;
+        renderReportsTable(submissions);
+
       } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 1rem;">เกิดข้อผิดพลาดในการดึงข้อมูลจาก Supabase: ${err.message}</td></tr>`;
+        console.error('Error loading data:', err);
       }
     }
 
-    function openManualModal() {
-      document.getElementById('manual-modal').style.display = 'flex';
+    function handleReportSearch() {
+      const query = document.getElementById('report-search-input').value.toLowerCase().trim();
+      const status = document.getElementById('status-filter-select').value;
+
+      const filtered = allSubmissions.filter(s => {
+        const matchesQuery = !query || 
+          s.submission_no.toLowerCase().includes(query) ||
+          (s.department_name && s.department_name.toLowerCase().includes(query)) ||
+          (s.sender_name && s.sender_name.toLowerCase().includes(query));
+        
+        const matchesStatus = !status || s.status === status;
+        return matchesQuery && matchesStatus;
+      });
+
+      renderReportsTable(filtered);
     }
 
-    function closeManualModal() {
-      document.getElementById('manual-modal').style.display = 'none';
-    }
+    function renderReportsTable(list) {
+      const tbody = document.getElementById('reports-table-body');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">ไม่พบรายการส่งตรวจ</td></tr>';
+        return;
+      }
 
-    function toggleSort() {
-      const container = document.getElementById('services-mockup-list');
-      const items = Array.from(container.children);
-      items.reverse();
-      items.forEach(i => container.appendChild(i));
-    }
+      tbody.innerHTML = list.map(s => {
+        const statusClass = `status-${s.status.toLowerCase()}`;
+        const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const staff = s.reporter_name ? s.reporter_name : 'ทนพ.มานพ (ทน.17500)';
 
-    function debounce(func, wait) {
-      let timeout;
-      return function(...args) {
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(this, args), wait);
-      };
+        return `
+          <tr>
+            <td>
+              <strong style="color: var(--tu-green);">${s.submission_no}</strong>
+              ${s.is_amended ? '<span class="status-badge status-rejected" style="font-size:0.65rem; margin-left:4px;">AMENDED</span>' : ''}
+            </td>
+            <td><span style="font-weight: 700; color: var(--tu-green);">${s.service_code}</span></td>
+            <td>${s.department_name || '-'}</td>
+            <td>${thDate}</td>
+            <td>${s.sample_count} จุด</td>
+            <td><span class="status-badge ${statusClass}">${s.status}</span></td>
+            <td style="font-size: 0.82rem; color: var(--text-muted);">${staff}</td>
+            <td style="text-align: right;">
+              <div style="display: inline-flex; gap: 0.35rem;">
+                <a href="report_view.html?id=${s.id}" class="btn btn-gold btn-sm" style="text-decoration: none;">
+                  📄 ใบรายงานผล
+                </a>
+                <a href="air.html?id=${s.id}" class="btn btn-secondary btn-sm">
+                  ✏️ แก้ไข
+                </a>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
   </script>
 </body>

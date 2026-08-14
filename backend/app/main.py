@@ -77,7 +77,7 @@ possible_frontend_paths = [
 
 frontend_dir = None
 for p in possible_frontend_paths:
-    if os.path.exists(p) and os.path.exists(os.path.join(p, "dashboard.html")):
+    if os.path.exists(p) and os.path.exists(os.path.join(p, "index.html")):
         frontend_dir = p
         break
 
@@ -93,22 +93,18 @@ if frontend_dir:
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
-    # Serve Dashboard as default root /
+    # Serve index.html as default landing root
     @app.get("/", include_in_schema=False)
     def serve_root():
-        return FileResponse(os.path.join(frontend_dir, "dashboard.html"))
+        return FileResponse(os.path.join(frontend_dir, "index.html"))
+
+    @app.get("/index.html", include_in_schema=False)
+    def serve_index():
+        return FileResponse(os.path.join(frontend_dir, "index.html"))
 
     @app.get("/dashboard.html", include_in_schema=False)
     def serve_dashboard():
         return FileResponse(os.path.join(frontend_dir, "dashboard.html"))
-
-    @app.get("/services.html", include_in_schema=False)
-    def serve_services():
-        return FileResponse(os.path.join(frontend_dir, "index.html"))
-
-    @app.get("/index.html", include_in_schema=False)
-    def serve_index_html():
-        return FileResponse(os.path.join(frontend_dir, "index.html"))
 
     @app.get("/report_view.html", include_in_schema=False)
     def serve_report_view():
