@@ -3,377 +3,459 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard สถิติสิ่งส่งตรวจ - TUH Microbiology</title>
+  <title>Dashboard - TUH Microbiology Environmental Reporting System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    .charts-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-    @media (max-width: 900px) {
-      .charts-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-    .chart-container {
-      position: relative;
-      height: 280px;
-      width: 100%;
-    }
-    .kpi-card {
-      background: #ffffff;
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-card);
-      padding: 1.25rem 1.4rem;
-      box-shadow: var(--shadow-card);
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      transition: all 0.2s ease;
-    }
-    .kpi-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-    .kpi-title {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-    .kpi-number {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--primary);
-      margin-top: 0.35rem;
-    }
-  </style>
 </head>
 <body>
 
-  <!-- Top Navigation Header -->
-  <header class="app-header">
-    <a href="index.html" class="brand-section">
-      <div class="brand-logo-circle">TU</div>
-      <div class="brand-text-container">
-        <span class="brand-main-title">MICROBIOLOGY</span>
-        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
-      </div>
-    </a>
-
-    <nav>
-      <ul class="header-nav">
-        <li><a href="index.html" class="header-nav-btn">🏠 หน้าหลัก</a></li>
-        <li><a href="dashboard.html" class="header-nav-btn active">📊 แดชบอร์ด</a></li>
-        <li><a href="booking.html" class="header-nav-btn"><span class="icon">📅</span> ปฏิทินจองวัน</a></li>
-        <li><a href="index.html#recent-submissions-section" class="header-nav-btn"><span class="icon">📑</span> E-Report</a></li>
-        <li id="auth-nav-container">
-          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">เข้าสู่ระบบ</a>
-        </li>
-      </ul>
-    </nav>
-  </header>
-
-  <main class="main-wrapper">
+  <!-- Outer 3-Column Frame Container matching UX/UI Mockup -->
+  <div class="app-frame-container">
     
-    <!-- Page Header & Filter Controls -->
-    <div class="section-header-bar" style="margin-bottom: 1.5rem;">
+    <!-- 1. Left Dark Sidebar -->
+    <aside class="sidebar">
       <div>
-        <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark);">📊 Specimen & Environmental Dashboard</h1>
-        <p style="font-size: 0.88rem; color: var(--text-muted);">สรุปสถิติผลการตรวจวิเคราะห์สิ่งแวดล้อม และตัวชี้วัดประสิทธิภาพ (TAT KPI)</p>
+        <!-- Brand Logo -->
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-logo-icon">TU</div>
+          <span class="brand-logo-text">TUH MICRO</span>
+        </a>
+
+        <!-- Sidebar Navigation Menu -->
+        <ul class="sidebar-menu">
+          <li>
+            <a href="dashboard.html" class="sidebar-link active">
+              <span class="menu-icon">📊</span>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="index.html" class="sidebar-link">
+              <span class="menu-icon">📋</span>
+              <span>Services (บริการ 8 รายการ)</span>
+            </a>
+          </li>
+          <li>
+            <a href="air.html" class="sidebar-link">
+              <span class="menu-icon">💨</span>
+              <span>Air Sampling (AIR-01)</span>
+            </a>
+          </li>
+          <li>
+            <a href="booking.html" class="sidebar-link">
+              <span class="menu-icon">📅</span>
+              <span>Queue Calendar (ปฏิทินจอง)</span>
+            </a>
+          </li>
+          <li>
+            <a href="audit.html" class="sidebar-link">
+              <span class="menu-icon">📜</span>
+              <span>ISO Audit Trail</span>
+            </a>
+          </li>
+          <li>
+            <a href="report_view.html?id=5" class="sidebar-link">
+              <span class="menu-icon">📑</span>
+              <span>E-Report (พิมพ์รายงาน)</span>
+            </a>
+          </li>
+        </ul>
       </div>
 
-      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-        <select id="filter-year" class="tool-btn" onchange="loadDashboardData()" style="padding: 0.45rem 0.85rem;">
-          <option value="2026">พ.ศ. 2569 (2026)</option>
-          <option value="2025">พ.ศ. 2568 (2025)</option>
-          <option value="all">ทุกปี</option>
-        </select>
-        <button class="btn-send-gold" onclick="loadDashboardData()">🔄 อัปเดตสถิติ</button>
-      </div>
-    </div>
+      <!-- Sidebar Footer (Profile + Mode Switcher) -->
+      <div class="sidebar-footer">
+        <div class="user-profile-box" id="user-profile-widget">
+          <div class="user-avatar" id="user-avatar-initial">ทน</div>
+          <div class="user-info">
+            <div class="user-name" id="user-display-name">ทนพ.มานพ นันตาบุตร</div>
+            <div class="user-status">● Active</div>
+          </div>
+        </div>
 
-    <!-- Top KPI Metric Cards -->
-    <div class="grid-stats" style="margin-bottom: 1.5rem;">
-      <div class="kpi-card">
-        <span class="kpi-title">📦 สิ่งส่งตรวจทั้งหมด (Total)</span>
-        <div class="kpi-number" id="kpi-total">80</div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btn-mode-light" onclick="setThemeMode('light')">☀️ Light</button>
+          <button class="mode-btn" id="btn-mode-dark" onclick="setThemeMode('dark')">🌙 Dark</button>
+        </div>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-title">✅ ออกรายงานผลแล้ว (Reported)</span>
-        <div class="kpi-number" style="color: #15803d;" id="kpi-reported">76</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-title">🔬 กำลังตรวจวิเคราะห์ (In Progress)</span>
-        <div class="kpi-number" style="color: #d97706;" id="kpi-in-progress">4</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-title">📅 คิวจองส่งตรวจ (Bookings)</span>
-        <div class="kpi-number" style="color: #0284c7;" id="kpi-bookings">134</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-title">⏱️ ผ่านเกณฑ์ TAT (On-Time %)</span>
-        <div class="kpi-number" style="color: var(--accent-gold);" id="kpi-tat-rate">98.5%</div>
-      </div>
-    </div>
+    </aside>
 
-    <!-- Charts Row 1 -->
-    <div class="charts-grid">
-      
-      <!-- Chart: Monthly Submissions Trend -->
-      <div class="card">
-        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
-          📈 สถิติสิ่งส่งตรวจรายเดือน (Monthly Submissions Trend)
-        </h2>
-        <div class="chart-container">
-          <canvas id="monthlyTrendChart"></canvas>
+    <!-- 2. Center Main Dashboard Content -->
+    <main class="content-center">
+      <h1 class="dash-top-title">Dashboard</h1>
+
+      <!-- Welcome Hero Banner (Gold Camel Theme) -->
+      <section class="welcome-hero-card">
+        <div class="welcome-text-side">
+          <h2 class="welcome-title" id="welcome-banner-title">Welcome back, TUH Medical Staff!</h2>
+          <p class="welcome-sub">
+            ระบบรายงานผลตรวจสิ่งแวดล้อม งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)
+          </p>
+          <div class="welcome-actions">
+            <a href="air.html" class="btn-white-pill">➕ สร้างใบส่งตรวจ Air</a>
+            <a href="booking.html" class="btn-white-pill">📅 จองคิวส่งตรวจ</a>
+          </div>
+        </div>
+        <div class="welcome-avatar-side">
+          🔬
+        </div>
+      </section>
+
+      <!-- 4 Key Metrics Strip -->
+      <section class="metrics-strip">
+        <div class="metric-box">
+          <div class="metric-icon-wrap">📦</div>
+          <div>
+            <div class="metric-val-title" id="stat-total-val">80</div>
+            <div class="metric-label-text">สิ่งส่งตรวจทั้งหมด</div>
+          </div>
+        </div>
+
+        <div class="metric-box">
+          <div class="metric-icon-wrap">✅</div>
+          <div>
+            <div class="metric-val-title" style="color: #12b76a;" id="stat-reported-val">76</div>
+            <div class="metric-label-text">ออกผลตรวจสมบูรณ์</div>
+          </div>
+        </div>
+
+        <div class="metric-box">
+          <div class="metric-icon-wrap">🔬</div>
+          <div>
+            <div class="metric-val-title" style="color: #f79009;" id="stat-inprogress-val">4</div>
+            <div class="metric-label-text">กำลังตรวจวิเคราะห์</div>
+          </div>
+        </div>
+
+        <div class="metric-box">
+          <div class="metric-icon-wrap">📅</div>
+          <div>
+            <div class="metric-val-title" style="color: #0ba5ec;" id="stat-bookings-val">134</div>
+            <div class="metric-label-text">คิวจองในปฏิทิน</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Team Executive / Services Distribution Card matching Mockup -->
+      <section class="analytics-card">
+        <div class="analytics-header">
+          <h2 class="analytics-title">สถิติสิ่งส่งตรวจและการกระจายตัว (Service Distribution)</h2>
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);" id="analytics-total-label">80 Submissions</span>
+        </div>
+
+        <div class="analytics-grid">
+          <!-- Donut Chart -->
+          <div class="donut-container">
+            <canvas id="serviceDonutChart"></canvas>
+            <div class="donut-center-number">
+              <div class="big-num" id="donut-center-num">80</div>
+              <div class="sub-text">รายการทั้งหมด</div>
+            </div>
+          </div>
+
+          <!-- Progress Bars List matching Mockup -->
+          <div class="progress-list">
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>🍃 Air Sampling (AIR-01)</span>
+                <span style="font-weight: 800; color: #12b76a;">76</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 95%; background: #12b76a;"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>💧 Water or Surface (WTS/WTO/WTM)</span>
+                <span style="font-weight: 800; color: #0ba5ec;">12</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 15%; background: #0ba5ec;"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>💊 Drug (DRG-07/08)</span>
+                <span style="font-weight: 800; color: #d4a359;">14</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 17%; background: #d4a359;"></div>
+              </div>
+            </div>
+
+            <div class="progress-item">
+              <div class="progress-meta">
+                <span>🍴 Food & Sterility (FOD/STR)</span>
+                <span style="font-weight: 800; color: #f04438;">8</span>
+              </div>
+              <div class="progress-track">
+                <div class="progress-fill" style="width: 10%; background: #f04438;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Real Submissions Table with Instant Printable Report Links -->
+      <section class="analytics-card" style="padding: 1.25rem;">
+        <div class="analytics-header" style="margin-bottom: 0.85rem;">
+          <h2 class="analytics-title">📑 รายการส่งตรวจล่าสุด (Recent Submissions)</h2>
+          <a href="index.html" class="view-all-link">ดูบริการทั้งหมด →</a>
+        </div>
+
+        <div class="table-responsive" style="border: none;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>เลขที่ส่งตรวจ</th>
+                <th>บริการ</th>
+                <th>หน่วยงาน</th>
+                <th>วันที่</th>
+                <th>จุดตรวจ</th>
+                <th>สถานะ</th>
+                <th>รายงานผล</th>
+              </tr>
+            </thead>
+            <tbody id="center-submissions-tbody">
+              <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                  กำลังดึงข้อมูลจาก Supabase...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- 3. Right Side Activity & Queue Feed Panel -->
+    <aside class="panel-right">
+      <h2 class="panel-title">My activity</h2>
+
+      <!-- Upcoming Queues -->
+      <div class="activity-section">
+        <div class="activity-section-header">
+          <span class="section-label">คิวจองส่งตรวจ (Upcoming queues)</span>
+          <a href="booking.html" class="view-all-link">View all</a>
+        </div>
+
+        <div id="upcoming-bookings-feed">
+          <!-- Real Bookings loaded via JS -->
         </div>
       </div>
 
-      <!-- Chart: Service Breakdown Donut -->
-      <div class="card">
-        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
-          🍩 สัดส่วนสิ่งส่งตรวจตามบริการ
-        </h2>
-        <div class="chart-container">
-          <canvas id="servicePieChart"></canvas>
+      <!-- Recent Laboratory Submissions -->
+      <div class="activity-section">
+        <div class="activity-section-header">
+          <span class="section-label">รายการส่งตรวจล่าสุด (Recent tests)</span>
+          <a href="index.html#recent-submissions-section" class="view-all-link">View all</a>
+        </div>
+
+        <div id="recent-tests-feed">
+          <!-- Real Submissions loaded via JS -->
         </div>
       </div>
 
-    </div>
+      <!-- Staff Actions Feed -->
+      <div class="activity-section">
+        <div class="activity-section-header">
+          <span class="section-label">ความเคลื่อนไหว (Latest shoutouts)</span>
+          <a href="audit.html" class="view-all-link">View all</a>
+        </div>
 
-    <!-- Charts Row 2 -->
-    <div class="charts-grid">
-      
-      <!-- Chart: Ward Distribution Top 7 -->
-      <div class="card">
-        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
-          🏥 หอผู้ป่วยและหน่วยงานที่ส่งตรวจสูงสุด (Top 7 Wards & Depts)
-        </h2>
-        <div class="chart-container">
-          <canvas id="wardBarChart"></canvas>
+        <div class="shoutout-item">
+          <div class="shoutout-avatar">ทน</div>
+          <div class="shoutout-text">
+            <strong>ทนพ.มานพ นันตาบุตร</strong> บันทึกผลการตรวจนับโคโลนี 48 ชม. (Air Sampling)
+          </div>
+        </div>
+
+        <div class="shoutout-item">
+          <div class="shoutout-avatar" style="background:#fef3f2; color:#f04438;">นร</div>
+          <div class="shoutout-text">
+            <strong>ทนพญ.นริศรา มังกรแก้ว</strong> อนุมัติผลออกรายงานทางการ (ISO 15189 Verified)
+          </div>
+        </div>
+
+        <div class="shoutout-item">
+          <div class="shoutout-avatar" style="background:#f0f9ff; color:#0ba5ec;">อช</div>
+          <div class="shoutout-text">
+            <strong>งานอาชีวอนามัย</strong> จองคิวส่งตรวจคุณภาพอากาศ 10 จุด
+          </div>
         </div>
       </div>
 
-      <!-- Chart: Colony Quality Rate -->
-      <div class="card">
-        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
-          🛡️ สัดส่วนผลการตรวจ (Pass / Fail)
-        </h2>
-        <div class="chart-container">
-          <canvas id="qualityPieChart"></canvas>
-        </div>
-      </div>
+    </aside>
 
-    </div>
-
-    <!-- Recent Submissions Table with Instant Report View -->
-    <div class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark);">
-          📑 รายการสิ่งส่งตรวจล่าสุดและพิมพ์รายงานผล
-        </h2>
-        <a href="index.html" class="btn btn-secondary btn-sm">ดูรายการทั้งหมดใน E-Report →</a>
-      </div>
-
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>เลขที่ส่งตรวจ</th>
-              <th>บริการ</th>
-              <th>หน่วยงานส่งตรวจ</th>
-              <th>วันที่ส่งตรวจ</th>
-              <th>จำนวนจุด</th>
-              <th>สถานะ</th>
-              <th>ผู้ตรวจ / ผู้อนุมัติ</th>
-              <th>ใบรายงานผล</th>
-            </tr>
-          </thead>
-          <tbody id="dash-submissions-tbody">
-            <tr>
-              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                กำลังโหลดข้อมูลจริงจากฐานข้อมูล Supabase...
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
-  </footer>
+  </div>
 
   <script src="js/api.js"></script>
   <script>
-    let trendChartInstance = null;
-    let serviceChartInstance = null;
-    let wardChartInstance = null;
-    let qualityChartInstance = null;
+    let donutChartInstance = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
-      checkAuth();
-      loadDashboardData();
+    document.addEventListener('DOMContentLoaded', async () => {
+      checkAuthUser();
+      await loadDashboardData();
     });
 
-    function checkAuth() {
+    function checkAuthUser() {
       const user = Api.getUser();
-      const authContainer = document.getElementById('auth-nav-container');
       if (user) {
-        authContainer.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
-            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="header-nav-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">ออก</button>
-          </div>
-        `;
+        document.getElementById('user-display-name').innerText = user.full_name;
+        document.getElementById('welcome-banner-title').innerText = `Welcome back, ${user.full_name}!`;
+        const initial = user.full_name ? user.full_name.substring(0, 2) : 'TU';
+        document.getElementById('user-avatar-initial').innerText = initial;
       }
     }
 
     async function loadDashboardData() {
       try {
-        const [summary, submissions] = await Promise.all([
+        const [summary, submissions, bookings] = await Promise.all([
           Api.getDashboardSummary(),
-          Api.getSubmissions({ limit: 15 })
+          Api.getSubmissions({ limit: 8 }),
+          Api.getBookings({ limit: 5 })
         ]);
 
         const m = summary.metrics;
-        document.getElementById('kpi-total').innerText = m.total;
-        document.getElementById('kpi-reported').innerText = m.reported;
-        document.getElementById('kpi-in-progress').innerText = m.in_progress + m.submitted + m.received;
-        document.getElementById('kpi-bookings').innerText = m.today_bookings + m.upcoming_bookings;
+        document.getElementById('stat-total-val').innerText = m.total;
+        document.getElementById('stat-reported-val').innerText = m.reported;
+        document.getElementById('stat-inprogress-val').innerText = m.in_progress + m.submitted + m.received;
+        document.getElementById('stat-bookings-val').innerText = m.today_bookings + m.upcoming_bookings;
+        document.getElementById('donut-center-num').innerText = m.total;
+        document.getElementById('analytics-total-label').innerText = `${m.total} Submissions`;
 
-        renderCharts(summary);
-        renderRecentTable(submissions);
+        renderDonutChart(m);
+        renderCenterSubmissions(submissions);
+        renderRightFeeds(bookings, submissions);
 
       } catch (err) {
-        console.error('Error loading dashboard:', err);
+        console.error('Error loading dashboard data:', err);
       }
     }
 
-    function renderCharts(summary) {
-      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-      
-      // 1. Monthly Trend Chart
-      const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
-      if (trendChartInstance) trendChartInstance.destroy();
-      trendChartInstance = new Chart(trendCtx, {
-        type: 'bar',
-        data: {
-          labels: months,
-          datasets: [{
-            label: 'จำนวนใบส่งตรวจ (Submissions)',
-            data: [12, 14, 18, 15, 20, 24, 28, 32, 0, 0, 0, 0],
-            backgroundColor: '#22372b',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } }
-        }
-      });
+    function renderDonutChart(m) {
+      const ctx = document.getElementById('serviceDonutChart').getContext('2d');
+      if (donutChartInstance) donutChartInstance.destroy();
 
-      // 2. Service Distribution Chart
-      const serviceCtx = document.getElementById('servicePieChart').getContext('2d');
-      if (serviceChartInstance) serviceChartInstance.destroy();
-      serviceChartInstance = new Chart(serviceCtx, {
+      donutChartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: {
-          labels: ['Air Sampling', 'Water / OR', 'Food', 'Drug', 'Sterility'],
+          labels: ['Air Sampling', 'Water', 'Drug', 'Food'],
           datasets: [{
-            data: [76, 12, 8, 14, 6],
-            backgroundColor: ['#22372b', '#0284c7', '#10b981', '#c99a45', '#8b5cf6']
+            data: [76, 12, 14, 8],
+            backgroundColor: ['#12b76a', '#0ba5ec', '#d4a359', '#f04438'],
+            borderWidth: 0,
+            cutout: '72%'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } }
-        }
-      });
-
-      // 3. Top Wards Bar Chart
-      const wardCtx = document.getElementById('wardBarChart').getContext('2d');
-      if (wardChartInstance) wardChartInstance.destroy();
-      wardChartInstance = new Chart(wardCtx, {
-        type: 'bar',
-        data: {
-          labels: ['ห้องเตรียมนม', 'ห้องเตรียม BD', 'ANICU', 'ICU Med', 'OPD MED 3', 'ห้องผ่าตัด OR', 'งานโภชนาการ'],
-          datasets: [{
-            label: 'จุดเก็บตัวอย่าง (จุด)',
-            data: [42, 38, 35, 29, 25, 22, 18],
-            backgroundColor: '#c99a45',
-            borderRadius: 6
-          }]
-        },
-        options: {
-          indexAxis: 'y',
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } }
-        }
-      });
-
-      // 4. Quality Pass/Fail Donut
-      const qualityCtx = document.getElementById('qualityPieChart').getContext('2d');
-      if (qualityChartInstance) qualityChartInstance.destroy();
-      qualityChartInstance = new Chart(qualityCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['ปกติ (Normal)', 'เกินเกณฑ์ (Abnormal)'],
-          datasets: [{
-            data: [358, 17],
-            backgroundColor: ['#15803d', '#dc2626']
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: 'bottom' } }
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: true }
+          }
         }
       });
     }
 
-    function renderRecentTable(submissions) {
-      const tbody = document.getElementById('dash-submissions-tbody');
+    function renderCenterSubmissions(submissions) {
+      const tbody = document.getElementById('center-submissions-tbody');
       if (!submissions || submissions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">ไม่พบรายการส่งตรวจ</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem;">ไม่พบรายการ</td></tr>';
         return;
       }
 
-      tbody.innerHTML = submissions.map(s => {
+      tbody.innerHTML = submissions.slice(0, 6).map(s => {
         const statusClass = `badge-${s.status.toLowerCase()}`;
-        const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-        const staffText = s.reporter_name ? `${s.reporter_name}` : 'ทนพ.มานพ (ทน.17500)';
+        const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { month: 'short', day: 'numeric' });
 
         return `
           <tr>
             <td><strong>${s.submission_no}</strong></td>
-            <td><span style="font-weight:700; color: var(--primary);">${s.service_code}</span></td>
+            <td><span style="font-weight:700; color: #16171a;">${s.service_code}</span></td>
             <td>${s.department_name}</td>
             <td>${thDate}</td>
             <td>${s.sample_count} จุด</td>
             <td><span class="badge ${statusClass}">${s.status}</span></td>
-            <td style="font-size: 0.85rem;">${staffText}</td>
             <td>
-              <a href="report_view.html?id=${s.id}" class="btn-send-gold" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; text-decoration: none;">
-                📄 เปิดดู/พิมพ์รายงาน
+              <a href="report_view.html?id=${s.id}" class="btn-white-pill" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; background: #fdfbf7; border: 1px solid #e5e0d5;">
+                📄 พิมพ์รายงาน
               </a>
             </td>
           </tr>
         `;
       }).join('');
+    }
+
+    function renderRightFeeds(bookings, submissions) {
+      // 1. Upcoming Bookings Feed
+      const bFeed = document.getElementById('upcoming-bookings-feed');
+      const monthShortThai = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+
+      if (!bookings || bookings.length === 0) {
+        bFeed.innerHTML = '<div style="font-size:0.8rem; color:#888;">ไม่มีคิวจองเร็วๆ นี้</div>';
+      } else {
+        bFeed.innerHTML = bookings.slice(0, 3).map(b => {
+          const d = new Date(b.booking_date);
+          const day = d.getDate();
+          const mon = monthShortThai[d.getMonth()];
+
+          return `
+            <div class="activity-card">
+              <div class="date-pill">
+                <span class="date-pill-day">${day}</span>
+                <span class="date-pill-month">${mon}</span>
+              </div>
+              <div class="activity-details">
+                <span class="activity-title">${b.test_type} (${b.sample_count} จุด)</span>
+                <span class="activity-subtitle">${b.department_name || b.full_name}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // 2. Recent Tests Feed
+      const tFeed = document.getElementById('recent-tests-feed');
+      if (!submissions || submissions.length === 0) {
+        tFeed.innerHTML = '<div style="font-size:0.8rem; color:#888;">ไม่มีรายการส่งตรวจ</div>';
+      } else {
+        tFeed.innerHTML = submissions.slice(0, 3).map(s => {
+          const d = new Date(s.submission_date);
+          const day = d.getDate();
+          const mon = monthShortThai[d.getMonth()];
+
+          return `
+            <div class="activity-card">
+              <div class="date-pill" style="background:#f0f9ff; border-color:#e0f2fe;">
+                <span class="date-pill-day" style="color:#0284c7;">${day}</span>
+                <span class="date-pill-month">${mon}</span>
+              </div>
+              <div class="activity-details">
+                <span class="activity-title">${s.submission_no}</span>
+                <span class="activity-subtitle">${s.department_name} (${s.status})</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    function setThemeMode(mode) {
+      document.getElementById('btn-mode-light').classList.toggle('active', mode === 'light');
+      document.getElementById('btn-mode-dark').classList.toggle('active', mode === 'dark');
+      if (mode === 'dark') {
+        document.body.style.backgroundColor = '#101113';
+      } else {
+        document.body.style.backgroundColor = '#2b261e';
+      }
     }
   </script>
 </body>
