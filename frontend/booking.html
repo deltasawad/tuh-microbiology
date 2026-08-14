@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ปฏิทินจองวันส่งตรวจ - งานจุลชีววิทยา รพ.ธรรมศาสตร์ (TUH Microbiology)</title>
+  <title>ปฏิทินจองวันส่งตรวจ - TUH Microbiology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .calendar-container {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
       padding: 1.5rem;
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-card);
     }
     .calendar-header {
       display: flex;
@@ -33,32 +33,32 @@
       font-size: 0.85rem;
       padding: 0.5rem;
       color: var(--text-muted);
-      background: #f1f5f9;
+      background: #f4f7f5;
       border-radius: var(--radius-sm);
     }
     .calendar-day-head.sunday { color: #ef4444; }
     .calendar-day-head.saturday { color: #8b5cf6; }
     .calendar-cell {
       min-height: 100px;
-      border: 1px solid var(--border);
+      border: 1px solid var(--border-card);
       border-radius: var(--radius-sm);
       padding: 0.4rem;
-      background: var(--bg-surface);
+      background: #ffffff;
       display: flex;
       flex-direction: column;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
     .calendar-cell:hover {
       border-color: var(--primary);
-      box-shadow: var(--shadow-sm);
+      box-shadow: var(--shadow-card);
     }
     .calendar-cell.holiday {
       background: #fff1f2;
       border-color: #fecdd3;
     }
     .calendar-cell.today {
-      border: 2px solid var(--primary);
+      border: 2px solid var(--accent-gold);
     }
     .day-num {
       font-weight: 700;
@@ -76,44 +76,50 @@
     }
     .booking-chip {
       font-size: 0.7rem;
-      background: #e0f2fe;
-      color: #0369a1;
+      background: #e8f0eb;
+      color: var(--primary);
       padding: 0.15rem 0.35rem;
       border-radius: var(--radius-sm);
       margin-bottom: 0.2rem;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <span class="nav-brand-badge">QUEUE</span>
-      <span>ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม</span>
-    </a>
-    <ul class="nav-menu">
-      <li><a href="index.html" class="nav-link">🏠 หน้าหลัก</a></li>
-      <li><a href="air.html" class="nav-link">💨 Air Sampling</a></li>
-      <li><a href="booking.html" class="nav-link active">📅 ปฏิทินจอง</a></li>
-      <li><a href="audit.html" class="nav-link">📋 Audit Trail</a></li>
-      <li id="user-nav-item">
-        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
-      </li>
-    </ul>
-  </nav>
-
-  <main class="container">
-    
-    <div class="page-header">
-      <div>
-        <h1 class="page-title">ปฏิทินจองวันส่งสิ่งส่งตรวจล่วงหน้า</h1>
-        <p class="page-subtitle">จองคิวส่งตรวจ น้ำ, อาหาร, อากาศ, ยา, เลือด งานจุลชีววิทยา รพ.ธรรมศาสตร์</p>
+  <!-- Top Dark Green Navigation Header -->
+  <header class="app-header">
+    <a href="index.html" class="brand-section">
+      <div class="brand-logo-circle">TU</div>
+      <div class="brand-text-container">
+        <span class="brand-main-title">MICROBIOLOGY</span>
+        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
       </div>
-      <button type="button" class="btn btn-primary" onclick="openBookingModal()">
+    </a>
+
+    <nav>
+      <ul class="header-nav">
+        <li><a href="index.html" class="header-nav-btn">🏠 หน้าหลัก</a></li>
+        <li><a href="booking.html" class="header-nav-btn active"><span class="icon">📅</span> ปฏิทินจองวัน</a></li>
+        <li><a href="index.html#recent-submissions-section" class="header-nav-btn"><span class="icon">📑</span> E-Report</a></li>
+        <li id="auth-nav-container">
+          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">เข้าสู่ระบบ</a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-wrapper">
+    
+    <div class="section-header-bar" style="margin-bottom: 1.5rem;">
+      <div>
+        <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark);">ปฏิทินจองวันส่งสิ่งส่งตรวจล่วงหน้า</h1>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">จองคิวส่งตรวจ น้ำ, อาหาร, อากาศ, ยา, เลือด งานจุลชีววิทยา รพ.ธรรมศาสตร์</p>
+      </div>
+      <button type="button" class="btn-send-gold" onclick="openBookingModal()">
         ➕ จองคิวส่งตรวจ
       </button>
     </div>
@@ -121,7 +127,7 @@
     <!-- Calendar View -->
     <div class="calendar-container">
       <div class="calendar-header">
-        <h2 id="current-month-display" style="font-size: 1.25rem; font-weight: 700;"></h2>
+        <h2 id="current-month-display" style="font-size: 1.25rem; font-weight: 700; color: var(--primary);"></h2>
         <div style="display: flex; gap: 0.5rem;">
           <button class="btn btn-secondary btn-sm" onclick="changeMonth(-1)">◀ เดือนก่อนหน้า</button>
           <button class="btn btn-secondary btn-sm" onclick="resetToday()">วันนี้</button>
@@ -140,7 +146,6 @@
       </div>
 
       <div class="calendar-grid" id="calendar-days" style="margin-top: 0.5rem;">
-        <!-- Calendar day cells loaded dynamically -->
       </div>
     </div>
 
@@ -202,11 +207,16 @@
 
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
           <button type="button" class="btn btn-secondary" onclick="closeBookingModal()">ยกเลิก</button>
-          <button type="submit" class="btn btn-primary">ยืนยันการจองคิว</button>
+          <button type="submit" class="btn-send-gold" style="padding: 0.55rem 1.4rem;">ยืนยันการจองคิว</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  </footer>
 
   <script src="js/api.js"></script>
   <script>
@@ -230,12 +240,12 @@
 
     function checkAuth() {
       const user = Api.getUser();
-      const navItem = document.getElementById('user-nav-item');
+      const authContainer = document.getElementById('auth-nav-container');
       if (user) {
-        navItem.innerHTML = `
-          <div class="user-badge">
-            <span>👤 ${user.full_name}</span>
-            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.4rem;">ออก</button>
+        authContainer.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="header-nav-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">ออก</button>
           </div>
         `;
       }
@@ -283,7 +293,6 @@
       const container = document.getElementById('calendar-days');
       container.innerHTML = '';
 
-      // Blank cells for days before month start
       for (let i = 0; i < firstDayIdx; i++) {
         container.insertAdjacentHTML('beforeend', `<div class="calendar-cell" style="background:#f8fafc; border:none; cursor:default;"></div>`);
       }

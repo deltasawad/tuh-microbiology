@@ -3,42 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ - งานจุลชีววิทยา รพ.ธรรมศาสตร์ (TUH Microbiology)</title>
+  <title>เข้าสู่ระบบ - TUH Microbiology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .login-container {
       max-width: 440px;
-      margin: 4rem auto;
+      margin: 3.5rem auto;
       padding: 1.5rem;
     }
     .login-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 2rem;
-      box-shadow: var(--shadow-md);
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      padding: 2.25rem;
+      box-shadow: var(--shadow-card);
     }
     .login-header {
       text-align: center;
       margin-bottom: 1.75rem;
     }
     .login-logo {
-      display: inline-block;
-      background: var(--primary);
-      color: white;
-      font-weight: 700;
-      font-size: 1.1rem;
-      padding: 0.5rem 1rem;
-      border-radius: var(--radius-md);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--header-bg);
+      border: 2px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 800;
+      font-size: 1.25rem;
       margin-bottom: 0.75rem;
     }
     .demo-accounts {
       margin-top: 1.5rem;
       padding-top: 1.25rem;
-      border-top: 1px dashed var(--border);
+      border-top: 1px dashed var(--border-card);
       font-size: 0.85rem;
     }
     .demo-btn-group {
@@ -48,38 +52,41 @@
       margin-top: 0.5rem;
     }
     .demo-btn {
-      background: var(--bg-main);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.6rem;
+      background: #f8faf9;
+      border: 1px solid var(--border-card);
+      padding: 0.45rem 0.75rem;
       border-radius: var(--radius-sm);
       text-align: left;
       cursor: pointer;
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       transition: all 0.2s;
     }
     .demo-btn:hover {
-      border-color: var(--primary);
-      background: var(--primary-light);
+      border-color: var(--accent-gold);
+      background: var(--accent-gold-light);
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <span class="nav-brand-badge">TUH MICRO</span>
-      <span>ระบบรายงานผลตรวจสิ่งแวดล้อม</span>
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <a href="index.html" class="brand-section">
+      <div class="brand-logo-circle">TU</div>
+      <div class="brand-text-container">
+        <span class="brand-main-title">MICROBIOLOGY</span>
+        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
+      </div>
     </a>
-  </nav>
+  </header>
 
   <div class="login-container">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-logo">TUH MICROBIOLOGY</div>
-        <h1 style="font-size: 1.35rem; font-weight: 700;">เข้าสู่ระบบ (Single Sign-On)</h1>
+        <div class="login-logo">TU</div>
+        <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-dark);">เข้าสู่ระบบ (Sign In)</h1>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
-          มาตรฐานความปลอดภัย ISO 15189
+          ระบบรายงานผลตรวจสิ่งแวดล้อม มาตรฐาน ISO 15189
         </p>
       </div>
 
@@ -97,7 +104,7 @@
           <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
         </div>
 
-        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" id="login-btn">
+        <button type="submit" class="btn-send-gold" style="width: 100%; margin-top: 0.5rem; padding: 0.65rem;" id="login-btn">
           เข้าสู่ระบบ
         </button>
       </form>

@@ -3,47 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ISO 15189 Audit Trail Explorer - TUH Microbiology</title>
+  <title>ISO 15189 Audit Trail - TUH Microbiology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <span class="nav-brand-badge">AUDIT</span>
-      <span>ISO 15189 Audit Trail Explorer</span>
+  <!-- Top Dark Green Navigation Header -->
+  <header class="app-header">
+    <a href="index.html" class="brand-section">
+      <div class="brand-logo-circle">TU</div>
+      <div class="brand-text-container">
+        <span class="brand-main-title">MICROBIOLOGY</span>
+        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
+      </div>
     </a>
-    <ul class="nav-menu">
-      <li><a href="index.html" class="nav-link">🏠 หน้าหลัก</a></li>
-      <li><a href="air.html" class="nav-link">💨 Air Sampling</a></li>
-      <li><a href="booking.html" class="nav-link">📅 ปฏิทินจอง</a></li>
-      <li><a href="audit.html" class="nav-link active">📋 Audit Trail</a></li>
-      <li id="user-nav-item">
-        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
-      </li>
-    </ul>
-  </nav>
 
-  <main class="container">
+    <nav>
+      <ul class="header-nav">
+        <li><a href="index.html" class="header-nav-btn">🏠 หน้าหลัก</a></li>
+        <li><a href="booking.html" class="header-nav-btn"><span class="icon">📅</span> ปฏิทินจองวัน</a></li>
+        <li><a href="index.html#recent-submissions-section" class="header-nav-btn"><span class="icon">📑</span> E-Report</a></li>
+        <li id="auth-nav-container">
+          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">เข้าสู่ระบบ</a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-wrapper">
     
-    <div class="page-header">
+    <div class="section-header-bar" style="margin-bottom: 1.5rem;">
       <div>
-        <h1 class="page-title">บันทึกประวัติการเปลี่ยนแปลงตามมาตรฐาน ISO 15189</h1>
-        <p class="page-subtitle">บันทึกประวัติทุกการสร้าง แก้ไขผลตรวจ และการเปลี่ยนสถานะโดยไม่สามารถแก้ไขย้อนหลังได้ (Immutable Log)</p>
+        <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark);">บันทึกประวัติการเปลี่ยนแปลงตามมาตรฐาน ISO 15189</h1>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">บันทึกประวัติทุกการสร้าง แก้ไขผลตรวจ และการเปลี่ยนสถานะโดยไม่สามารถแก้ไขย้อนหลังได้ (Immutable Log)</p>
       </div>
       <button class="btn btn-secondary" onclick="loadAuditLogs()">🔄 รีเฟรชข้อมูล</button>
     </div>
 
     <!-- Filters -->
-    <div class="card" style="padding: 1rem;">
+    <div class="card" style="padding: 1rem; margin-bottom: 1.25rem;">
       <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
         <div>
           <label class="form-label" style="margin-bottom: 0.2rem;">ประเภทการดำเนินการ (Action)</label>
-          <select id="action-filter" class="form-control" style="width: 180px;">
+          <select id="action-filter" class="form-control" style="width: 200px;">
             <option value="">ทั้งหมด</option>
             <option value="INSERT">สร้างรายการ (INSERT)</option>
             <option value="UPDATE">แก้ไขผลตรวจ (UPDATE)</option>
@@ -71,7 +76,7 @@
           <tbody id="audit-tbody">
             <tr>
               <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                กำลังโหลดข้อมูล Audit Trail...
+                กำลังโหลดข้อมูล Audit Trail จาก Supabase...
               </td>
             </tr>
           </tbody>
@@ -96,12 +101,12 @@
 
     function checkAuth() {
       const user = Api.getUser();
-      const navItem = document.getElementById('user-nav-item');
+      const authContainer = document.getElementById('auth-nav-container');
       if (user) {
-        navItem.innerHTML = `
-          <div class="user-badge">
-            <span>👤 ${user.full_name}</span>
-            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.4rem;">ออก</button>
+        authContainer.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="header-nav-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">ออก</button>
           </div>
         `;
       }

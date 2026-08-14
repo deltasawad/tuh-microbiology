@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIR-01: Air Sampling (ตรวจคุณภาพอากาศ) - TUH Microbiology</title>
+  <title>Air Sampling (ตรวจคุณภาพอากาศ) - TUH Microbiology</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     .sample-row {
@@ -15,17 +15,17 @@
       gap: 0.5rem;
       align-items: center;
       padding: 0.5rem 0;
-      border-bottom: 1px dashed var(--border);
+      border-bottom: 1px dashed var(--border-card);
     }
     .sample-header {
       display: grid;
       grid-template-columns: 50px 1.5fr 1.5fr 120px 120px 1.2fr 40px;
       gap: 0.5rem;
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.85rem;
       color: var(--text-muted);
       padding-bottom: 0.5rem;
-      border-bottom: 2px solid var(--border);
+      border-bottom: 2px solid var(--border-card);
     }
     @media (max-width: 900px) {
       .sample-row, .sample-header {
@@ -42,11 +42,11 @@
     }
     .step-pill {
       padding: 0.4rem 0.8rem;
-      border-radius: var(--radius-sm);
+      border-radius: var(--radius-pill);
       font-size: 0.8rem;
       font-weight: 600;
-      background: #e2e8f0;
-      color: #64748b;
+      background: #e2ebe5;
+      color: #55675c;
     }
     .step-pill.active {
       background: var(--primary);
@@ -56,49 +56,54 @@
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-      <span class="nav-brand-badge">AIR-01</span>
-      <span>Air Sampling (ตรวจคุณภาพอากาศ)</span>
+  <!-- Top Dark Green Navigation Header matching UX/UI Mockup -->
+  <header class="app-header">
+    <a href="index.html" class="brand-section">
+      <div class="brand-logo-circle">TU</div>
+      <div class="brand-text-container">
+        <span class="brand-main-title">MICROBIOLOGY</span>
+        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
+      </div>
     </a>
-    <ul class="nav-menu">
-      <li><a href="index.html" class="nav-link">🏠 หน้าหลัก</a></li>
-      <li><a href="air.html" class="nav-link active">💨 Air Sampling</a></li>
-      <li><a href="booking.html" class="nav-link">📅 ปฏิทินจอง</a></li>
-      <li><a href="audit.html" class="nav-link">📋 Audit Trail</a></li>
-      <li id="user-nav-item">
-        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
-      </li>
-    </ul>
-  </nav>
 
-  <main class="container">
+    <nav>
+      <ul class="header-nav">
+        <li><a href="index.html" class="header-nav-btn">🏠 หน้าหลัก</a></li>
+        <li><a href="booking.html" class="header-nav-btn"><span class="icon">📅</span> ปฏิทินจองวัน</a></li>
+        <li><a href="index.html#recent-submissions-section" class="header-nav-btn"><span class="icon">📑</span> E-Report</a></li>
+        <li id="auth-nav-container">
+          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">เข้าสู่ระบบ</a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-wrapper">
     
     <!-- Header -->
-    <div class="page-header">
+    <div class="section-header-bar" style="margin-bottom: 1.5rem;">
       <div>
         <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <h1 class="page-title" id="page-heading">แบบบันทึกส่งตรวจ / รายงานผล Air Sampling</h1>
+          <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark);" id="page-heading">แบบบันทึกส่งตรวจ / รายงานผล Air Sampling</h1>
           <span id="submission-status-badge" class="badge badge-submitted" style="font-size: 0.85rem; display: none;"></span>
         </div>
-        <p class="page-subtitle" id="submission-sub-text">งานอาชีวอนามัยและความปลอดภัย โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)</p>
+        <p style="font-size: 0.88rem; color: var(--text-muted);" id="submission-sub-text">งานอาชีวอนามัยและความปลอดภัย โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)</p>
       </div>
 
       <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-        <button type="button" class="btn btn-secondary" id="btn-audit-history" style="display: none;" onclick="openAuditModal()">
+        <button type="button" class="tool-btn" id="btn-audit-history" style="display: none;" onclick="openAuditModal()">
           📜 ประวัติการแก้ไข (Audit Trail)
         </button>
-        <button type="button" class="btn btn-secondary" id="btn-download-pdf" style="display: none;" onclick="downloadPdf()">
+        <button type="button" class="btn-send-gold" id="btn-download-pdf" style="display: none;" onclick="downloadPdf()">
           📄 ดาวน์โหลดรายงาน PDF
         </button>
-        <a href="air.html" class="btn btn-primary">➕ สร้างใบใหม่</a>
+        <a href="air.html" class="btn btn-secondary">➕ สร้างใบใหม่</a>
       </div>
     </div>
 
     <!-- Status Flow Stepper -->
     <div class="card" id="status-card" style="display: none;">
-      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-muted);">
+      <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-muted);">
         ขั้นตอนการดำเนินงาน (Workflow Transition):
       </div>
       <div class="status-stepper">
@@ -113,16 +118,15 @@
         <div class="step-pill" id="step-REPORTED">5. ออกรายงานผลสมบูรณ์ (Reported)</div>
       </div>
 
-      <!-- Action Buttons Toolbar for Lab Tech / Approver -->
-      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;" id="action-buttons-toolbar">
-        <!-- Injected via JS based on current status and user role -->
+      <!-- Action Buttons Toolbar -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; border-top: 1px solid var(--border-card); padding-top: 1rem;" id="action-buttons-toolbar">
       </div>
     </div>
 
-    <!-- Alert Message Box -->
+    <!-- Alert Box -->
     <div id="alert-box" style="display: none; padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;"></div>
 
-    <!-- Main Submission & Results Form -->
+    <!-- Form -->
     <form id="air-form">
       
       <!-- Section 1: Header Info -->
@@ -156,8 +160,8 @@
         </div>
 
         <div class="form-row" style="margin-top: 0.5rem;">
-          <div class="form-group" style="max-width: 250px;">
-            <label class="form-label" for="row-count-select">จำนวนจุดเก็บตัวอย่าง (Number of Rows)</label>
+          <div class="form-group" style="max-width: 280px;">
+            <label class="form-label" for="row-count-select">จำนวนจุดเก็บตัวอย่าง (Number of Points)</label>
             <div style="display: flex; gap: 0.5rem;">
               <input type="number" id="row-count-input" class="form-control" min="1" max="100" value="5">
               <button type="button" class="btn btn-secondary" onclick="adjustRowCount()">ปรับแถว</button>
@@ -170,7 +174,7 @@
       <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
           <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">
-            2. จุดเก็บตัวอย่างและผลการตรวจนับโคโลนี (Sampling Points & Colonies Count)
+            2. จุดเก็บตัวอย่างและผลการตรวจนับโคโลนี (Sampling Points & Results)
           </h2>
           <button type="button" class="btn btn-secondary btn-sm" onclick="addSampleRow()">➕ เพิ่ม 1 แถว</button>
         </div>
@@ -190,7 +194,7 @@
         </div>
       </div>
 
-      <!-- Section 3: Signatures (ISO 15189 Electronic Signatures) -->
+      <!-- Section 3: Signatures -->
       <div class="card" id="signature-card">
         <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary);">
           3. ผู้ตรวจวิเคราะห์และผู้อนุมัติผล (ISO 15189 Electronic Signatures)
@@ -222,8 +226,8 @@
 
       <!-- Submit Actions -->
       <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 3rem;">
-        <a href="index.html" class="btn btn-secondary">ยกเลิก</a>
-        <button type="submit" class="btn btn-primary" id="btn-save-submission" style="min-width: 180px;">
+        <a href="index.html" class="btn btn-secondary">ย้อนกลับ</a>
+        <button type="submit" class="btn-send-gold" id="btn-save-submission" style="min-width: 180px; padding: 0.65rem 1.8rem; font-size: 1rem;">
           💾 บันทึกข้อมูล
         </button>
       </div>
@@ -245,6 +249,11 @@
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  </footer>
+
   <script src="js/api.js"></script>
   <script>
     let currentSubmissionId = null;
@@ -257,15 +266,18 @@
       checkAuth();
       await loadMasterData();
       
-      // Check query param ?id=123
       const urlParams = new URLSearchParams(window.location.search);
       const subId = urlParams.get('id');
+      const serviceParam = urlParams.get('service');
+
+      if (serviceParam && serviceParam !== 'AIR-01') {
+        document.getElementById('page-heading').innerText = `แบบบันทึกส่งตรวจ / รายงานผล ${serviceParam}`;
+      }
 
       if (subId) {
         currentSubmissionId = parseInt(subId);
         await loadExistingSubmission(currentSubmissionId);
       } else {
-        // Initialize new form
         document.getElementById('submission-date').valueAsDate = new Date();
         adjustRowCount(5);
       }
@@ -275,12 +287,12 @@
 
     function checkAuth() {
       const user = Api.getUser();
-      const navItem = document.getElementById('user-nav-item');
+      const authContainer = document.getElementById('auth-nav-container');
       if (user) {
-        navItem.innerHTML = `
-          <div class="user-badge">
-            <span>👤 ${user.full_name}</span>
-            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.4rem;">ออก</button>
+        authContainer.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="header-nav-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">ออก</button>
           </div>
         `;
       }
@@ -294,16 +306,13 @@
           Api.getStaff()
         ]);
 
-        // Populate Departments Dropdown
         const deptSelect = document.getElementById('department-select');
         deptSelect.innerHTML = '<option value="">-- กรุณาเลือกหน่วยงาน --</option>' + 
           masterDepartments.map(d => `<option value="${d.id}">${d.name_th}</option>`).join('');
 
-        // Select Occ Health by default if new
         const occDept = masterDepartments.find(d => d.name_th.includes('อาชีวอนามัย'));
         if (occDept) deptSelect.value = occDept.id;
 
-        // Populate Staff Dropdowns
         const repSelect = document.getElementById('reporter-select');
         const revSelect = document.getElementById('reviewer-select');
         const staffOptions = '<option value="">-- กรุณาเลือก --</option>' + 
@@ -405,25 +414,19 @@
         document.getElementById('btn-audit-history').style.display = 'inline-flex';
         document.getElementById('btn-download-pdf').style.display = 'inline-flex';
 
-        // Update stepper active
         document.querySelectorAll('.step-pill').forEach(p => p.classList.remove('active'));
         const activePill = document.getElementById(`step-${submissionData.status}`);
         if (activePill) activePill.classList.add('active');
 
-        // Fill form fields
         document.getElementById('submission-date').value = submissionData.submission_date;
         document.getElementById('department-select').value = submissionData.department_id;
         document.getElementById('sender-name').value = submissionData.sender_name || '';
         document.getElementById('sender-email').value = submissionData.sender_email || '';
 
-        if (submissionData.reporter_name) {
-          // find staff
-        }
         if (submissionData.status === 'REPORTED') {
           document.getElementById('amended-reason-group').style.display = 'block';
         }
 
-        // Fill samples
         const container = document.getElementById('samples-container');
         container.innerHTML = '';
         submissionData.samples.forEach(s => {
@@ -459,9 +462,9 @@
       } else if (st === 'IN_PROGRESS') {
         btns += `<button type="button" class="btn btn-success" onclick="saveAndComplete()">✓ ตรวจเสร็จสิ้น (Mark Completed)</button>`;
       } else if (st === 'COMPLETED') {
-        btns += `<button type="button" class="btn btn-success" onclick="approveAndReport()">🛡️ อนุมัติออกรายงานผล (Approve & Report)</button>`;
+        btns += `<button type="button" class="btn-send-gold" onclick="approveAndReport()">🛡️ อนุมัติออกรายงานผล (Approve & Report)</button>`;
       } else if (st === 'REPORTED') {
-        btns += `<button type="button" class="btn btn-primary" onclick="downloadPdf()">📄 ดาวน์โหลดรายงาน PDF</button>`;
+        btns += `<button type="button" class="btn-send-gold" onclick="downloadPdf()">📄 ดาวน์โหลดรายงาน PDF</button>`;
       }
 
       bar.innerHTML = btns || '<span style="color: var(--text-muted); font-size: 0.85rem;">ไม่มีขั้นตอนดำเนินการเพิ่มเติม</span>';
@@ -503,7 +506,6 @@
 
       try {
         await Api.changeStatus(currentSubmissionId, 'REPORTED', 'อนุมัติออกรายงานผลทางการ', parseInt(repId), parseInt(revId));
-        // Auto generate PDF
         await Api.generateReport(currentSubmissionId);
         showAlert('อนุมัติผลและสร้างรายงาน PDF สำเร็จเรียบร้อย!', 'success');
         await loadExistingSubmission(currentSubmissionId);
@@ -525,6 +527,9 @@
       const repId = document.getElementById('reporter-select').value ? parseInt(document.getElementById('reporter-select').value) : null;
       const revId = document.getElementById('reviewer-select').value ? parseInt(document.getElementById('reviewer-select').value) : null;
       const editReason = document.getElementById('edit-reason').value.trim();
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const sCode = urlParams.get('service') || 'AIR-01';
 
       const samples = [];
       const rows = document.querySelectorAll('.sample-row');
@@ -553,9 +558,8 @@
 
       try {
         if (!currentSubmissionId) {
-          // Create
           const created = await Api.createSubmission({
-            service_code: 'AIR-01',
+            service_code: sCode,
             department_id: deptId,
             submission_date: subDate,
             sender_name: senderName,
@@ -568,7 +572,6 @@
           if (!silent) showAlert(`สร้างใบส่งตรวจสำเร็จ เลขที่: ${created.submission_no}`, 'success');
           await loadExistingSubmission(currentSubmissionId);
         } else {
-          // Update
           await Api.updateSubmission(currentSubmissionId, {
             department_id: deptId,
             submission_date: subDate,
@@ -608,7 +611,7 @@
         body.innerHTML = logs.map(l => {
           const dateStr = new Date(l.timestamp).toLocaleString('th-TH');
           return `
-            <div style="border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-size: 0.85rem;">
+            <div style="border-bottom: 1px solid var(--border-card); padding: 0.75rem 0; font-size: 0.85rem;">
               <div style="display: flex; justify-content: space-between; font-weight: 600;">
                 <span class="badge badge-submitted">${l.action}</span>
                 <span style="color: var(--text-muted);">${dateStr}</span>
