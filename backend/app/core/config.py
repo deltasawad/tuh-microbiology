@@ -1,6 +1,9 @@
 import os
 from typing import List, Optional
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
+
+SUPABASE_POOLER_URL = "postgresql://postgres.tgctyouhzsyizlosrmqh:euKpcT2ScEMIaHMW@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TUH Microbiology Environmental Reporting System"
@@ -10,10 +13,14 @@ class Settings(BaseSettings):
     DEBUG: bool = True
 
     # Database (Supabase Cloud PostgreSQL Pooler)
-    DATABASE_URL: str = os.getenv(
-        "DATABASE_URL",
-        "postgresql://postgres.tgctyouhzsyizlosrmqh:euKpcT2ScEMIaHMW@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
-    )
+    DATABASE_URL: str = SUPABASE_POOLER_URL
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def validate_database_url(cls, v):
+        if not v or not isinstance(v, str) or v.strip() == "" or "sqlite" in v:
+            return SUPABASE_POOLER_URL
+        return v.strip()
 
     # JWT Authentication
     JWT_SECRET_KEY: str = "9f8234ab8e76c12d3450918ef029c81726a45b9012cd34ef567890abcdef1234"
