@@ -31,6 +31,21 @@ def parse_date(val):
                 pass
     return date.today()
 
+def find_excel_file(keyword: str) -> str | None:
+    search_dirs = [
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")),
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")),
+        os.path.abspath("."),
+        os.path.abspath("..")
+    ]
+    for d in search_dirs:
+        if os.path.exists(d):
+            for root, _, files in os.walk(d):
+                for f in files:
+                    if f.endswith(".xlsx") and (keyword.lower() in f.lower() or keyword in f):
+                        return os.path.join(root, f)
+    return None
+
 def migrate_real_data():
     print("==========================================================")
     print("  MIGRATING REAL DATA FROM EXCEL TO SUPABASE DATABASE")
@@ -41,7 +56,7 @@ def migrate_real_data():
     try:
         air_service = db.query(Service).filter(Service.code == "AIR-01").first()
         if not air_service:
-            air_service = Service(code="AIR-01", name_th="Air Sampling (ตรวจคุณภาพอากาศ)", department_owner="งานอาชีวอนามัยและความปลอดภัย", tat_target_hours=24)
+            air_service = Service(code="AIR-01", name_th="Air Sampling (ตรวจคุณภาพอากาศ)", department_owner="งานอาชีวอนามัยและความปลอดภัย", tat_target_hours=120)
             db.add(air_service)
             db.flush()
 
@@ -56,19 +71,15 @@ def migrate_real_data():
         # ---------------------------------------------------------
         # 1. Migrate Air Sampling Excel Data
         # ---------------------------------------------------------
-        air_file_candidates = [
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
-            os.path.abspath(os.path.join(os.getcwd(), "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
-            os.path.abspath(os.path.join(os.getcwd(), "..", "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
-        ]
-        air_file = next((f for f in air_file_candidates if os.path.exists(f)), None)
+        air_file = find_excel_file("Air Sampling")
+        if not air_file:
+            air_file = find_excel_file("air")
         
-        if air_file:
+        if air_file and os.path.exists(air_file):
             print(f"\n[1/2] Loading Air Sampling real data from: {os.path.basename(air_file)}")
             wb = openpyxl.load_workbook(air_file, data_only=True)
-            sheet = wb["Sheet1"]
+            sheet = wb["Sheet1"] if "Sheet1" in wb.sheetnames else wb.active
 
-            # Group rows by SubmissionID
             submissions_dict = {}
             for r in range(2, sheet.max_row + 1):
                 sub_id_val = sheet.cell(r, 2).value
@@ -102,7 +113,6 @@ def migrate_real_data():
                 first_row = rows[0]
                 dept_str = str(first_row["dept_name"]).strip() if first_row["dept_name"] else "งานอาชีวอนามัยและความปลอดภัย"
                 
-                # Find or create department
                 dept = db.query(Department).filter(Department.name_th == dept_str).first()
                 if not dept:
                     dept = Department(name_th=dept_str)
@@ -110,15 +120,11 @@ def migrate_real_data():
                     db.flush()
 
                 sub_date = parse_date(first_row["sub_date"])
-                
-                # Map status
                 raw_status = str(first_row["status"]).strip()
                 final_status = "REPORTED" if ("ตรวจแล้ว" in raw_status or "ออกผล" in raw_status) else "SUBMITTED"
 
-                # Check if submission already exists by external ID
                 existing_sub = db.query(Submission).filter(Submission.submission_no == sub_key).first()
                 if not existing_sub:
-                    # Create submission
                     submission = Submission(
                         submission_no=sub_key,
                         service_id=air_service.id,
@@ -138,7 +144,6 @@ def migrate_real_data():
                     db.flush()
                     sub_count += 1
 
-                    # Add status transition
                     db.add(StatusTransition(
                         submission_id=submission.id,
                         from_status="DRAFT",
@@ -155,7 +160,6 @@ def migrate_real_data():
                             reason="นำเข้าผลตรวจเสร็จสิ้นจากระบบเดิม"
                         ))
 
-                    # Process each sample row
                     for idx, s_row in enumerate(rows, 1):
                         ward_str = str(s_row["ward_name"]).strip() if s_row["ward_name"] else "-"
                         ward = db.query(Ward).filter(Ward.name_th == ward_str).first()
@@ -214,17 +218,14 @@ def migrate_real_data():
         # ---------------------------------------------------------
         # 2. Migrate Booking Calendar Excel Data
         # ---------------------------------------------------------
-        book_file_candidates = [
-            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
-            os.path.abspath(os.path.join(os.getcwd(), "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
-            os.path.abspath(os.path.join(os.getcwd(), "..", "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
-        ]
-        book_file = next((f for f in book_file_candidates if os.path.exists(f)), None)
+        book_file = find_excel_file("จองคิว")
+        if not book_file:
+            book_file = find_excel_file("book")
         
-        if book_file:
+        if book_file and os.path.exists(book_file):
             print(f"\n[2/2] Loading Booking calendar real data from: {os.path.basename(book_file)}")
             wb_b = openpyxl.load_workbook(book_file, data_only=True)
-            sheet_b = wb_b["Bookings"]
+            sheet_b = wb_b["Bookings"] if "Bookings" in wb_b.sheetnames else wb_b.active
 
             book_count = 0
             for r in range(2, sheet_b.max_row + 1):
@@ -244,10 +245,8 @@ def migrate_real_data():
                     count_val = 1
 
                 remarks = str(sheet_b.cell(r, 9).value or "").strip()
-
                 dept = db.query(Department).filter(Department.name_th == dept_name).first()
 
-                # Check if booking exists
                 existing_book = db.query(Booking).filter(
                     Booking.booking_date == b_date,
                     Booking.full_name == name,
