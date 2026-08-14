@@ -9,8 +9,11 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./tuh_microbiology.db"
+    # Database (Supabase Cloud PostgreSQL Pooler)
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql://postgres.tgctyouhzsyizlosrmqh:euKpcT2ScEMIaHMW@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
+    )
 
     # JWT Authentication
     JWT_SECRET_KEY: str = "9f8234ab8e76c12d3450918ef029c81726a45b9012cd34ef567890abcdef1234"

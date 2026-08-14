@@ -56,9 +56,14 @@ def migrate_real_data():
         # ---------------------------------------------------------
         # 1. Migrate Air Sampling Excel Data
         # ---------------------------------------------------------
-        air_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx"))
+        air_file_candidates = [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
+            os.path.abspath(os.path.join(os.getcwd(), "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
+            os.path.abspath(os.path.join(os.getcwd(), "..", "Air Sampling (สำหรับงานอาชีวอนามัย)", "สำเนาของ Air Sampling งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์.xlsx")),
+        ]
+        air_file = next((f for f in air_file_candidates if os.path.exists(f)), None)
         
-        if os.path.exists(air_file):
+        if air_file:
             print(f"\n[1/2] Loading Air Sampling real data from: {os.path.basename(air_file)}")
             wb = openpyxl.load_workbook(air_file, data_only=True)
             sheet = wb["Sheet1"]
@@ -209,9 +214,14 @@ def migrate_real_data():
         # ---------------------------------------------------------
         # 2. Migrate Booking Calendar Excel Data
         # ---------------------------------------------------------
-        book_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx"))
+        book_file_candidates = [
+            os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
+            os.path.abspath(os.path.join(os.getcwd(), "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
+            os.path.abspath(os.path.join(os.getcwd(), "..", "ปฏิทินจองวันส่งตรวจ", "สำเนาของ ระบบจองคิว.xlsx")),
+        ]
+        book_file = next((f for f in book_file_candidates if os.path.exists(f)), None)
         
-        if os.path.exists(book_file):
+        if book_file:
             print(f"\n[2/2] Loading Booking calendar real data from: {os.path.basename(book_file)}")
             wb_b = openpyxl.load_workbook(book_file, data_only=True)
             sheet_b = wb_b["Bookings"]

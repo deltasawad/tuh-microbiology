@@ -15,6 +15,7 @@ from app.api.reports import router as reports_router
 from app.api.audit import router as audit_router
 from app.api.dashboard import router as dashboard_router
 from app.seeds.seed_master_data import seed_database
+from app.seeds.migrate_real_excel_data import migrate_real_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -24,6 +25,7 @@ async def lifespan(app: FastAPI):
     try:
         Base.metadata.create_all(bind=engine)
         seed_database()
+        migrate_real_data()
     except Exception as e:
         print(f"Startup notice: {e}")
     yield
