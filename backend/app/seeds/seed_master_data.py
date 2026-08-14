@@ -16,14 +16,14 @@ def seed_database():
 
         # 1. Services (8 services)
         services_data = [
-            {"code": "AIR-01", "name_th": "Air Sampling (ตรวจคุณภาพอากาศ)", "department_owner": "งานอาชีวอนามัยและความปลอดภัย", "tat_target_hours": 24},
-            {"code": "STR-02", "name_th": "Sterility (ตรวจความปลอดเชื้อถุงเลือด)", "department_owner": "งานธนาคารเลือด", "tat_target_hours": 48},
-            {"code": "WTS-03", "name_th": "Water or Surface (ตรวจน้ำหรือพื้นผิว)", "department_owner": "งานควบคุมโรคติดเชื้อ", "tat_target_hours": 24},
-            {"code": "WTO-04", "name_th": "Water (สำหรับห้องผ่าตัด OR)", "department_owner": "ห้องผ่าตัด OR", "tat_target_hours": 24},
-            {"code": "WTM-05", "name_th": "Water (ศูนย์การแพทย์ธรรมศาสตร์ THAMC)", "department_owner": "ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)", "tat_target_hours": 48},
-            {"code": "FOD-06", "name_th": "Food (ตรวจการปนเปื้อนในอาหาร)", "department_owner": "งานโภชนาการ", "tat_target_hours": 72},
-            {"code": "DRG-07", "name_th": "Drug 1 (ตรวจความปลอดเชื้อยาเตรียม)", "department_owner": "งานผลิตยา 1", "tat_target_hours": 120},
-            {"code": "DRG-08", "name_th": "Drug 2 (วิเคราะห์การปนเปื้อนเชื้อในยาเตรียม)", "department_owner": "งานผลิตยา 2", "tat_target_hours": 120},
+            {"code": "AIR-01", "name_th": "Air Sampling (ตรวจคุณภาพอากาศ)", "department_owner": "งานอาชีวอนามัยและความปลอดภัย", "tat_target_hours": 120},
+            {"code": "STR-02", "name_th": "Sterility Test (ถุงเลือดและผลิตภัณฑ์)", "department_owner": "งานธนาคารเลือด", "tat_target_hours": 120},
+            {"code": "WTS-03", "name_th": "Water or Surface Test (ตรวจน้ำและพื้นผิว)", "department_owner": "งานควบคุมและป้องกันการติดเชื้อ (IC)", "tat_target_hours": 120},
+            {"code": "WTO-04", "name_th": "Water OR (ตรวจน้ำห้องผ่าตัด)", "department_owner": "งานห้องผ่าตัด (OR)", "tat_target_hours": 120},
+            {"code": "WTM-05", "name_th": "Water Med (ตรวจน้ำศูนย์การแพทย์)", "department_owner": "ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)", "tat_target_hours": 120},
+            {"code": "FOD-06", "name_th": "Food Contamination Test (ตรวจอาหาร)", "department_owner": "งานโภชนาการ", "tat_target_hours": 120},
+            {"code": "DRG-07", "name_th": "Drug Sterility (ยาเตรียมปราศจากเชื้อ)", "department_owner": "งานผลิตยา 1", "tat_target_hours": 120},
+            {"code": "DRG-08", "name_th": "Drug Contamination (ยาเตรียมทั่วไป)", "department_owner": "งานผลิตยา 2", "tat_target_hours": 120},
         ]
 
         for s_data in services_data:
