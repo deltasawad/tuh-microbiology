@@ -84,10 +84,14 @@ for p in possible_frontend_paths:
 if frontend_dir:
     css_dir = os.path.join(frontend_dir, "css")
     js_dir = os.path.join(frontend_dir, "js")
+    assets_dir = os.path.join(frontend_dir, "assets")
+
     if os.path.exists(css_dir):
         app.mount("/css", StaticFiles(directory=css_dir), name="css")
     if os.path.exists(js_dir):
         app.mount("/js", StaticFiles(directory=js_dir), name="js")
+    if os.path.exists(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
     # Serve Dashboard as default root /
     @app.get("/", include_in_schema=False)

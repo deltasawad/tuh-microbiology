@@ -19,10 +19,13 @@
     <!-- 1. Left Dark Sidebar -->
     <aside class="sidebar">
       <div>
-        <!-- Brand Logo -->
+        <!-- Brand Logo with Official Hospital Seal -->
         <a href="dashboard.html" class="brand-logo">
-          <div class="brand-logo-icon">TU</div>
-          <span class="brand-logo-text">TUH MICRO</span>
+          <img src="assets/tuh_logo.png" alt="TUH Logo" style="width: 40px; height: 40px; object-fit: contain;">
+          <div>
+            <div class="brand-logo-text">TUH MICRO</div>
+            <div style="font-size: 0.65rem; color: #94969c; font-weight: 600;">รพ.ธรรมศาสตร์ฯ</div>
+          </div>
         </a>
 
         <!-- Sidebar Navigation Menu -->
@@ -87,12 +90,12 @@
     <main class="content-center">
       <h1 class="dash-top-title">Dashboard</h1>
 
-      <!-- Welcome Hero Banner (Gold Camel Theme) -->
+      <!-- Welcome Hero Banner with Official Hospital Logo -->
       <section class="welcome-hero-card">
         <div class="welcome-text-side">
           <h2 class="welcome-title" id="welcome-banner-title">Welcome back, TUH Medical Staff!</h2>
           <p class="welcome-sub">
-            ระบบรายงานผลตรวจสิ่งแวดล้อม งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)
+            ระบบรายงานผลตรวจสิ่งแวดล้อม งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)
           </p>
           <div class="welcome-actions">
             <a href="air.html" class="btn-white-pill">➕ สร้างใบส่งตรวจ Air</a>
@@ -100,7 +103,7 @@
           </div>
         </div>
         <div class="welcome-avatar-side">
-          🔬
+          <img src="assets/tuh_logo.png" alt="TUH Logo" style="width: 65px; height: 65px; object-fit: contain;">
         </div>
       </section>
 
@@ -395,7 +398,6 @@
     }
 
     function renderRightFeeds(bookings, submissions) {
-      // 1. Upcoming Bookings Feed
       const bFeed = document.getElementById('upcoming-bookings-feed');
       const monthShortThai = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 
@@ -422,7 +424,6 @@
         }).join('');
       }
 
-      // 2. Recent Tests Feed
       const tFeed = document.getElementById('recent-tests-feed');
       if (!submissions || submissions.length === 0) {
         tFeed.innerHTML = '<div style="font-size:0.8rem; color:#888;">ไม่มีรายการส่งตรวจ</div>';
@@ -454,7 +455,7 @@
       if (mode === 'dark') {
         document.body.style.backgroundColor = '#101113';
       } else {
-        document.body.style.backgroundColor = '#2b261e';
+        document.body.style.backgroundColor = '#f7f4ef';
       }
     }
   </script>

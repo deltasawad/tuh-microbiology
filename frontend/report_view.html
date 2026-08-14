@@ -63,7 +63,7 @@
       max-width: 800px;
       min-height: 1050px;
       background: #ffffff;
-      padding: 3rem 2.5rem;
+      padding: 2.5rem 2.5rem;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
       border-radius: 4px;
       position: relative;
@@ -74,24 +74,22 @@
       text-align: center;
       border-bottom: 2px solid #22372b;
       padding-bottom: 1rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .tu-badge {
-      display: inline-block;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 2px solid #c99a45;
-      color: #c99a45;
-      font-weight: 800;
-      font-size: 1.15rem;
-      line-height: 40px;
+    .tuh-official-logo {
+      width: 80px;
+      height: 80px;
+      object-fit: contain;
       margin-bottom: 0.4rem;
     }
     .hosp-name-th {
       font-size: 1.35rem;
       font-weight: 800;
       color: #22372b;
+      line-height: 1.2;
     }
     .hosp-name-en {
       font-size: 0.85rem;
@@ -169,7 +167,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 2rem;
-      margin-top: 2.5rem;
+      margin-top: 2rem;
       padding-top: 1rem;
       border-top: 1px solid #cbd5e1;
     }
@@ -194,7 +192,7 @@
 
     /* Footer ISO note */
     .iso-footer {
-      margin-top: 3rem;
+      margin-top: 2.5rem;
       border-top: 1px solid #e2e8f0;
       padding-top: 0.75rem;
       display: flex;
@@ -224,16 +222,16 @@
 
   <!-- Action Bar -->
   <div class="action-toolbar">
-    <a href="index.html" class="btn btn-secondary">◀ กลับหน้าหลัก</a>
+    <a href="dashboard.html" class="btn btn-secondary">◀ กลับหน้าหลัก Dashboard</a>
     <button onclick="window.print()" class="btn btn-gold">🖨️ พิมพ์รายงาน / บันทึกเป็น PDF</button>
   </div>
 
   <!-- A4 Printable Sheet -->
   <div class="paper-sheet" id="report-sheet">
     
-    <!-- Hospital Header -->
+    <!-- Hospital Header with Official Logo -->
     <div class="hospital-header">
-      <div class="tu-badge">TU</div>
+      <img src="assets/tuh_logo.png" alt="Thammasat University Hospital Logo" class="tuh-official-logo">
       <h1 class="hosp-name-th">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h1>
       <p class="hosp-name-en">THAMMASAT UNIVERSITY HOSPITAL — DEPARTMENT OF PATHOLOGY</p>
       <p style="font-size: 0.85rem; color: #475569; margin-top: 0.2rem;">ห้องปฏิบัติการจุลชีววิทยา (Microbiology Laboratory - ISO 15189 Accredited)</p>
@@ -331,7 +329,7 @@
 
       if (!subId) {
         alert('ไม่พบรหัสใบส่งตรวจ');
-        window.location.href = 'index.html';
+        window.location.href = 'dashboard.html';
         return;
       }
 
