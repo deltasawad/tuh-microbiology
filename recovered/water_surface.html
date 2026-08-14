@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบส่งตรวจเพาะเชื้อจากน้ำและพื้นผิว</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- jsPDF for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* Apply Noto Sans Thai as the default font */
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+            background-color: #f7f3f7; /* Light lavender background */
+        }
+
+        /* Custom gradient for header and active elements */
+        .k-minimal-gradient {
+            background: linear-gradient(135deg, #6c5070, #c2dbc1, #df6a6a);
+        }
+        
+        /* Custom pastel colors */
+        .bg-pastel-purple { background-color: #6c5070; }
+        .bg-pastel-pink { background-color: #df6a6a; }
+        .bg-pastel-green { background-color: #c2dbc1; }
+        .text-pastel-purple { color: #6c5070; }
+
+        /* Style for active tab */
+        .tab-active {
+            background-color: #6c5070;
+            color: white;
+            border-bottom-width: 4px;
+            border-color: #df6a6a;
+        }
+
+        /* Hide scrollbar for aesthetics but allow scrolling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c2dbc1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6c5070;
+        }
+        
+        /* Custom styles for printing PDF */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #pdf-export-area, #pdf-export-area * {
+                visibility: visible;
+            }
+            #pdf-export-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Logo" class="mx-auto mb-4" style="max-width: 120px;">
+            <h2 class="text-2xl font-bold text-pastel-purple mb-2">ระบบส่งตรวจเพาะเชื้อจากน้ำและพื้นผิว</h2>
+            <p class="text-gray-600 mb-6">สำหรับงานควบคุมโรคติดเชื้อและห้องผ่าตัด</p>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple">
+                <input type="password" id="password" placeholder="รหัสผ่าน" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple">
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-4 h-4"></p>
+            <button id="login-button" class="w-full bg-pastel-purple text-white py-3 mt-4 rounded-lg hover:bg-opacity-90 transition-all duration-300 font-bold">
+                เข้าสู่ระบบ
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden">
+        <!-- Header -->
+        <header class="py-4 px-4 sm:px-8">
+            <div class="container mx-auto flex flex-col items-center text-center">
+                <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="h-auto" style="max-width: 150px;">
+                <h1 class="text-xl sm:text-2xl font-bold text-pastel-purple mt-2">ระบบส่งตรวจเพาะเชื้อจากน้ำและพื้นผิว</h1>
+                <p class="text-sm sm:text-base text-gray-600">สำหรับงานควบคุมโรคติดเชื้อและห้องผ่าตัด</p>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-white shadow-md sticky top-0 z-30 no-print">
+            <div class="container mx-auto flex justify-center">
+                <button data-tab="dashboard" class="tab-button tab-active text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">แดชบอร์ด</button>
+                <button data-tab="form" class="tab-button text-gray-600 hover:text-pastel-purple text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">แบบฟอร์มส่งตรวจ</button>
+                <button data-tab="report" class="tab-button text-gray-600 hover:text-pastel-purple text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">รายงานผล</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="container mx-auto p-4 sm:p-8">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content">
+                <!-- Summary Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                        <p class="text-gray-500">ตัวอย่างทั้งหมด</p>
+                        <h3 id="total-samples" class="text-4xl font-bold text-pastel-purple mt-2">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                        <p class="text-gray-500">รอตรวจ</p>
+                        <h3 id="pending-samples" class="text-4xl font-bold text-yellow-500 mt-2">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-lg text-center">
+                        <p class="text-gray-500">ตรวจแล้ว</p>
+                        <h3 id="completed-samples" class="text-4xl font-bold text-green-500 mt-2">0</h3>
+                    </div>
+                </div>
+
+                <!-- Monthly Stats Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+                    <h2 class="text-xl font-bold text-pastel-purple mb-4">สถิติจำนวนตัวอย่างทั้งหมดรายเดือน</h2>
+                    <canvas id="monthly-chart"></canvas>
+                </div>
+
+                <!-- Latest Submissions -->
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-xl font-bold text-pastel-purple mb-4">รายการส่งตรวจล่าสุด</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="py-2 px-3">วันที่ส่ง</th>
+                                    <th class="py-2 px-3">หน่วยงานส่งตรวจ</th>
+                                    <th class="py-2 px-3">ประเภทสิ่งส่งตรวจ</th>
+                                    <th class="py-2 px-3">จำนวน</th>
+                                    <th class="py-2 px-3">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="latest-submissions-body">
+                                <tr><td colspan="5" class="text-center py-8 text-gray-500">ยังไม่มีข้อมูล...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Tab -->
+            <div id="form-tab" class="tab-content hidden">
+                 <div class="bg-white p-6 rounded-2xl shadow-lg max-w-7xl mx-auto">
+                    <h2 class="text-2xl font-bold text-pastel-purple mb-6 text-center">แบบฟอร์มส่งตรวจเพาะเชื้อ</h2>
+                    <!-- Form Header -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                        <div>
+                            <label for="submission-date" class="block text-sm font-medium text-gray-700 mb-1">วันที่ส่งตรวจ</label>
+                            <input type="date" id="submission-date" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple">
+                        </div>
+                        <div>
+                            <label for="department" class="block text-sm font-medium text-gray-700 mb-1">หน่วยงานส่งตรวจ</label>
+                            <input type="text" id="department" list="department-list" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple" placeholder="พิมพ์หรือเลือกหน่วยงาน">
+                            <datalist id="department-list"></datalist>
+                        </div>
+                         <div>
+                            <label for="specimen-type" class="block text-sm font-medium text-gray-700 mb-1">ประเภทสิ่งส่งตรวจ</label>
+                            <input type="text" id="specimen-type" list="specimen-type-list" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple" placeholder="พิมพ์หรือเลือกประเภท">
+                            <datalist id="specimen-type-list"></datalist>
+                        </div>
+                        <div>
+                            <label for="suspected-organism" class="block text-sm font-medium text-gray-700 mb-1">เชื้อที่สงสัย</label>
+                            <input type="text" id="suspected-organism" list="suspected-organism-list" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple" placeholder="พิมพ์หรือเลือกเชื้อ">
+                            <datalist id="suspected-organism-list"></datalist>
+                        </div>
+                    </div>
+
+                    <!-- Samples Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-max text-sm text-center">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3 font-medium">ลำดับ</th>
+                                    <th class="p-3 font-medium">สถานที่/หน่วยงาน</th>
+                                    <th class="p-3 font-medium">ผลเพาะเชื้อ</th>
+                                    <th class="p-3 font-medium">หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="samples-table-body">
+                                <!-- Rows will be generated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex justify-center gap-4 mt-8">
+                        <button id="save-data-button" class="bg-pastel-green text-white font-bold py-3 px-8 rounded-lg hover:bg-opacity-90 transition-all">
+                            บันทึกข้อมูล
+                        </button>
+                        <button id="clear-form-button" class="bg-gray-300 text-gray-700 font-bold py-3 px-8 rounded-lg hover:bg-gray-400 transition-all">
+                            ล้างข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Tab -->
+            <div id="report-tab" class="tab-content hidden">
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-pastel-purple mb-6 text-center">ค้นหารายงานผลตรวจ</h2>
+                     <div class="flex flex-col md:flex-row items-center justify-center gap-4 mb-6">
+                         <button id="fetch-data-button" class="w-full md:w-auto bg-pastel-purple text-white font-bold py-3 px-6 rounded-lg hover:bg-opacity-90 transition-all">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V4a1 1 0 011-1zm10 8a1 1 0 110 2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 111.885-.666A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h3z" clip-rule="evenodd" /></svg>
+                             เรียกดูข้อมูลจาก Google Sheet
+                         </button>
+                         <input type="date" id="report-date-filter" class="w-full md:w-auto p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pastel-purple">
+                     </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="py-2 px-3">วันที่ส่ง</th>
+                                    <th class="py-2 px-3">สถานที่/หน่วยงาน</th>
+                                    <th class="py-2 px-3">ประเภท</th>
+                                    <th class="py-2 px-3">สถานะ</th>
+                                    <th class="py-2 px-3 text-center">ดูรายงาน</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-list-body">
+                                <tr><td colspan="5" class="text-center py-8 text-gray-500">กดปุ่ม "เรียกดูข้อมูล" เพื่อแสดงรายการ</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center py-6 mt-8">
+            <p class="text-xs sm:text-sm text-gray-500">
+                © 2025 ระบบส่งตรวจเพาะเชื้อจากน้ำ พื้นผิว รายงานผลงานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์ | พัฒนาโดย ทนพ.มานพ นันตาบุตร
+            </p>
+        </footer>
+    </div>
+    
+    <!-- Report Modal -->
+    <div id="report-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-full overflow-y-auto">
+             <div id="pdf-export-area" class="p-8">
+                <!-- Modal Header -->
+                <div class="text-center mb-6">
+                    <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto" style="max-width: 100px;">
+                    <h2 class="text-xl font-bold mt-2">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h2>
+                    <h3 class="text-lg font-semibold text-pastel-purple">ใบรายงานผลตรวจเพาะเชื้อจากน้ำและพื้นผิว</h3>
+                    <p class="text-sm text-gray-500">เลขที่รายงาน: FM-09-156-080</p>
+                </div>
+
+                <!-- Report Info -->
+                 <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-6">
+                    <div><strong>หน่วยงานส่งตรวจ:</strong> <span id="modal-report-department"></span></div>
+                    <div class="text-right"><strong>วันที่รายงาน:</strong> <span id="modal-report-date"></span></div>
+                    <div class="col-span-2"><strong>เชื้อที่สงสัย:</strong> <span id="modal-suspected-organism"></span></div>
+                </div>
+
+                <!-- Report Table -->
+                <div class="overflow-x-auto">
+                     <table class="w-full text-sm text-left border-collapse border border-slate-400">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 border border-slate-300 text-center">ลำดับ</th>
+                                <th class="p-2 border border-slate-300">วันที่ส่งตรวจ</th>
+                                <th class="p-2 border border-slate-300">สถานที่เก็บ/หน่วยงาน</th>
+                                <th class="p-2 border border-slate-300 text-center">ผลเพาะเชื้อ</th>
+                                <th class="p-2 border border-slate-300">หมายเหตุ</th>
+                                <th class="p-2 border border-slate-300 text-center">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-report-table-body">
+                            <!-- Data will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                 <!-- Signatures -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-12 text-sm">
+                     <div class="text-center">
+                         <p>(ทนพ.มานพ นันตาบุตร)</p>
+                         <p>ผู้รายงานผล (นักเทคนิคการแพทย์ ทน.17500)</p>
+                         <p>วันที่: <span id="modal-reported-date"></span></p>
+                     </div>
+                     <div class="text-center">
+                         <p>(ทนพญ.นริศรา มังกรแก้ว)</p>
+                         <p>ผู้ตรวจสอบผล (นักเทคนิคการแพทย์ ทน.5596)</p>
+                         <p>วันที่: <span id="modal-reviewed-date"></span></p>
+                     </div>
+                 </div>
+            </div>
+             <!-- Modal Actions -->
+            <div class="flex justify-end gap-4 p-4 bg-gray-50 rounded-b-2xl no-print">
+                <button id="export-pdf-button" class="bg-pastel-pink text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-90">Export PDF</button>
+                <button id="close-modal-button" class="bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">ปิด</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Google Sheet Configuration ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzmzLqNXCDaSB4c_49kGbPPcPAisgZeyF3_y4IV61BDPUDzPj8Xc92GJItRKzS5HKOdvQ/exec";
+
+        // --- Global State ---
+        let allJobs = []; 
+        let monthlyChartInstance = null;
+
+        // --- DOM Elements ---
+        const DOMElements = {
+            loginModal: document.getElementById('login-modal'),
+            loginButton: document.getElementById('login-button'),
+            usernameInput: document.getElementById('username'),
+            passwordInput: document.getElementById('password'),
+            loginError: document.getElementById('login-error'),
+            appContainer: document.getElementById('app-container'),
+            tabButtons: document.querySelectorAll('.tab-button'),
+            tabContents: document.querySelectorAll('.tab-content'),
+            submissionDate: document.getElementById('submission-date'),
+            departmentInput: document.getElementById('department'),
+            specimenTypeInput: document.getElementById('specimen-type'),
+            suspectedOrganismInput: document.getElementById('suspected-organism'),
+            samplesTableBody: document.getElementById('samples-table-body'),
+            saveDataButton: document.getElementById('save-data-button'),
+            clearFormButton: document.getElementById('clear-form-button'),
+            fetchDataButton: document.getElementById('fetch-data-button'),
+            reportListBody: document.getElementById('report-list-body'),
+            reportDateFilter: document.getElementById('report-date-filter'),
+            reportModal: document.getElementById('report-modal'),
+            closeModalButton: document.getElementById('close-modal-button'),
+            exportPdfButton: document.getElementById('export-pdf-button'),
+        };
+        
+        const departmentOptions = [
+            "--กรุณาเลือก--", "ศัลยกรรมอุบัติเหตุ", "อายุรกรรมกิตติวัฒนา", "ICU CVT", "SICU", "ANICU", "กึ่งวิกฤตทารกแรกเกิด", "NICU", "PICU", "ICU Burn", "NSICU", "RCU", "ศัลยกรรม 1", "ศัลยกรรม 2", "ศัลยกรรม 3", "ศัลยกรรมพิเศษ 1", "งานการพยาบาลรังสีวิทยา", "โรคไตและไตเทียม", "งานอุบัติเหตุและฉุกเฉิน", "งานการพยาบาลสุขภาพจิต", "งานการพยาบาลผู้คลอด", "งานการพยาบาลเวชศาสตร์มารดาและทารกในครรภ์", "หน่วยการพยาบาลอิตถีบูรณา", "หน่วยการพยาบาลมะเร็งนรีเวช", "งานการพยาบาลตรวจโรคกุมารเวชกรรม", "งานการพยาบาลตรวจโรคติดเชื้อแพร่กระจายทางอากาศ", "คัดกรองและรับผู้ป่วยใน", "ศัลยกรรมพิเศษ 2", "ศัลยกรรมระบบประสาท", "สูติ-นรีเวชกรรมสามัญ", "สูติ-นรีเวชกรรมพิเศษ", "เคมีบำบัด", "ผู้ป่วยนอกเคมีบำบัดและหอผู้ป่วยพิเศษเคมีบำบัด", "ศัลยกรรมกระดูกและข้อสามัญ", "ศัลยกรรมกระดูกและข้อพิเศษ", "พิเศษยูงทอง 5", "พิเศษยูงทอง 6", "พิเศษยูงทอง 3", "พิเศษยูงทอง 4", "อายุรกรรมความดันลบ", "พิเศษยูงทอง 1", "พิเศษยูงทอง 2", "งานการพยาบาลตรวจโรคหู คอ จมูก", "งานการพยาบาลตรวจโรคศัลยกรรม 1", "งานการพยาบาลตรวจโรคอายุรกรรม 1", "งานการพยาบาลตรวจโรคอายุรกรรม 2", "งานการพยาบาลตรวจโรคเวชศาสตร์ทั่วไปและครอบครัว", "งานการพยาบาลตรวจโรคจักษุ", "โรคหัวใจและหลอดเลือด (ศูนย์หัวใจ)", "งานการพยาบาลผู้ป่วยผ่าตัดเปลี่ยนข้อ", "งานการพยาบาลตรวจโรคศัลยกรรมกระดูก", "งานการพยาบาลตรวจโรคสูติ-นรีเวชกรรม", "งานการพยาบาลตรวจโรคศัลยกรรม 2", "โรคหลอดเลือดสมองและระบบประสาท", "CCU", "MICU", "พิเศษดุลโสภาคย์ 4", "พิเศษดุลโสภาคย์ 5", "กุมารเวชกรรม 1", "จักษุ", "หู คอ จมูก ทันตกรรม และศัลยกรรมช่องปาก", "อายุรกรรมชายสามัญ", "อายุรกรรมชายพิเศษ", "อายุรกรรมหญิงสามัญ", "อายุรกรรมหญิงพิเศษ", "กุมารเวชกรรม 2", "กุมารพิเศษ", "ปัญจา", "ก่อนและหลังผ่าตัด", "ผ่าตัดไม่ค้างคืน", "งานการพยาบาลผู้ป่วยผ่าตัด", "วิสัญญี", "ส่องกล้องและหัตถการพิเศษ", "หน่วยการพยาบาลตรวจโรคภูมิแพ้โรคหืดฯ", "ศูนย์ thammasat Lifestyle and wellness medical center", "งานการพยาบาลเวชศาสตร์การเจริญพันธ์(ผู้มีบุตรยาก)", "หน่วยการพยาบาลตรวจโรคผิวหนัง", "ศูนย์ไตเทียมประสิทธิภาพสูง", "หน่วยการพยาบาลตรวจโรคเวชศาสตร์ฟื้นฟู"
+        ];
+        
+        const specimenTypeOptions = ["--กรุณาเลือก--", "น้ำ", "อาหาร", "อากาศ", "พื้นผิว", "ยา"];
+        
+        const suspectedOrganismOptions = [
+            "--- กรุณาเลือก ---",
+            "Staphylococcus aureus (Coagulase-positive)",
+            "Coagulase-negative staphylococci (CoNS)",
+            "Streptococcus pneumoniae",
+            "Streptococcus spp. (กลุ่มอื่นๆ)",
+            "Enterococcus spp.",
+            "Escherichia coli",
+            "Klebsiella pneumoniae",
+            "Enterobacteriaceae (อื่นๆ)",
+            "Pseudomonas aeruginosa",
+            "Acinetobacter baumannii",
+            "Non-fermenting gram-negative bacilli (อื่นๆ)",
+            "แบคทีเรียที่ไม่ต้องการออกซิเจน (Anaerobic Bacteria)",
+            "เชื้อรา (Fungi)"
+        ];
+
+        const locationOptions = departmentOptions.filter(opt => opt !== "--กรุณาเลือก--");
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            initialize();
+            addEventListeners();
+        });
+
+        function initialize() {
+            DOMElements.submissionDate.value = new Date().toISOString().split('T')[0];
+            populateDatalist('department-list', departmentOptions);
+            populateDatalist('specimen-type-list', specimenTypeOptions);
+            populateDatalist('suspected-organism-list', suspectedOrganismOptions);
+            generateSampleRows();
+        }
+
+        function populateDatalist(listId, options) {
+            const datalist = document.getElementById(listId);
+            datalist.innerHTML = '';
+            options.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                datalist.appendChild(option);
+            });
+        }
+
+        function addEventListeners() {
+            // Login
+            DOMElements.loginButton.addEventListener('click', handleLogin);
+            DOMElements.passwordInput.addEventListener('keypress', (e) => {
+                 if (e.key === 'Enter') handleLogin();
+            });
+
+            // Tab navigation
+            DOMElements.tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tab = button.dataset.tab;
+                    switchTab(tab);
+                });
+            });
+
+            // Form tab
+            DOMElements.saveDataButton.addEventListener('click', saveData);
+            DOMElements.clearFormButton.addEventListener('click', clearForm);
+            
+            // Report Tab
+            DOMElements.fetchDataButton.addEventListener('click', () => fetchData());
+            DOMElements.reportDateFilter.addEventListener('change', filterAndRenderReports);
+            
+            // Modal
+            DOMElements.closeModalButton.addEventListener('click', () => DOMElements.reportModal.classList.add('hidden'));
+            DOMElements.exportPdfButton.addEventListener('click', exportPDF);
+        }
+
+        // --- Authentication ---
+        function handleLogin() {
+            const user = DOMElements.usernameInput.value.trim();
+            const pass = DOMElements.passwordInput.value.trim();
+            if (user === 'doctor' && pass === '1234') {
+                DOMElements.loginModal.classList.add('hidden');
+                DOMElements.appContainer.classList.remove('hidden');
+                fetchData(true);
+            } else {
+                DOMElements.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
+                setTimeout(() => DOMElements.loginError.textContent = '', 3000);
+            }
+        }
+        
+        // --- Tab Management ---
+        function switchTab(targetTab) {
+            DOMElements.tabContents.forEach(content => {
+                content.classList.toggle('hidden', content.id !== `${targetTab}-tab`);
+            });
+            DOMElements.tabButtons.forEach(button => {
+                button.classList.toggle('tab-active', button.dataset.tab === targetTab);
+                 button.classList.toggle('text-gray-600', button.dataset.tab !== targetTab);
+            });
+        }
+        
+        // --- Form Management ---
+        function generateSampleRows() {
+            let html = '';
+            const locationDatalist = `<datalist id="locations">${locationOptions.map(loc => `<option value="${loc}"></option>`).join('')}</datalist>`;
+            for (let i = 1; i <= 10; i++) {
+                html += `
+                    <tr class="border-b border-gray-200">
+                        <td class="p-2">${i}</td>
+                        <td class="p-2"><input type="text" list="locations" class="w-full p-2 border border-gray-300 rounded-md sample-location"></td>
+                        <td class="p-2"><input type="text" class="w-full p-2 border border-gray-300 rounded-md sample-culture-result" placeholder="ผลเพาะเชื้อ"></td>
+                        <td class="p-2"><input type="text" class="w-full p-2 border border-gray-300 rounded-md sample-remarks"></td>
+                    </tr>
+                `;
+            }
+            DOMElements.samplesTableBody.innerHTML = html + locationDatalist;
+        }
+
+        function clearForm() {
+            DOMElements.departmentInput.value = '';
+            DOMElements.specimenTypeInput.value = '';
+            DOMElements.suspectedOrganismInput.value = '';
+            DOMElements.submissionDate.value = new Date().toISOString().split('T')[0];
+            generateSampleRows(); // Regenerate to clear inputs
+        }
+        
+        // --- Data Handling (Save) ---
+        function saveData() {
+            const submissionDate = DOMElements.submissionDate.value;
+            const department = DOMElements.departmentInput.value;
+            const specimenType = DOMElements.specimenTypeInput.value;
+            const suspectedOrganism = DOMElements.suspectedOrganismInput.value;
+
+            if (!submissionDate || department.trim() === '' || department === '--กรุณาเลือก--' || specimenType.trim() === '' || specimenType === '--กรุณาเลือก--') {
+                Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลส่วนหัวให้ครบถ้วน (วันที่, หน่วยงาน, ประเภท)', 'error');
+                return;
+            }
+
+            const samples = [];
+            const rows = DOMElements.samplesTableBody.querySelectorAll('tr');
+            rows.forEach((row, index) => {
+                const location = row.querySelector('.sample-location').value.trim();
+                const cultureResult = row.querySelector('.sample-culture-result').value.trim();
+                const remarks = row.querySelector('.sample-remarks').value.trim();
+                
+                if (location) {
+                    samples.push({
+                        no: index + 1,
+                        location: location,
+                        cultureResult: cultureResult || 'N/A',
+                        remarks: remarks || '',
+                        status: 'รอตรวจ'
+                    });
+                }
+            });
+
+            if (samples.length === 0) {
+                Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลตัวอย่างอย่างน้อย 1 รายการ', 'error');
+                return;
+            }
+            
+            const dataToSave = { submissionDate, department, specimenType, suspectedOrganism, samples };
+
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            const callbackName = 'jsonpCallback_' + Date.now();
+            const url = `${SCRIPT_URL}?action=save&data=${encodeURIComponent(JSON.stringify(dataToSave))}&callback=${callbackName}`;
+            
+            window[callbackName] = (response) => {
+                if (response.result === 'success') {
+                    Swal.fire('สำเร็จ!', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว', 'success');
+                    clearForm();
+                    fetchData(true);
+                } else {
+                    Swal.fire('ผิดพลาด!', `เกิดข้อผิดพลาดในการบันทึก: ${response.message}`, 'error');
+                }
+                delete window[callbackName];
+                document.body.removeChild(script);
+            };
+
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = () => {
+                Swal.fire('ผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                delete window[callbackName];
+                script.remove();
+            };
+            document.body.appendChild(script);
+        }
+        
+        // --- Data Handling (Fetch) ---
+        function fetchData(isSilent = false) {
+            if (!isSilent) {
+                Swal.fire({
+                    title: 'กำลังเรียกดูข้อมูล...',
+                    allowOutsideClick: false,
+                    didOpen: () => Swal.showLoading()
+                });
+            }
+
+            const callbackName = 'jsonpCallback_' + Date.now();
+            const url = `${SCRIPT_URL}?action=fetch&callback=${callbackName}`;
+            
+            window[callbackName] = (response) => {
+                if (!isSilent) Swal.close();
+                if (response.result === 'success') {
+                    allJobs = groupSamplesIntoJobs(response.data);
+                    updateDashboard();
+                    filterAndRenderReports();
+                } else {
+                    if (!isSilent) Swal.fire('ผิดพลาด!', `ไม่สามารถเรียกดูข้อมูลได้: ${response.message}`, 'error');
+                }
+                 delete window[callbackName];
+                 document.body.removeChild(script);
+            };
+            
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = () => {
+                if (!isSilent) Swal.fire('ผิดพลาด!', 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้', 'error');
+                delete window[callbackName];
+                script.remove();
+            };
+            document.body.appendChild(script);
+        }
+
+        // --- Data Grouping Utility ---
+        function groupSamplesIntoJobs(flatSamples) {
+            if (!flatSamples || !Array.isArray(flatSamples)) {
+                return [];
+            }
+
+            const jobsMap = new Map();
+
+            flatSamples.forEach(sample => {
+                 if (!sample || typeof sample !== 'object') return;
+
+                const { SubmissionID, Department, SpecimenType, SubmissionDate, SuspectedOrganism } = sample;
+                
+                 if (!SubmissionID) return;
+
+                const sampleData = {
+                    no: sample.SampleNo,
+                    location: sample.Location,
+                    cultureResult: sample.CultureResult,
+                    remarks: sample.Remarks,
+                    status: sample.Status === 'รอตรวจ' ? 'รอตรวจ' : 'ตรวจแล้ว'
+                };
+
+                if (!jobsMap.has(SubmissionID)) {
+                    jobsMap.set(SubmissionID, {
+                        submissionId: SubmissionID,
+                        department: Department,
+                        specimenType: SpecimenType,
+                        submissionDate: SubmissionDate,
+                        suspectedOrganism: SuspectedOrganism,
+                        samples: []
+                    });
+                }
+                
+                jobsMap.get(SubmissionID).samples.push(sampleData);
+            });
+
+            return Array.from(jobsMap.values());
+        }
+
+        // --- Rendering ---
+        function updateDashboard() {
+            // Summary Cards
+            const statusCounts = { 'รอตรวจ': 0, 'ตรวจแล้ว': 0 };
+            let totalSamples = 0;
+            
+            allJobs.forEach(job => {
+                 job.samples.forEach(sample => {
+                    totalSamples++;
+                    if (sample.status === 'รอตรวจ') {
+                        statusCounts['รอตรวจ']++;
+                    } else {
+                        statusCounts['ตรวจแล้ว']++;
+                    }
+                });
+            });
+
+            document.getElementById('total-samples').textContent = totalSamples;
+            document.getElementById('pending-samples').textContent = statusCounts['รอตรวจ'];
+            document.getElementById('completed-samples').textContent = statusCounts['ตรวจแล้ว'];
+            
+            // Latest Submissions
+            const latestBody = document.getElementById('latest-submissions-body');
+            latestBody.innerHTML = '';
+            
+            if (allJobs.length === 0) {
+                 latestBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">ยังไม่มีข้อมูล...</td></tr>';
+                 renderMonthlyChart([]); // Render empty chart
+                 return;
+            }
+
+            const recentJobs = allJobs.slice(-5).reverse();
+            recentJobs.forEach(job => {
+                const overallStatus = getOverallStatus(job.samples);
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-2 px-3">${formatDate(job.submissionDate)}</td>
+                    <td class="py-2 px-3">${job.department}</td>
+                    <td class="py-2 px-3">${job.specimenType}</td>
+                    <td class="py-2 px-3">${job.samples.length}</td>
+                    <td class="py-2 px-3">${getStatusBadge(overallStatus)}</td>
+                `;
+                latestBody.appendChild(row);
+            });
+
+            // Monthly Chart
+            renderMonthlyChart(allJobs);
+        }
+
+        function renderMonthlyChart(jobs) {
+            const ctx = document.getElementById('monthly-chart').getContext('2d');
+            const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            
+            const labels = [];
+            const data = [];
+            const monthlyData = {};
+
+            const today = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const month = d.getMonth();
+                const year = d.getFullYear();
+                const key = `${year}-${String(month).padStart(2, '0')}`;
+                labels.push(`${thaiMonths[month]} ${year + 543}`);
+                monthlyData[key] = 0;
+            }
+
+            jobs.forEach(job => {
+                job.samples.forEach(sample => {
+                    const submissionDate = new Date(job.submissionDate);
+                    const month = submissionDate.getMonth();
+                    const year = submissionDate.getFullYear();
+                    const key = `${year}-${String(month).padStart(2, '0')}`;
+                    if(monthlyData.hasOwnProperty(key)) {
+                        monthlyData[key]++;
+                    }
+                });
+            });
+
+            for (const key in monthlyData) {
+                data.push(monthlyData[key]);
+            }
+            
+            if (monthlyChartInstance) {
+                monthlyChartInstance.destroy();
+            }
+
+            monthlyChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'จำนวนตัวอย่าง',
+                        data: data,
+                        backgroundColor: 'rgba(108, 80, 112, 0.6)',
+                        borderColor: 'rgba(108, 80, 112, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+        
+        function filterAndRenderReports() {
+            const filterDate = DOMElements.reportDateFilter.value;
+            const filteredData = (filterDate ? allJobs.filter(job => job.submissionDate === filterDate) : allJobs).reverse();
+
+            DOMElements.reportListBody.innerHTML = '';
+            if (filteredData.length === 0) {
+                DOMElements.reportListBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">ไม่พบข้อมูลตามที่ค้นหา</td></tr>';
+                return;
+            }
+
+            filteredData.forEach(job => {
+                const overallStatus = getOverallStatus(job.samples);
+                const row = document.createElement('tr');
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-2 px-3">${formatDate(job.submissionDate)}</td>
+                    <td class="py-2 px-3">${job.department}</td>
+                    <td class="py-2 px-3">${job.specimenType}</td>
+                    <td class="py-2 px-3">${getStatusBadge(overallStatus)}</td>
+                    <td class="py-2 px-3 text-center">
+                        <button class="view-report-btn bg-pastel-green text-white p-2 rounded-lg hover:bg-opacity-80" data-job-id="${job.submissionId}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.522 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.064 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </td>
+                `;
+                DOMElements.reportListBody.appendChild(row);
+            });
+            
+            document.querySelectorAll('.view-report-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const jobId = e.currentTarget.dataset.jobId;
+                    const jobData = allJobs.find(j => j.submissionId === jobId);
+                    if (jobData) showReportModal(jobData);
+                });
+            });
+        }
+        
+        function showReportModal(job) {
+            DOMElements.reportModal.dataset.submissionId = job.submissionId;
+            document.getElementById('modal-report-department').textContent = job.department;
+            document.getElementById('modal-report-date').textContent = formatDate(new Date());
+            document.getElementById('modal-reported-date').textContent = formatDate(job.submissionDate);
+            document.getElementById('modal-reviewed-date').textContent = formatDate(job.submissionDate);
+            document.getElementById('modal-suspected-organism').textContent = job.suspectedOrganism || 'ไม่ได้ระบุ';
+
+            const tableBody = document.getElementById('modal-report-table-body');
+            tableBody.innerHTML = '';
+            job.samples.forEach(sample => {
+                const row = document.createElement('tr');
+                 row.innerHTML = `
+                    <td class="p-2 border border-slate-300 text-center">${sample.no}</td>
+                    <td class="p-2 border border-slate-300">${formatDate(job.submissionDate)}</td>
+                    <td class="p-2 border border-slate-300">${sample.location}</td>
+                    <td class="p-2 border border-slate-300 text-center">${sample.cultureResult}</td>
+                    <td class="p-2 border border-slate-300">${sample.remarks}</td>
+                    <td class="p-2 border border-slate-300 text-center">${getStatusBadge(sample.status)}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            DOMElements.reportModal.classList.remove('hidden');
+        }
+
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const pdfExportArea = document.getElementById('pdf-export-area');
+            const currentJobId = DOMElements.reportModal.dataset.submissionId;
+            
+            Swal.fire({
+                title: 'กำลังสร้างไฟล์ PDF...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            html2canvas(pdfExportArea, { scale: 2 })
+             .then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`report-${currentJobId || 'file'}.pdf`);
+                Swal.close();
+            }).catch(err => {
+                 Swal.fire('ผิดพลาด!', 'ไม่สามารถสร้าง PDF ได้', 'error');
+                 console.error(err);
+            });
+        }
+
+        // --- Utility Functions ---
+        function getOverallStatus(samples) {
+            if (!samples || samples.length === 0) return 'N/A';
+            if (samples.some(s => s.status === 'รอตรวจ')) {
+                return 'รอตรวจ';
+            }
+            return 'ตรวจแล้ว';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear() + 543; // Convert to B.E.
+            return `${day}/${month}/${year}`;
+        }
+        
+        function getStatusBadge(status) {
+            const colors = {
+                'รอตรวจ': 'bg-yellow-100 text-yellow-800',
+                'ตรวจแล้ว': 'bg-green-100 text-green-800',
+            };
+            const colorClass = colors[status] || 'bg-gray-100 text-gray-800';
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full ${colorClass}">${status}</span>`;
+        }
+    </script>
+</body>
+</html>

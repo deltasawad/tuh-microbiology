@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ISO 15189 Audit Trail Explorer - TUH Microbiology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-badge">AUDIT</span>
+      <span>ISO 15189 Audit Trail Explorer</span>
+    </a>
+    <ul class="nav-menu">
+      <li><a href="index.html" class="nav-link">🏠 หน้าหลัก</a></li>
+      <li><a href="air.html" class="nav-link">💨 Air Sampling</a></li>
+      <li><a href="booking.html" class="nav-link">📅 ปฏิทินจอง</a></li>
+      <li><a href="audit.html" class="nav-link active">📋 Audit Trail</a></li>
+      <li id="user-nav-item">
+        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">บันทึกประวัติการเปลี่ยนแปลงตามมาตรฐาน ISO 15189</h1>
+        <p class="page-subtitle">บันทึกประวัติทุกการสร้าง แก้ไขผลตรวจ และการเปลี่ยนสถานะโดยไม่สามารถแก้ไขย้อนหลังได้ (Immutable Log)</p>
+      </div>
+      <button class="btn btn-secondary" onclick="loadAuditLogs()">🔄 รีเฟรชข้อมูล</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding: 1rem;">
+      <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+        <div>
+          <label class="form-label" style="margin-bottom: 0.2rem;">ประเภทการดำเนินการ (Action)</label>
+          <select id="action-filter" class="form-control" style="width: 180px;">
+            <option value="">ทั้งหมด</option>
+            <option value="INSERT">สร้างรายการ (INSERT)</option>
+            <option value="UPDATE">แก้ไขผลตรวจ (UPDATE)</option>
+            <option value="STATUS_CHANGE">เปลี่ยนสถานะ (STATUS_CHANGE)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit Logs Table -->
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>วัน-เวลา (Timestamp)</th>
+              <th>Action</th>
+              <th>ตาราง / ID</th>
+              <th>ผู้ดำเนินการ (Actor)</th>
+              <th>เหตุผลการดำเนินการ (Reason)</th>
+              <th>ข้อมูลก่อนหน้า (Before)</th>
+              <th>ข้อมูลใหม่ (After)</th>
+            </tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                กำลังโหลดข้อมูล Audit Trail...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadAuditLogs();
+      document.getElementById('action-filter').addEventListener('change', loadAuditLogs);
+    });
+
+    function checkAuth() {
+      const user = Api.getUser();
+      const navItem = document.getElementById('user-nav-item');
+      if (user) {
+        navItem.innerHTML = `
+          <div class="user-badge">
+            <span>👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.4rem;">ออก</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadAuditLogs() {
+      const tbody = document.getElementById('audit-tbody');
+      const action = document.getElementById('action-filter').value;
+
+      try {
+        const logs = await Api.getAuditLogs();
+        const filtered = action ? logs.filter(l => l.action === action) : logs;
+
+        if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">ไม่พบรายการบันทึก</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = filtered.map(l => {
+          const dateStr = new Date(l.timestamp).toLocaleString('th-TH');
+          const beforeStr = l.before_data ? JSON.stringify(l.before_data, null, 1) : '-';
+          const afterStr = l.after_data ? JSON.stringify(l.after_data, null, 1) : '-';
+
+          return `
+            <tr>
+              <td style="font-size: 0.85rem; white-space: nowrap;"><strong>${dateStr}</strong></td>
+              <td><span class="badge badge-submitted">${l.action}</span></td>
+              <td>${l.entity_name} #${l.entity_id}</td>
+              <td><strong>${l.user_name || 'SYSTEM'}</strong></td>
+              <td>${l.reason || '-'}</td>
+              <td style="font-family: monospace; font-size: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                ${beforeStr}
+              </td>
+              <td style="font-family: monospace; font-size: 0.75rem; max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                ${afterStr}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--danger); padding: 1.5rem;">กรุณาเข้าสู่ระบบด้วยบัญชีเจ้าหน้าที่แล็บเพื่อดู Audit Trail (${err.message})</td></tr>`;
+      }
+    }
+  </script>
+</body>
+</html>

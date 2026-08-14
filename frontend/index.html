@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรายงานผลตรวจสิ่งแวดล้อม งานจุลชีววิทยา รพ.ธรรมศาสตร์ (TUH Microbiology)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-badge">TUH MICRO</span>
+      <span>ระบบรายงานผลตรวจสิ่งแวดล้อม</span>
+    </a>
+    <ul class="nav-menu">
+      <li><a href="index.html" class="nav-link active">🏠 หน้าหลัก</a></li>
+      <li><a href="air.html" class="nav-link">💨 Air Sampling</a></li>
+      <li><a href="booking.html" class="nav-link">📅 ปฏิทินจองส่งตรวจ</a></li>
+      <li><a href="audit.html" class="nav-link">📋 ISO Audit Trail</a></li>
+      <li id="user-nav-item">
+        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Main Container -->
+  <main class="container">
+    
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">ศูนย์กลางระบบตรวจวิเคราะห์สิ่งแวดล้อมทางจุลชีววิทยา</h1>
+        <p class="page-subtitle">ห้องปฏิบัติการจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ (มาตรฐาน ISO 15189)</p>
+      </div>
+      <div style="display: flex; gap: 0.5rem;">
+        <a href="air.html" class="btn btn-primary">➕ สร้างใบส่งตรวจ Air Sampling</a>
+        <a href="booking.html" class="btn btn-secondary">📅 จองคิวส่งตรวจ</a>
+      </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <section class="grid-stats">
+      <div class="stat-card">
+        <div class="stat-label">ใบส่งตรวจทั้งหมด</div>
+        <div class="stat-value primary" id="stat-total">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">รอรับตัวอย่าง (Submitted)</div>
+        <div class="stat-value" id="stat-submitted">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">กำลังตรวจวิเคราะห์ (In Progress)</div>
+        <div class="stat-value warning" id="stat-inprogress">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">ออกรายงานแล้ว (Reported)</div>
+        <div class="stat-value success" id="stat-reported">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">คิวจองวันนี้ (Today Bookings)</div>
+        <div class="stat-value" id="stat-bookings">-</div>
+      </div>
+    </section>
+
+    <!-- Services Grid -->
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">บริการตรวจวิเคราะห์สิ่งแวดล้อม (Environmental Services)</h2>
+    <section class="grid-services" id="services-grid">
+      <!-- Loaded dynamically via JS -->
+    </section>
+
+    <!-- Recent Submissions Table -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="font-size: 1.2rem; font-weight: 700;">รายการใบส่งตรวจล่าสุด (Recent Submissions)</h2>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <input type="text" id="search-input" class="form-control" placeholder="ค้นหาเลขที่, ผู้ส่ง..." style="width: 200px;">
+          <select id="status-filter" class="form-control" style="width: 150px;">
+            <option value="">ทุกสถานะ</option>
+            <option value="SUBMITTED">กำลังส่งตรวจ</option>
+            <option value="RECEIVED">รับแล้ว</option>
+            <option value="IN_PROGRESS">กำลังตรวจ</option>
+            <option value="COMPLETED">ตรวจแล้ว</option>
+            <option value="REPORTED">ออกรายงานแล้ว</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>เลขที่ส่งตรวจ</th>
+              <th>บริการ</th>
+              <th>หน่วยงานส่งตรวจ</th>
+              <th>วันที่ส่ง</th>
+              <th>จำนวนตัวอย่าง</th>
+              <th>สถานะ</th>
+              <th>ผู้ตรวจ / ผู้อนุมัติ</th>
+              <th>การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="submissions-tbody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                กำลังโหลดข้อมูล...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      checkUserAuth();
+      loadDashboardStats();
+      loadServices();
+      loadSubmissions();
+
+      document.getElementById('search-input').addEventListener('input', debounce(loadSubmissions, 400));
+      document.getElementById('status-filter').addEventListener('change', loadSubmissions);
+    });
+
+    function checkUserAuth() {
+      const user = Api.getUser();
+      const userNavItem = document.getElementById('user-nav-item');
+      if (user) {
+        userNavItem.innerHTML = `
+          <div class="user-badge">
+            <span>👤 ${user.full_name} (${user.role})</span>
+            <button onclick="logout()" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.5rem;">ออก</button>
+          </div>
+        `;
+      }
+    }
+
+    function logout() {
+      Api.clearAuth();
+      window.location.href = 'login.html';
+    }
+
+    async function loadDashboardStats() {
+      try {
+        const data = await Api.getDashboardSummary();
+        const m = data.metrics;
+        document.getElementById('stat-total').innerText = m.total;
+        document.getElementById('stat-submitted').innerText = m.submitted;
+        document.getElementById('stat-inprogress').innerText = m.in_progress;
+        document.getElementById('stat-reported').innerText = m.reported;
+        document.getElementById('stat-bookings').innerText = m.today_bookings;
+      } catch (err) {
+        console.error('Error loading dashboard summary:', err);
+      }
+    }
+
+    async function loadServices() {
+      try {
+        const services = await Api.getServices();
+        const container = document.getElementById('services-grid');
+        container.innerHTML = services.map(s => `
+          <a href="${s.code === 'AIR-01' ? 'air.html' : 'air.html?service=' + s.code}" class="service-card">
+            <div>
+              <span class="service-code">${s.code}</span>
+              <div class="service-title">${s.name_th}</div>
+              <div class="service-dept">หน่วยงาน: ${s.department_owner || '-'}</div>
+            </div>
+            <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--primary); font-weight: 600;">
+              เป้าหมาย TAT: ${s.tat_target_hours} ชม. →
+            </div>
+          </a>
+        `).join('');
+      } catch (err) {
+        console.error('Error loading services:', err);
+      }
+    }
+
+    async function loadSubmissions() {
+      const tbody = document.getElementById('submissions-tbody');
+      const search = document.getElementById('search-input').value.trim();
+      const status = document.getElementById('status-filter').value;
+
+      try {
+        const submissions = await Api.getSubmissions({ search, status });
+        if (submissions.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">ไม่พบรายการส่งตรวจ</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = submissions.map(s => {
+          const statusClass = `badge-${s.status.toLowerCase()}`;
+          const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+          const staffText = s.reporter_name ? `${s.reporter_name} / ${s.reviewer_name || '-'}` : '-';
+          
+          return `
+            <tr>
+              <td><strong>${s.submission_no}</strong> ${s.is_amended ? '<span class="badge badge-rejected" style="font-size: 0.65rem;">AMENDED</span>' : ''}</td>
+              <td><span class="service-code">${s.service_code}</span></td>
+              <td>${s.department_name}</td>
+              <td>${thDate}</td>
+              <td>${s.sample_count} จุด</td>
+              <td><span class="badge ${statusClass}">${s.status}</span></td>
+              <td style="font-size: 0.85rem;">${staffText}</td>
+              <td>
+                <a href="air.html?id=${s.id}" class="btn btn-secondary btn-sm">เปิดดู / บันทึกผล</a>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--danger); padding: 1rem;">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>`;
+      }
+    }
+
+    function debounce(func, wait) {
+      let timeout;
+      return function(...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+  </script>
+</body>
+</html>

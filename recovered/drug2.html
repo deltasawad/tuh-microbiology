@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Noto Sans Thai', sans-serif; 
+            background-color: #f8fafc; 
+        }
+        .tab-active { 
+            background-color: #4a5568; 
+            color: white; 
+            border-bottom-width: 4px; 
+            border-color: #718096; 
+        }
+        .form-input { 
+            width: 100%; 
+            padding: 0.6rem 0.75rem; 
+            border: 1px solid #cbd5e0; 
+            border-radius: 0.5rem; 
+            transition: all 0.2s; 
+            font-size: 0.95rem;
+        }
+        .form-input:focus { 
+            outline: none; 
+            border-color: #4a5568; 
+            box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.2); 
+        }
+        .form-input:disabled { 
+            background-color: #f1f5f9; 
+            cursor: not-allowed; 
+            color: #64748b;
+        }
+        .form-label { 
+            display: block; 
+            font-weight: 500; 
+            color: #475569; 
+            margin-bottom: 0.35rem; 
+            font-size: 0.875rem; 
+        }
+        .signature-font { 
+            font-family: 'Dancing Script', cursive; 
+        }
+        .pdf-temp-text {
+            padding: 0.5rem;
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+        
+        /* Custom Scrollbar for tables */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+
+        @media print {
+            body * { visibility: hidden; }
+            #pdf-export-area, #pdf-export-area * { visibility: visible; }
+            #pdf-export-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center transform transition-all">
+            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Logo" class="mx-auto mb-6 drop-shadow-md" style="max-width: 110px;">
+            <h2 class="text-xl font-bold text-slate-800 mb-2 leading-snug">ระบบรายงานผลการวิเคราะห์<br>การปนเปื้อนเชื้อจุลินทรีย์</h2>
+            <p class="text-slate-500 mb-6 text-sm">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="sr-only" for="username">ชื่อผู้ใช้</label>
+                    <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="form-input">
+                </div>
+                <div>
+                    <label class="sr-only" for="password">รหัสผ่าน</label>
+                    <input type="password" id="password" placeholder="รหัสผ่าน" class="form-input">
+                </div>
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-3 h-4 font-medium"></p>
+            <button id="login-button" class="w-full bg-slate-700 text-white py-3 mt-5 rounded-lg hover:bg-slate-800 transition-all duration-300 font-semibold shadow-lg shadow-slate-700/30 focus:ring-4 focus:ring-slate-300">
+                เข้าสู่ระบบ
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden">
+        <header class="bg-white shadow-sm py-6 px-4 sm:px-8 border-b border-slate-200">
+            <div class="container mx-auto flex flex-col items-center text-center">
+                <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="h-auto drop-shadow-sm mb-3" style="max-width: 130px;">
+                <h1 class="text-xl sm:text-2xl font-bold text-[#6c5070]">ระบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h1>
+                <p class="text-sm sm:text-base text-slate-500 mt-1 font-medium">สำหรับงานผลิตยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</p>
+                <div id="user-info" class="inline-flex items-center gap-2 bg-slate-100 text-xs text-slate-600 mt-4 px-3 py-1.5 rounded-full font-medium"></div>
+            </div>
+        </header>
+
+        <nav class="bg-white shadow-md sticky top-0 z-30 no-print">
+            <div id="nav-tabs-container" class="container mx-auto flex justify-center overflow-x-auto custom-scrollbar"></div>
+        </nav>
+
+        <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+            <!-- New Form Tab -->
+            <div id="form-tab" class="tab-content hidden animate-fade-in">
+                <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 max-w-7xl mx-auto">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mb-6 text-center border-b pb-4">แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-5 mb-8">
+                        <div><label for="receipt-date" class="form-label">วันที่รับตัวอย่างยาเตรียม</label><input type="date" id="receipt-date" class="form-input bg-slate-50"></div>
+                        <div><label for="analysis-date" class="form-label">วันที่วิเคราะห์ตัวอย่าง</label><input type="date" id="analysis-date" class="form-input bg-slate-50"></div>
+                        <div>
+                            <label for="prepared-medicine-header" class="form-label">ยาเตรียม</label>
+                            <input type="text" id="prepared-medicine-header" list="prepared-medicine-list" class="form-input" placeholder="เลือกหรือพิมพ์">
+                            <datalist id="prepared-medicine-list">
+                                <option value="Zinc sulphate solution"></option>
+                                <option value="Trace element"></option>
+                                <option value="Phosphate solution"></option>
+                                <option value="Magnesium Chloride"></option>
+                            </datalist>
+                        </div>
+                        <div><label for="lot-no" class="form-label">Lot No.</label><input type="text" id="lot-no" class="form-input" placeholder="ระบุ Lot No."></div>
+                        
+                        <div><label for="production-date" class="form-label">ผลิตเมื่อวันที่</label><input type="date" id="production-date" class="form-input bg-slate-50"></div>
+                        <div><label for="volume" class="form-label">ปริมาณ (ml)</label><input type="number" id="volume" class="form-input" placeholder="0"></div>
+                        <div><label for="sample-count" class="form-label">จำนวน (Sample)</label><input type="number" id="sample-count" class="form-input" value="10" min="1" max="50"></div>
+                        <div><label for="submission-date" class="form-label">วันที่ส่งตรวจ</label><input type="date" id="submission-date" class="form-input bg-slate-50"></div>
+                        
+                        <div><label for="submitted-by" class="form-label">ผู้ส่งตรวจ</label><input type="text" id="submitted-by" class="form-input" placeholder="ชื่อผู้ส่ง"></div>
+                        <div>
+                            <label for="department" class="form-label">หน่วยงานส่งตรวจ</label>
+                            <input type="text" id="department" list="department-list" class="form-input" placeholder="เลือกหรือพิมพ์">
+                            <datalist id="department-list">
+                                <option value="งานผลิตยา"></option>
+                                <option value="งานควบคุมโรคติดเชื้อ"></option>
+                                <option value="งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร"></option>
+                                <option value="ธนาคารเลือด"></option>
+                            </datalist>
+                        </div>
+                        <div class="lg:col-span-2">
+                            <label for="specimen-type" class="form-label">ประเภทสิ่งส่งตรวจ</label>
+                            <input type="text" id="specimen-type" list="specimen-type-list" class="form-input" placeholder="เลือกหรือพิมพ์">
+                            <datalist id="specimen-type-list">
+                                <option value="น้ำ"></option>
+                                <option value="อาหาร"></option>
+                                <option value="อากาศ"></option>
+                                <option value="เลือด"></option>
+                                <option value="ยา"></option>
+                                <option value="อื่นๆโปรดระบุ"></option>
+                            </datalist>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto custom-scrollbar border rounded-xl border-slate-200">
+                        <table class="w-full min-w-[600px] text-sm text-left">
+                            <thead class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3 font-semibold text-center w-16">ลำดับ</th>
+                                    <th class="p-3 font-semibold w-1/3">ยาเตรียม</th>
+                                    <th class="p-3 font-semibold w-1/4">ผลการตรวจเพาะเชื้อที่ 72 ชม.</th>
+                                    <th class="p-3 font-semibold">หมายเหตุ (Remarks)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="new-samples-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row justify-center gap-4 mt-8 pt-6 border-t border-slate-100">
+                        <button id="new-save-button" class="bg-emerald-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-emerald-700 transition-all shadow-md shadow-emerald-600/20 focus:ring-4 focus:ring-emerald-200 w-full sm:w-auto">
+                            บันทึกข้อมูล
+                        </button>
+                        <button id="new-clear-button" class="bg-slate-200 text-slate-700 font-semibold py-3 px-8 rounded-lg hover:bg-slate-300 transition-all focus:ring-4 focus:ring-slate-100 w-full sm:w-auto">
+                            ล้างข้อมูล
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-slate-50 rounded-full z-0"></div>
+                        <p class="text-slate-500 font-medium z-10">ตัวอย่างทั้งหมด</p>
+                        <h3 id="total-samples" class="text-4xl sm:text-5xl font-bold text-[#6c5070] mt-2 z-10">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-amber-50 rounded-full z-0"></div>
+                        <p class="text-slate-500 font-medium z-10">รอตรวจ</p>
+                        <h3 id="pending-samples" class="text-4xl sm:text-5xl font-bold text-amber-500 mt-2 z-10">0</h3>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center flex flex-col justify-center items-center relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 rounded-full z-0"></div>
+                        <p class="text-slate-500 font-medium z-10">ตรวจแล้ว</p>
+                        <h3 id="completed-samples" class="text-4xl sm:text-5xl font-bold text-emerald-500 mt-2 z-10">0</h3>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+                    <div class="lg:col-span-2 bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-[#6c5070]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                            สถิติจำนวนตัวอย่างทั้งหมดรายเดือน
+                        </h2>
+                        <div class="relative h-64 sm:h-80 w-full">
+                            <canvas id="monthly-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-6 flex items-center">
+                            <svg class="w-5 h-5 mr-2 text-[#6c5070]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            รายการส่งตรวจล่าสุด
+                        </h2>
+                        <div class="overflow-x-auto custom-scrollbar -mx-4 sm:mx-0">
+                            <table class="w-full text-left text-sm min-w-[450px]">
+                                <thead class="text-slate-600 bg-slate-50">
+                                    <tr>
+                                        <th class="py-3 px-4 font-medium rounded-tl-lg">วันที่ส่ง</th>
+                                        <th class="py-3 px-4 font-medium">หน่วยงาน</th>
+                                        <th class="py-3 px-4 font-medium text-center">จำนวน</th>
+                                        <th class="py-3 px-4 font-medium rounded-tr-lg">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="latest-submissions-body" class="divide-y divide-slate-100">
+                                    <tr><td colspan="4" class="text-center py-8 text-slate-400">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Tab -->
+            <div id="report-tab" class="tab-content hidden">
+                 <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8 gap-4 border-b pb-4">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-[#6c5070]" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            รายการรายงานผลตรวจ
+                        </h2>
+                        <button id="fetch-data-button" class="w-full sm:w-auto bg-slate-700 text-white font-semibold py-2.5 px-5 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            รีเฟรชข้อมูล
+                        </button>
+                    </div>
+                    
+                    <div class="overflow-x-auto custom-scrollbar border rounded-xl border-slate-200">
+                        <table class="w-full text-left text-sm min-w-[700px]">
+                            <thead class="bg-slate-100 text-slate-700">
+                                <tr>
+                                    <th class="py-3 px-4 font-semibold w-24">วันที่ส่ง</th>
+                                    <th class="py-3 px-4 font-semibold w-48">หน่วยงาน</th>
+                                    <th class="py-3 px-4 font-semibold">ยาเตรียม</th>
+                                    <th class="py-3 px-4 font-semibold text-center w-32">สถานะ</th>
+                                    <th class="py-3 px-4 font-semibold text-center w-24">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="report-list-body" class="divide-y divide-slate-100">
+                                <tr><td colspan="5" class="text-center py-10 text-slate-400">กรุณากด "รีเฟรชข้อมูล" เพื่อแสดงรายการ</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer class="text-center py-8 mt-4 border-t border-slate-200 text-slate-500">
+            <p class="text-xs sm:text-sm">© 2025 ระบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์</p>
+            <p class="text-xs mt-1">พัฒนาโดย ทนพ.มานพ นันตาบุตร</p>
+        </footer>
+    </div>
+    
+    <!-- Report Modal -->
+    <div id="report-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-40 hidden p-2 sm:p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-full flex flex-col overflow-hidden transform scale-95 transition-transform duration-300" id="report-modal-content">
+            
+            <div class="flex-1 overflow-y-auto custom-scrollbar" id="modal-scroll-area">
+                <div id="pdf-export-area" class="p-6 sm:p-10 bg-white">
+                    <div class="text-center mb-8">
+                        <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto h-20 sm:h-24 object-contain mb-3">
+                        <h2 class="text-lg sm:text-xl font-bold text-slate-800">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h2>
+                        <h3 class="text-base sm:text-lg font-semibold text-slate-700 mt-1">แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h3>
+                        <p class="text-xs sm:text-sm text-slate-500 mt-1">(Microbial contamination analysis report form)</p>
+                    </div>
+                    
+                    <div class="bg-slate-50 p-4 sm:p-5 rounded-xl border border-slate-200 mb-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3 text-sm">
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่รับตัวอย่าง</span><strong id="modal-receipt-date" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่วิเคราะห์</span><strong id="modal-analysis-date" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">Lot No.</span><strong id="modal-lot-no" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">ผลิตเมื่อวันที่</span><strong id="modal-production-date" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4"><span class="text-slate-500 text-xs">ยาเตรียม / ประเภท</span><strong id="modal-prepared-medicine-header" class="text-slate-800 mt-0.5 text-base"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">ปริมาณ (ml)</span><strong id="modal-volume" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">จำนวน (Sample)</span><strong id="modal-sample-count" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่ส่งตรวจ</span><strong id="modal-submission-date" class="text-slate-800 mt-0.5"></strong></div>
+                            <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4 border-t border-slate-200 pt-2 mt-1">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div><span class="text-slate-500 text-xs block">ผู้ส่งตรวจ</span><strong id="modal-submitted-by" class="text-slate-800 mt-0.5"></strong></div>
+                                    <div><span class="text-slate-500 text-xs block">หน่วยงานส่งตรวจ</span><strong id="modal-department" class="text-slate-800 mt-0.5"></strong></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto mb-8 border border-slate-300 rounded">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead class="bg-slate-100 text-slate-700">
+                                <tr>
+                                    <th class="p-2 sm:p-3 border-b border-r border-slate-300 text-center w-12 font-semibold">ลำดับ</th>
+                                    <th class="p-2 sm:p-3 border-b border-r border-slate-300 font-semibold">ยาเตรียม</th>
+                                    <th class="p-2 sm:p-3 border-b border-r border-slate-300 font-semibold w-1/4">ผล 72 ชม.</th>
+                                    <th class="p-2 sm:p-3 border-b border-r border-slate-300 font-semibold w-1/4">หมายเหตุ</th>
+                                    <th class="p-2 sm:p-3 border-b border-slate-300 text-center font-semibold w-28">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modal-report-table-body" class="divide-y divide-slate-200"></tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-12 mt-10 text-sm">
+                        <div class="text-center flex flex-col items-center">
+                            <div class="h-16 flex items-end justify-center mb-2">
+                                <span class="signature-font text-3xl text-slate-800 opacity-80">N.MANOP</span>
+                            </div>
+                            <p class="text-slate-400 mb-2">...........................................................</p>
+                            <select id="reporter-name-select" class="form-input text-center w-full max-w-[250px] mb-2 bg-slate-50 text-sm font-medium">
+                                 <option value="ทนพ.มานพ นันตาบุตร">ทนพ.มานพ นันตาบุตร</option>
+                            </select>
+                            <p class="text-slate-600">ผู้รายงานผล : นักเทคนิคการแพทย์</p>
+                            <p class="text-slate-500 text-xs mt-1">วันที่: <span id="modal-reported-date"></span></p>
+                        </div>
+                        <div class="text-center flex flex-col items-center">
+                            <div class="h-16 flex items-end justify-center mb-2">
+                                <span class="signature-font text-3xl text-slate-800 opacity-80">N. NARISARA</span>
+                            </div>
+                            <p class="text-slate-400 mb-2">...........................................................</p>
+                            <select id="reviewer-name-select" class="form-input text-center w-full max-w-[250px] mb-2 bg-slate-50 text-sm font-medium">
+                                 <option value="ทนพญ.นริศรา มังกรแก้ว">ทนพญ.นริศรา มังกรแก้ว</option>
+                            </select>
+                            <p class="text-slate-600">ผู้ตรวจสอบผล : นักเทคนิคการแพทย์</p>
+                            <p class="text-slate-500 text-xs">(หัวหน้าห้องปฎิบัติการจุลชีววิทยา)</p>
+                            <p class="text-slate-500 text-xs mt-1">วันที่: <span id="modal-reviewed-date"></span></p>
+                        </div>
+                    </div>
+                    
+                    <!-- TAT Summary Container -->
+                    <div id="tat-summary-container" class="mt-10 pt-6 border-t-2 border-dashed border-slate-200"></div>
+                </div>
+            </div>
+            
+            <div id="modal-actions" class="flex flex-wrap justify-end gap-3 p-4 sm:p-5 bg-slate-50 border-t border-slate-200 no-print"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Config ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6nBsMgHwPL9j6a4RwpylqNdPyffNg2YitwbXZyXJbblRTx72q3ETGqvoJySFJ1qiy/exec";
+        let allJobs = [];
+        let monthlyChartInstance = null;
+        let currentUserRole = null;
+
+        const staffNames = [
+            "--- กรุณาเลือก ---", 
+            "ทนพญ.นริศรา มังกรแก้ว(ทน.5596)", 
+            "ทนพ.มานพ นันตาบุตร(ทน.17500)",
+            "ทนพญ.อนันตพร ฉันท์ผ่อง(ทน.5653)", 
+            "ทนพญ.พนารัตน์ เหมะธุลิน(ทน.5969)", 
+            "ทนพญ.รุจิรา แย้มนวล(ทน.11667)",
+            "ทนพญ.ปราญชลี หรั่งอ่อน(ทน.23412)"
+        ];
+
+        const DOMElements = {
+            loginModal: document.getElementById('login-modal'), 
+            loginButton: document.getElementById('login-button'), 
+            passwordInput: document.getElementById('password'), 
+            loginError: document.getElementById('login-error'),
+            appContainer: document.getElementById('app-container'), 
+            navTabsContainer: document.getElementById('nav-tabs-container'), 
+            userInfo: document.getElementById('user-info'),
+            sampleCountInput: document.getElementById('sample-count'), 
+            preparedMedicineHeader: document.getElementById('prepared-medicine-header'), 
+            newSamplesTableBody: document.getElementById('new-samples-table-body'),
+            newSaveButton: document.getElementById('new-save-button'), 
+            newClearButton: document.getElementById('new-clear-button'),
+            fetchDataButton: document.getElementById('fetch-data-button'), 
+            reportListBody: document.getElementById('report-list-body'),
+            reportModal: document.getElementById('report-modal'), 
+            reportModalContent: document.getElementById('report-modal-content'),
+            modalActions: document.getElementById('modal-actions'),
+        };
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            DOMElements.loginButton.addEventListener('click', handleLogin);
+            DOMElements.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+            DOMElements.newSaveButton.addEventListener('click', saveNewData);
+            DOMElements.newClearButton.addEventListener('click', () => {
+                Swal.fire({
+                    title: 'ยืนยันการล้างข้อมูล?',
+                    text: "ข้อมูลที่คุณกรอกจะหายไปทั้งหมด",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'ใช่, ล้างข้อมูล',
+                    cancelButtonText: 'ยกเลิก'
+                }).then((result) => {
+                    if (result.isConfirmed) clearNewForm();
+                });
+            });
+            DOMElements.fetchDataButton.addEventListener('click', () => fetchData());
+            DOMElements.sampleCountInput.addEventListener('change', () => generateNewSampleRows(DOMElements.sampleCountInput.value));
+            DOMElements.preparedMedicineHeader.addEventListener('input', (e) => { 
+                document.querySelectorAll('.sample-prepared-medicine').forEach(input => input.value = e.target.value); 
+            });
+            
+            // Set today's date for date inputs
+            const today = new Date().toLocaleDateString('en-CA'); // Gets YYYY-MM-DD in local timezone
+            document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
+            
+            generateNewSampleRows(10);
+            populateDropdowns();
+            
+            // Initial animation for login modal
+            setTimeout(() => {
+                DOMElements.loginModal.querySelector('div').classList.add('scale-100');
+            }, 50);
+        });
+
+        function populateDropdowns() {
+            const reporterSelect = document.getElementById('reporter-name-select');
+            const reviewerSelect = document.getElementById('reviewer-name-select');
+            const optionsHtml = staffNames.map(name => `<option value="${name}">${name}</option>`).join('');
+            reporterSelect.innerHTML = optionsHtml;
+            reviewerSelect.innerHTML = optionsHtml;
+        }
+
+        function handleLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = DOMElements.passwordInput.value.trim();
+            const roles = { 'doctor': '1234', 'admin': '1234' };
+            
+            const btn = DOMElements.loginButton;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> กำลังเข้าสู่ระบบ...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                if (roles[user] && roles[user] === pass) {
+                    currentUserRole = user;
+                    
+                    // Animate out
+                    DOMElements.loginModal.classList.add('opacity-0');
+                    setTimeout(() => {
+                        DOMElements.loginModal.classList.add('hidden');
+                        DOMElements.appContainer.classList.remove('hidden');
+                        
+                        const roleName = user === 'admin' ? 'ผู้ดูแลระบบ (Admin)' : 'แพทย์/พยาบาล (User)';
+                        DOMElements.userInfo.innerHTML = `
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            ${roleName}
+                        `;
+                        setupUIForRole();
+                        fetchData(true);
+                    }, 300);
+                } else { 
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    DOMElements.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'; 
+                    // Shake effect
+                    const modalBox = DOMElements.loginModal.querySelector('div');
+                    modalBox.classList.add('translate-x-2');
+                    setTimeout(() => modalBox.classList.replace('translate-x-2', '-translate-x-2'), 100);
+                    setTimeout(() => modalBox.classList.replace('-translate-x-2', 'translate-x-2'), 200);
+                    setTimeout(() => modalBox.classList.replace('translate-x-2', 'translate-x-0'), 300);
+                }
+            }, 600);
+        }
+        
+        function setupUIForRole() {
+            const tabs = `
+                <button data-tab="form" class="tab-button flex-shrink-0 text-sm sm:text-base font-semibold py-4 px-6 focus:outline-none transition-colors duration-300 whitespace-nowrap">
+                    แบบฟอร์มส่งตรวจ
+                </button>
+                <button data-tab="dashboard" class="tab-button flex-shrink-0 text-sm sm:text-base font-semibold py-4 px-6 focus:outline-none transition-colors duration-300 whitespace-nowrap">
+                    แดชบอร์ด
+                </button>
+                <button data-tab="report" class="tab-button flex-shrink-0 text-sm sm:text-base font-semibold py-4 px-6 focus:outline-none transition-colors duration-300 whitespace-nowrap">
+                    รายการรายงานผล
+                </button>
+            `;
+            DOMElements.navTabsContainer.innerHTML = tabs;
+            DOMElements.navTabsContainer.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => switchTab(button.dataset.tab));
+            });
+            switchTab(currentUserRole === 'doctor' ? 'form' : 'report');
+        }
+
+        function switchTab(targetTab) {
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.add('hidden');
+                c.classList.remove('animate-fade-in');
+            });
+            
+            const targetContent = document.getElementById(`${targetTab}-tab`);
+            targetContent.classList.remove('hidden');
+            // Small delay to trigger animation
+            setTimeout(() => targetContent.classList.add('animate-fade-in'), 10);
+            
+            DOMElements.navTabsContainer.querySelectorAll('.tab-button').forEach(b => {
+                b.classList.remove('tab-active', 'text-slate-500');
+                if (b.dataset.tab === targetTab) {
+                    b.classList.add('tab-active');
+                } else {
+                    b.classList.add('text-slate-500');
+                }
+            });
+        }
+
+        function generateNewSampleRows(count) {
+            let html = '';
+            const medDatalistId = "prepared-medicine-list";
+            const resultDatalistId = "result-list";
+            
+            const countNum = parseInt(count) || 0;
+            if(countNum <= 0) return;
+
+            for (let i = 1; i <= countNum; i++) {
+                html += `
+                <tr class="hover:bg-slate-50 transition-colors group">
+                    <td class="p-2 border-b border-slate-100 text-center font-medium text-slate-500">${i}</td>
+                    <td class="p-2 border-b border-slate-100">
+                        <input type="text" list="${medDatalistId}" class="form-input bg-transparent border-transparent group-hover:bg-white group-hover:border-slate-200 sample-prepared-medicine" value="${DOMElements.preparedMedicineHeader.value}">
+                    </td>
+                    <td class="p-2 border-b border-slate-100">
+                        <input type="text" list="${resultDatalistId}" class="form-input bg-transparent border-transparent group-hover:bg-white group-hover:border-slate-200 sample-culture-result" placeholder="กำลังส่งตรวจ">
+                    </td>
+                    <td class="p-2 border-b border-slate-100">
+                        <input type="text" class="form-input bg-transparent border-transparent group-hover:bg-white group-hover:border-slate-200 sample-remarks" placeholder="ระบุหมายเหตุ (ถ้ามี)">
+                    </td>
+                </tr>`;
+            }
+            DOMElements.newSamplesTableBody.innerHTML = `${html}<datalist id="${resultDatalistId}"><option value="กำลังส่งตรวจ"></option><option value="No Growth"></option><option value="Growth"></option></datalist>`;
+        }
+
+        function clearNewForm() {
+            document.getElementById('form-tab').querySelectorAll('input').forEach(input => { 
+                if(input.type !== 'date' && input.id !== 'sample-count') input.value = ''; 
+            });
+            generateNewSampleRows(DOMElements.sampleCountInput.value);
+            
+            // Reset dates to today
+            const today = new Date().toLocaleDateString('en-CA');
+            document.querySelectorAll('input[type="date"]').forEach(input => input.value = today);
+            
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: 'ล้างข้อมูลเรียบร้อย',
+                showConfirmButton: false,
+                timer: 1500
+            });
+        }
+
+        // Universal POST request handler
+        async function postRequest(action, payload) {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, payload })
+            });
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Server error: ${response.status} - ${errorText}`);
+            }
+            const res = await response.json();
+            if (res.result !== 'success') {
+                throw new Error(res.message);
+            }
+            return res;
+        }
+        
+        async function handleSendEmail() {
+            const { value: email } = await Swal.fire({
+                title: 'ส่งรายงานทางอีเมล',
+                input: 'email',
+                inputLabel: 'ที่อยู่อีเมลผู้รับ',
+                inputPlaceholder: 'ตัวอย่าง: doctor@hospital.com',
+                showCancelButton: true,
+                confirmButtonText: 'ส่งอีเมล',
+                cancelButtonText: 'ยกเลิก'
+            });
+
+            if (email) {
+                Swal.fire({ title: 'กำลังส่งอีเมล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const reportHtml = document.getElementById('pdf-export-area').innerHTML;
+                const medName = document.getElementById('modal-prepared-medicine-header').textContent;
+                const subject = `รายงานผลการตรวจวิเคราะห์: ${medName}`;
+                
+                const payload = { recipient: email, subject, body: reportHtml };
+                try {
+                     const res = await postRequest('sendEmail', payload);
+                     Swal.fire('สำเร็จ!', res.message || 'ส่งอีเมลเรียบร้อยแล้ว', 'success');
+                } catch(e) {
+                    console.error('Email send error:', e);
+                    Swal.fire('ผิดพลาด!', `ไม่สามารถส่งอีเมลได้: ${e.message}`, 'error');
+                }
+            }
+        }
+
+        async function saveNewData() {
+            const dataToSave = {
+                receiptDate: document.getElementById('receipt-date').value, 
+                analysisDate: document.getElementById('analysis-date').value,
+                preparedMedicine: DOMElements.preparedMedicineHeader.value, 
+                lotNo: document.getElementById('lot-no').value,
+                productionDate: document.getElementById('production-date').value, 
+                volume: document.getElementById('volume').value,
+                sampleCount: DOMElements.sampleCountInput.value, 
+                submissionDate: document.getElementById('submission-date').value,
+                submittedBy: document.getElementById('submitted-by').value, 
+                department: document.getElementById('department').value,
+                specimenType: document.getElementById('specimen-type').value,
+                samples: Array.from(DOMElements.newSamplesTableBody.querySelectorAll('tr'))
+                    .map((row, i) => ({ 
+                        no: i + 1, 
+                        preparedMedicine: row.querySelector('.sample-prepared-medicine').value, 
+                        cultureResult72h: row.querySelector('.sample-culture-result').value, 
+                        remarks: row.querySelector('.sample-remarks').value, 
+                        status: 'กำลังส่งตรวจ' 
+                    }))
+                    .filter(s => s.preparedMedicine)
+            };
+            
+            if (dataToSave.samples.length === 0) {
+                return Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกข้อมูลยาเตรียมในตารางอย่างน้อย 1 รายการ', 'warning');
+            }
+            if (!dataToSave.preparedMedicine && !dataToSave.specimenType) {
+                return Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณาระบุชื่อยาเตรียม หรือ ประเภทสิ่งส่งตรวจ', 'warning');
+            }
+
+            Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            
+            try {
+                await postRequest('save', dataToSave);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'บันทึกสำเร็จ!',
+                    text: 'ข้อมูลถูกส่งเข้าสู่ระบบเรียบร้อยแล้ว',
+                    timer: 2000,
+                    showConfirmButton: false
+                }); 
+                clearNewForm(); 
+                fetchData(true);
+            } catch (e) { 
+                Swal.fire('ผิดพลาด!', `เกิดข้อผิดพลาด: ${e.message}`, 'error'); 
+            }
+        }
+        
+        async function fetchData(isSilent = false) {
+             if (!isSilent) {
+                 Swal.fire({ title: 'กำลังดึงข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+             }
+             try {
+                const res = await postRequest('fetch', {}); 
+                if (!isSilent) Swal.close();
+
+                if (res.result === 'success' && res.data) {
+                    allJobs = groupSamplesIntoJobs(res.data);
+                    updateDashboard();
+                    filterAndRenderReports();
+                } else {
+                    throw new Error(res.message || 'ไม่พบข้อมูลที่ส่งกลับมา');
+                }
+             } catch(e) { 
+                 console.error("Fetch data error:", e);
+                 if (!isSilent) {
+                     Swal.fire({
+                         icon: 'error',
+                         title: 'ไม่สามารถดึงข้อมูลได้',
+                         html: `รายละเอียด: ${e.message}<br><br><span class="text-sm text-slate-500">กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต หรือตั้งค่า SCRIPT_URL ให้ถูกต้อง</span>`
+                     });
+                 }
+             }
+        }
+        
+        async function updateReportInSheet() {
+            const updatePayload = {
+                submissionId: DOMElements.reportModal.dataset.submissionId,
+                reporterName: document.getElementById('reporter-name-select').value,
+                reviewerName: document.getElementById('reviewer-name-select').value,
+                samples: Array.from(document.getElementById('modal-report-table-body').querySelectorAll('tr')).map(r => ({ 
+                    sampleId: r.dataset.sampleId, 
+                    cultureResult72h: r.querySelector('.modal-culture-result').value, 
+                    remarks: r.querySelector('.modal-remarks').value, 
+                    status: r.querySelector('.modal-status').value 
+                }))
+            };
+            
+            Swal.fire({ title: 'กำลังอัปเดตผล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await postRequest('update', updatePayload);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'อัปเดตสำเร็จ',
+                    showConfirmButton: false,
+                    timer: 1500
+                }); 
+                closeReportModal();
+                fetchData(true);
+            } catch (e) { 
+                Swal.fire('ผิดพลาด!', `เกิดข้อผิดพลาดในการอัปเดต: ${e.message}`, 'error'); 
+            }
+        }
+
+        function groupSamplesIntoJobs(flatSamples) {
+            if (!Array.isArray(flatSamples)) return [];
+            const jobsMap = new Map();
+            flatSamples.forEach(s => {
+                if (!s || !s.SubmissionID) return;
+                if (!jobsMap.has(s.SubmissionID)) {
+                    jobsMap.set(s.SubmissionID, { 
+                        submissionId: s.SubmissionID, receiptDate: s.ReceiptDate, analysisDate: s.AnalysisDate, 
+                        preparedMedicine: s.PreparedMedicineHeader, lotNo: s.LotNo, productionDate: s.ProductionDate, 
+                        volume: s.Volume, sampleCount: s.SampleCount, submissionDate: s.SubmissionDate, 
+                        submittedBy: s.SubmittedBy, department: s.Department, specimenType: s.SpecimenType, 
+                        reporterName: s.ReporterName, reviewerName: s.ReviewerName,
+                        TimestampSubmitting: s.TimestampSubmitting, TimestampReceived: s.TimestampReceived,
+                        TimestampPending: s.TimestampPending, TimestampCompleted: s.TimestampCompleted,
+                        samples: [] 
+                    });
+                }
+                jobsMap.get(s.SubmissionID).samples.push({ 
+                    sampleId: s.SampleID, no: s.SampleNo, 
+                    preparedMedicine: s.PreparedMedicineSample, 
+                    cultureResult72h: s.CultureResult72h, 
+                    remarks: s.Remarks, status: s.Status 
+                });
+            });
+            // Sort by latest submission
+            return Array.from(jobsMap.values()).sort((a,b) => b.submissionId.localeCompare(a.submissionId));
+        }
+        
+        function updateDashboard() {
+            const statusCounts = { 'กำลังส่งตรวจ': 0, 'รับสิ่งส่งตรวจแล้ว': 0, 'รอตรวจ': 0, 'ตรวจแล้ว': 0 };
+            let totalSamples = 0;
+            
+            allJobs.forEach(job => {
+                job.samples.forEach(sample => {
+                    totalSamples++;
+                    statusCounts[sample.status] = (statusCounts[sample.status] || 0) + 1;
+                });
+            });
+            
+            // Animate counters
+            animateValue('total-samples', 0, totalSamples, 500);
+            animateValue('pending-samples', 0, (statusCounts['กำลังส่งตรวจ'] || 0) + (statusCounts['รับสิ่งส่งตรวจแล้ว'] || 0) + (statusCounts['รอตรวจ'] || 0), 500);
+            animateValue('completed-samples', 0, (statusCounts['ตรวจแล้ว'] || 0), 500);
+            
+            const latestBody = document.getElementById('latest-submissions-body');
+            latestBody.innerHTML = '';
+            
+            if (allJobs.length === 0) {
+                latestBody.innerHTML = '<tr><td colspan="4" class="text-center py-10 text-slate-400">ยังไม่มีข้อมูลการส่งตรวจ</td></tr>';
+                renderMonthlyChart([]); 
+                return;
+            }
+            
+            const recentJobs = allJobs.slice(0, 5);
+            recentJobs.forEach(job => {
+                const overallStatus = getOverallStatus(job.samples);
+                const row = latestBody.insertRow();
+                row.className = 'hover:bg-slate-50 transition-colors';
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-slate-600">${formatDate(job.submissionDate)}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${job.department || '-'} <br><span class="text-xs text-slate-500 font-normal">${job.preparedMedicine || job.specimenType || '-'}</span></td>
+                    <td class="py-3 px-4 text-center text-slate-600">${job.samples.length}</td>
+                    <td class="py-3 px-4">${getStatusBadge(overallStatus)}</td>
+                `;
+            });
+            
+            renderMonthlyChart(allJobs);
+        }
+
+        function animateValue(id, start, end, duration) {
+            if (start === end) {
+                document.getElementById(id).textContent = end;
+                return;
+            }
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                document.getElementById(id).textContent = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        function renderMonthlyChart(jobs) {
+            const ctx = document.getElementById('monthly-chart').getContext('2d');
+            const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const labels = [];
+            const monthlyData = {};
+            const today = new Date();
+            
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+                labels.push(`${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`);
+                monthlyData[key] = 0;
+            }
+            
+            jobs.forEach(job => {
+                 if(!job.submissionDate) return;
+                 const d = new Date(job.submissionDate);
+                 const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+                 if(monthlyData.hasOwnProperty(key)) monthlyData[key] += job.samples.length;
+            });
+            
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+            
+            monthlyChartInstance = new Chart(ctx, { 
+                type: 'bar', 
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        label: 'จำนวนตัวอย่าง', 
+                        data: Object.values(monthlyData), 
+                        backgroundColor: 'rgba(108, 80, 112, 0.7)', 
+                        hoverBackgroundColor: 'rgba(108, 80, 112, 0.9)',
+                        borderColor: 'rgba(108, 80, 112, 1)', 
+                        borderWidth: 0, 
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }] 
+                }, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { stepSize: 1, color: '#64748b' },
+                            grid: { color: '#f1f5f9', drawBorder: false }
+                        },
+                        x: {
+                            ticks: { color: '#64748b' },
+                            grid: { display: false, drawBorder: false }
+                        }
+                    }, 
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                            padding: 10,
+                            titleFont: { family: 'Noto Sans Thai', size: 13 },
+                            bodyFont: { family: 'Noto Sans Thai', size: 14, weight: 'bold' },
+                            displayColors: false
+                        }
+                    } 
+                } 
+            });
+        }
+        
+        function filterAndRenderReports() {
+            const reportBody = DOMElements.reportListBody;
+            reportBody.innerHTML = '';
+            
+            if (!allJobs || allJobs.length === 0) {
+                reportBody.innerHTML = `<tr><td colspan="5" class="text-center py-12 text-slate-400">ไม่พบข้อมูล หรือยังไม่มีข้อมูลในระบบ</td></tr>`;
+                return;
+            }
+            
+            allJobs.forEach(job => {
+                const row = reportBody.insertRow();
+                row.className = 'hover:bg-slate-50 transition-colors border-b border-slate-100';
+                
+                const medName = job.preparedMedicine || job.specimenType || '-';
+                
+                row.innerHTML = `
+                    <td class="py-3 px-4 text-slate-600">${formatDate(job.submissionDate)}</td>
+                    <td class="py-3 px-4 font-medium text-slate-800">${job.department || '-'}</td>
+                    <td class="py-3 px-4 text-slate-700">${medName}</td>
+                    <td class="py-3 px-4 text-center">${getStatusBadge(getOverallStatus(job.samples))}</td>
+                    <td class="py-3 px-4 text-center">
+                        <button class="view-report-btn inline-flex items-center justify-center bg-white border border-slate-300 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:text-[#6c5070] hover:border-[#6c5070] transition-colors shadow-sm text-sm font-medium" data-job-id="${job.submissionId}">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            ดูผล
+                        </button>
+                    </td>`;
+            });
+            
+            document.querySelectorAll('.view-report-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                const jobData = allJobs.find(j => j.submissionId === e.currentTarget.dataset.jobId);
+                if (jobData) showReportModal(jobData);
+            }));
+        }
+        
+        function showReportModal(job) {
+            const reportDate = formatDate(new Date().toISOString());
+            DOMElements.reportModal.dataset.submissionId = job.submissionId;
+
+            const fields = { 
+                '#modal-receipt-date': formatDate(job.receiptDate), 
+                '#modal-analysis-date': formatDate(job.analysisDate), 
+                '#modal-prepared-medicine-header': job.preparedMedicine || job.specimenType, 
+                '#modal-lot-no': job.lotNo, 
+                '#modal-production-date': formatDate(job.productionDate), 
+                '#modal-volume': job.volume, 
+                '#modal-sample-count': job.sampleCount, 
+                '#modal-submission-date': formatDate(job.submissionDate), 
+                '#modal-submitted-by': job.submittedBy, 
+                '#modal-department': job.department, 
+                '#modal-reported-date': reportDate, 
+                '#modal-reviewed-date': reportDate 
+            };
+            
+            Object.entries(fields).forEach(([sel, val]) => {
+                const el = document.querySelector(sel);
+                if(el) el.textContent = val || '-';
+            });
+
+            const body = document.getElementById('modal-report-table-body');
+            body.innerHTML = '';
+            const isAdmin = currentUserRole === 'admin';
+            const statuses = ['กำลังส่งตรวจ', 'รับสิ่งส่งตรวจแล้ว', 'รอตรวจ', 'ตรวจแล้ว'];
+            
+            job.samples.forEach(s => {
+                const row = body.insertRow();
+                row.dataset.sampleId = s.sampleId;
+                
+                const statusHtml = isAdmin ? 
+                    `<select class="form-input py-1 px-2 text-xs modal-status border-slate-300 w-full">${statuses.map(st => `<option value="${st}" ${s.status === st ? 'selected' : ''}>${st}</option>`).join('')}</select>` :
+                    getStatusBadge(s.status);
+                
+                row.innerHTML = `
+                    <td class="p-2 border-b border-r border-slate-200 text-center text-slate-500 font-medium">${s.no}</td>
+                    <td class="p-2 border-b border-r border-slate-200 text-slate-700">${s.preparedMedicine || '-'}</td>
+                    <td class="p-2 border-b border-r border-slate-200"><input type="text" class="form-input py-1 px-2 text-sm modal-culture-result border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent focus:bg-white transition-colors w-full" value="${s.cultureResult72h || ''}" ${!isAdmin ? 'disabled' : ''} placeholder="${isAdmin ? 'กรอกผล...' : '-'}"></td>
+                    <td class="p-2 border-b border-r border-slate-200"><input type="text" class="form-input py-1 px-2 text-sm modal-remarks border-transparent hover:border-slate-300 focus:border-blue-400 bg-transparent focus:bg-white transition-colors w-full" value="${s.remarks || ''}" ${!isAdmin ? 'disabled' : ''} placeholder="${isAdmin ? 'หมายเหตุ...' : '-'}"></td>
+                    <td class="p-2 border-b border-slate-200 text-center">${statusHtml}</td>`;
+            });
+            
+            const reporterSelect = document.getElementById('reporter-name-select');
+            const reviewerSelect = document.getElementById('reviewer-name-select');
+            
+            reporterSelect.value = job.reporterName || '--- กรุณาเลือก ---';
+            reviewerSelect.value = job.reviewerName || '--- กรุณาเลือก ---';
+
+            let buttonsHTML = '';
+            if (isAdmin) {
+                reporterSelect.disabled = false;
+                reviewerSelect.disabled = false;
+                buttonsHTML += `
+                    <button id="update-report-button" class="bg-blue-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-blue-700 transition-colors shadow-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                        บันทึกผล
+                    </button>
+                    <button id="send-email-button" class="bg-teal-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-teal-700 transition-colors shadow-sm flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                        ส่ง Email
+                    </button>`;
+            } else {
+                reporterSelect.disabled = true;
+                reviewerSelect.disabled = true;
+                // Add simple text display for disabled selects in view mode to make it look cleaner
+                reporterSelect.classList.add('bg-transparent', 'border-transparent', 'appearance-none');
+                reviewerSelect.classList.add('bg-transparent', 'border-transparent', 'appearance-none');
+            }
+            
+            buttonsHTML += `
+                <button id="export-pdf-button" class="bg-rose-600 text-white font-semibold py-2 px-5 rounded-lg hover:bg-rose-700 transition-colors shadow-sm flex items-center">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    พิมพ์ PDF
+                </button>
+                <button id="close-modal-button" class="bg-slate-200 text-slate-700 font-semibold py-2 px-6 rounded-lg hover:bg-slate-300 transition-colors">
+                    ปิดหน้าต่าง
+                </button>`;
+                
+            DOMElements.modalActions.innerHTML = buttonsHTML;
+
+            document.getElementById('close-modal-button').addEventListener('click', closeReportModal);
+            document.getElementById('export-pdf-button').addEventListener('click', exportPDF);
+            if(isAdmin) {
+                document.getElementById('update-report-button').addEventListener('click', updateReportInSheet);
+                document.getElementById('send-email-button').addEventListener('click', handleSendEmail);
+            } 
+            
+            displayTatSummary(job);
+            
+            // Show modal with animation
+            DOMElements.reportModal.classList.remove('hidden');
+            // Reset scroll
+            document.getElementById('modal-scroll-area').scrollTop = 0;
+            
+            setTimeout(() => {
+                DOMElements.reportModal.classList.remove('opacity-0');
+                DOMElements.reportModalContent.classList.remove('scale-95');
+            }, 10);
+        }
+        
+        function closeReportModal() {
+            DOMElements.reportModal.classList.add('opacity-0');
+            DOMElements.reportModalContent.classList.add('scale-95');
+            setTimeout(() => {
+                DOMElements.reportModal.classList.add('hidden');
+            }, 300);
+        }
+
+        function displayTatSummary(job) {
+            const container = document.getElementById('tat-summary-container');
+            container.innerHTML = '';
+
+            const formatMilliseconds = (ms) => {
+                if (ms === null || isNaN(ms) || ms < 0) return 'N/A';
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                return `${hours} ชม. ${minutes} นาที`;
+            };
+
+            const tsSubmitting = job.TimestampSubmitting ? new Date(job.TimestampSubmitting) : null;
+            const tsReceived = job.TimestampReceived ? new Date(job.TimestampReceived) : null;
+            const tsPending = job.TimestampPending ? new Date(job.TimestampPending) : null;
+            const tsCompleted = job.TimestampCompleted ? new Date(job.TimestampCompleted) : null;
+
+            let summaryHTML = `<h4 class="text-base font-bold text-slate-700 mb-3 flex items-center"><svg class="w-4 h-4 mr-1 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>สรุประยะเวลาดำเนินการ (TAT)</h4>`;
+            summaryHTML += `<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">`;
+            
+            const tatPairs = [
+                { label: 'รับสิ่งส่งตรวจ', time: tsSubmitting && tsReceived ? tsReceived - tsSubmitting : null, icon: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4' },
+                { label: 'เตรียมการตรวจ', time: tsReceived && tsPending ? tsPending - tsReceived : null, icon: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z' },
+                { label: 'ระยะเวลาตรวจ', time: tsPending && tsCompleted ? tsCompleted - tsPending : null, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' }
+            ];
+
+            tatPairs.forEach(pair => {
+                const val = formatMilliseconds(pair.time);
+                summaryHTML += `
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-100 flex items-center">
+                        <div class="p-2 bg-white rounded-full shadow-sm mr-3 text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${pair.icon}"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-slate-500">${pair.label}</p>
+                            <p class="font-semibold text-slate-700 text-sm">${val}</p>
+                        </div>
+                    </div>`;
+            });
+            summaryHTML += `</div>`;
+
+            if (tsSubmitting && tsCompleted) {
+                const totalTAT = tsCompleted - tsSubmitting;
+                const benchmarkMs = 72 * 60 * 60 * 1000;
+                const isOverdue = totalTAT > benchmarkMs;
+                
+                summaryHTML += `<div class="bg-${isOverdue ? 'rose' : 'emerald'}-50 p-4 rounded-xl border border-${isOverdue ? 'rose' : 'emerald'}-100 flex justify-between items-center mt-2">`;
+                summaryHTML += `
+                    <div>
+                        <p class="text-xs font-semibold text-${isOverdue ? 'rose' : 'emerald'}-600 uppercase tracking-wider mb-1">เวลารวมทั้งหมด (Total TAT)</p>
+                        <p class="text-xl font-bold text-${isOverdue ? 'rose' : 'emerald'}-700">${formatMilliseconds(totalTAT)}</p>
+                    </div>`;
+                
+                if (isOverdue) {
+                    const overageMs = totalTAT - benchmarkMs;
+                    summaryHTML += `<div class="text-right"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">เกินกำหนด 72 ชม.</span><p class="text-xs text-rose-600 mt-1">เลยกำหนด ${formatMilliseconds(overageMs)}</p></div>`;
+                } else {
+                    summaryHTML += `<div class="text-right"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">ตามเป้าหมาย</span><p class="text-xs text-emerald-600 mt-1">อยู่ในเกณฑ์ 72 ชม.</p></div>`;
+                }
+                summaryHTML += `</div>`;
+            } else if (!tsCompleted && tsSubmitting) {
+                summaryHTML += `<p class="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">... ตัวอย่างกำลังอยู่ในกระบวนการ ...</p>`;
+            }
+            
+            container.innerHTML = summaryHTML;
+        }
+
+        function exportPDF() {
+            const exportArea = document.getElementById('pdf-export-area');
+            
+            Swal.fire({ 
+                title: 'กำลังสร้างไฟล์ PDF...', 
+                html: 'กรุณารอสักครู่ อาจใช้เวลาครู่หนึ่งขึ้นอยู่กับจำนวนข้อมูล',
+                allowOutsideClick: false, 
+                didOpen: () => Swal.showLoading() 
+            });
+
+            // Prepare elements for print (replace inputs with text temporarily)
+            const interactiveElements = exportArea.querySelectorAll('input, select');
+            interactiveElements.forEach(el => {
+                const textSpan = document.createElement('span');
+                textSpan.className = 'pdf-temp-text';
+                let value = el.value;
+                
+                if (el.tagName === 'SELECT') {
+                    value = el.options[el.selectedIndex].text;
+                    if(value.includes('---')) value = ''; 
+                }
+                
+                if (el.classList.contains('modal-status')) {
+                    // Make status look better in PDF
+                    textSpan.textContent = value;
+                    textSpan.style.fontWeight = 'bold';
+                    textSpan.style.color = '#475569';
+                } else {
+                    textSpan.textContent = value || '-';
+                    if(el.classList.contains('modal-culture-result') && value) {
+                        textSpan.style.fontWeight = 'bold';
+                    }
+                }
+                
+                textSpan.style.textAlign = window.getComputedStyle(el).textAlign || 'center';
+                textSpan.style.fontSize = window.getComputedStyle(el).fontSize;
+                
+                el.style.display = 'none';
+                el.parentNode.insertBefore(textSpan, el);
+            });
+
+            // Adjust styles specifically for PDF render
+            exportArea.style.width = '210mm'; // A4 width approx
+            exportArea.classList.add('bg-white');
+
+            html2canvas(exportArea, { 
+                scale: 2, 
+                useCORS: true,
+                logging: false,
+                windowWidth: exportArea.scrollWidth,
+                onclone: (clonedDoc) => {
+                    const clonedArea = clonedDoc.getElementById('pdf-export-area');
+                    clonedArea.style.padding = '40px'; // Add safe margin for PDF
+                }
+            }) 
+            .then(canvas => {
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = pdf.internal.pageSize.getHeight();
+                
+                const imgProps = pdf.getImageProperties(imgData);
+                const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                // Handle multiple pages if content is too long
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                heightLeft -= pdfHeight;
+
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                const filename = `Microbial_Report_${document.getElementById('modal-prepared-medicine-header').textContent.substring(0,15)}_${formatDate(new Date().toISOString()).replace(/\//g,'-')}.pdf`;
+                pdf.save(filename);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'ดาวน์โหลด PDF สำเร็จ',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            })
+            .catch((err) => {
+                console.error("PDF generation error:", err);
+                Swal.fire('ผิดพลาด!', 'ไม่สามารถสร้าง PDF ได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            })
+            .finally(() => {
+                // Restore original elements
+                exportArea.style.width = '';
+                exportArea.querySelectorAll('.pdf-temp-text').forEach(span => span.remove());
+                interactiveElements.forEach(el => {
+                    el.style.display = '';
+                });
+            });
+        }
+
+        function getOverallStatus(samples) {
+            if (!samples || samples.length === 0) return 'N/A';
+            if (samples.some(s => s.status === 'กำลังส่งตรวจ')) return 'กำลังส่งตรวจ';
+            if (samples.some(s => s.status === 'รับสิ่งส่งตรวจแล้ว')) return 'รับสิ่งส่งตรวจแล้ว';
+            if (samples.some(s => s.status === 'รอตรวจ')) return 'รอตรวจ';
+            return 'ตรวจแล้ว';
+        }
+
+        function formatDate(d) {
+            if (!d) return '-';
+            try {
+                const date = new Date(d);
+                if (isNaN(date.getTime())) return '-';
+                const day = String(date.getDate()).padStart(2, '0');
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                return `${day}/${month}/${date.getFullYear() + 543}`;
+            } catch(e) {
+                return '-';
+            }
+        }
+        
+        function getStatusBadge(status) {
+            let colors = '';
+            let icon = '';
+            
+            switch(status) {
+                case 'กำลังส่งตรวจ':
+                    colors = 'bg-orange-100 text-orange-800 border-orange-200';
+                    icon = '<circle cx="12" cy="12" r="4" class="fill-current animate-pulse mr-1.5"/>';
+                    break;
+                case 'รับสิ่งส่งตรวจแล้ว':
+                    colors = 'bg-blue-100 text-blue-800 border-blue-200';
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" class="mr-1.5 w-3 h-3"/>';
+                    break;
+                case 'รอตรวจ':
+                    colors = 'bg-amber-100 text-amber-800 border-amber-200';
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" class="mr-1.5 w-3 h-3"/>';
+                    break;
+                case 'ตรวจแล้ว':
+                    colors = 'bg-emerald-100 text-emerald-800 border-emerald-200';
+                    icon = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" class="mr-1.5 w-3 h-3"/>';
+                    break;
+                default:
+                    colors = 'bg-slate-100 text-slate-800 border-slate-200';
+            }
+            
+            return `<span class="inline-flex items-center px-2.5 py-1 text-xs font-semibold rounded-full border shadow-sm ${colors}">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor">${icon}</svg>
+                ${status}
+            </span>`;
+        }
+    </script>
+</body>
+</html>

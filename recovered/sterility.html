@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบส่งตรวจ Sterility test (Blood bank) - รพ.ธรรมศาสตร์</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Font: Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@100..900&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 for notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- jsPDF and html2canvas for PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        /* Apply Noto Sans Thai as the default font */
+        body, html {
+            font-family: 'Noto Sans Thai', sans-serif;
+            scroll-behavior: smooth;
+        }
+        /* Custom gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #6c5070, #c2dbc1, #df6a6a);
+        }
+        /* Styling for active tab */
+        .tab-active {
+            border-color: #6c5070;
+            background-color: #6c5070;
+            color: white;
+            font-weight: 600;
+        }
+        /* Modal styles */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 50; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.5); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 800px;
+            border-radius: 1rem;
+            position: relative;
+        }
+        .close-button {
+            color: #aaa;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        /* Class to hide elements during PDF export */
+        .no-print {
+             /* This class will be used to hide the button during PDF generation */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center gradient-bg p-4">
+        <div class="bg-white/80 backdrop-blur-sm p-8 md:p-12 rounded-3xl shadow-2xl w-full max-w-md text-center">
+            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Logo" class="mx-auto mb-4 w-32 h-32 object-contain">
+            <h1 class="text-xl md:text-2xl font-bold text-[#6c5070] mb-2">ระบบส่งตรวจ Sterility test</h1>
+            <p class="text-gray-600 mb-8">สำหรับงานธนาคารเลือด</p>
+            <div class="space-y-6">
+                <input type="text" id="username" placeholder="ชื่อผู้ใช้ (Username)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#6c5070] transition">
+                <input type="password" id="password" placeholder="รหัสผ่าน (Password)" class="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#6c5070] transition">
+                <button id="login-button" class="w-full bg-[#6c5070] text-white py-3 rounded-xl font-semibold hover:bg-[#563f5a] transition-transform transform hover:scale-105 shadow-lg">
+                    เข้าสู่ระบบ
+                </button>
+            </div>
+             <p id="login-error" class="text-red-500 mt-4 text-sm hidden">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden">
+        <!-- Header -->
+        <header class="bg-white/80 backdrop-blur-sm sticky top-0 z-40 py-4 px-4 md:px-8">
+            <div class="flex items-center justify-center">
+                <div class="text-center">
+                     <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="h-20 w-20 md:h-24 md:w-24 object-contain mx-auto">
+                     <h1 class="text-lg md:text-2xl font-bold text-[#6c5070] mt-2">ระบบส่งตรวจ Sterility test</h1>
+                     <p class="text-sm text-gray-500">สำหรับงานธนาคารเลือด</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="p-4 md:p-8">
+            <!-- Tab Navigation -->
+            <div class="mb-8 max-w-4xl mx-auto">
+                <div class="flex justify-center border-b border-gray-200">
+                     <button data-tab="dashboard" class="tab-btn tab-active px-4 md:px-6 py-3 text-sm md:text-base text-gray-500 border-b-2 border-transparent hover:text-[#6c5070] hover:border-[#6c5070] transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" /></svg>
+                        แดชบอร์ด
+                    </button>
+                     <button data-tab="form" class="tab-btn px-4 md:px-6 py-3 text-sm md:text-base text-gray-500 border-b-2 border-transparent hover:text-[#6c5070] hover:border-[#6c5070] transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>
+                        แบบฟอร์มส่งตรวจ
+                    </button>
+                     <button data-tab="report" class="tab-btn px-4 md:px-6 py-3 text-sm md:text-base text-gray-500 border-b-2 border-transparent hover:text-[#6c5070] hover:border-[#6c5070] transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" /><path fill-rule="evenodd" d="M4 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm6 4a1 1 0 100 2h2a1 1 0 100-2h-2z" clip-rule="evenodd" /></svg>
+                        รายงานผลตรวจ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="tab-content" class="max-w-7xl mx-auto">
+                <!-- Dashboard -->
+                <div id="dashboard" class="tab-pane">
+                    <div id="summary-cards" class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 text-center">
+                        <!-- Summary cards will be injected here by JavaScript -->
+                    </div>
+                     <div class="mt-8 bg-white p-6 rounded-2xl shadow-md">
+                        <h2 class="text-xl font-bold text-[#6c5070] mb-4">สถิติจำนวนตัวอย่างทั้งหมดรายเดือน</h2>
+                        <canvas id="monthly-chart"></canvas>
+                     </div>
+                     <div class="mt-8 bg-white p-6 rounded-2xl shadow-md">
+                        <h2 class="text-xl font-bold text-[#6c5070] mb-4">งานที่ส่งล่าสุด</h2>
+                        <div class="overflow-x-auto">
+                            <table id="latest-submissions-table" class="w-full text-sm text-left text-gray-600">
+                                <thead class="text-xs text-white uppercase bg-[#6c5070] rounded-lg">
+                                    <tr>
+                                        <th class="px-4 py-3">วันที่ส่ง</th>
+                                        <th class="px-4 py-3">แผนก</th>
+                                        <th class="px-4 py-3">หมายเลขถุงเลือด</th>
+                                        <th class="px-4 py-3">สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Latest submissions will be injected here -->
+                                     <tr class="bg-white border-b"><td colspan="4" class="p-4 text-center">กำลังโหลดข้อมูล...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submission Form -->
+                <div id="form" class="tab-pane hidden">
+                    <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                        <h2 class="text-xl font-bold text-[#6c5070] mb-6">แบบฟอร์มส่งตรวจ Sterility test (Blood)</h2>
+                        <!-- Form Header -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                            <div>
+                                <label class="font-semibold text-gray-600 block mb-2">วันที่ส่งตรวจ</label>
+                                <input type="date" id="submission-date" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#df6a6a]">
+                            </div>
+                            <div>
+                                <label class="font-semibold text-gray-600 block mb-2">แผนก/หน่วยงาน</label>
+                                <select id="department" class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#df6a6a]">
+                                    <option>--กรุณาเลือกหน่วยงาน--</option>
+                                    <option>งานควบคุมโรคติดเชื้อ</option>
+                                    <option>ห้องผ่าตัด</option>
+                                    <option>ไตเทียม</option>
+                                    <option>งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร</option>
+                                    <option>งานธนาคารเลือด</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="font-semibold text-gray-600 block mb-2">ประเภทสิ่งส่งตรวจ</label>
+                                <select id="sample-type" class="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#df6a6a]">
+                                    <option>--กรุณาเลือก--</option>
+                                    <option>น้ำ</option>
+                                    <option>อาหาร</option>
+                                    <option>อากาศ</option>
+                                    <option>เลือด</option>
+                                    <option>ยา</option>
+                                    <option>อื่นๆโปรดระบุ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Sample Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[1200px] text-sm text-left">
+                                <thead class="text-xs text-white uppercase bg-[#6c5070]">
+                                    <tr>
+                                        <th class="p-3 w-12 text-center">ลำดับ</th>
+                                        <th class="p-3 w-40">หมายเลขถุงเลือด</th>
+                                        <th class="p-3 w-96">ชนิดผลิตภัณฑ์เลือด</th>
+                                        <th class="p-3 w-24">ปลอดเชื้อ</th>
+                                        <th class="p-3 w-24">ไม่ปลอดเชื้อ</th>
+                                        <th class="p-3">หมายเหตุ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sample-table-body">
+                                    <!-- 10 rows will be generated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Form Footer -->
+                        <div class="flex justify-end items-center gap-4 mt-8">
+                            <button id="clear-form-btn" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition">ล้างข้อมูล</button>
+                            <button id="save-form-btn" class="bg-[#df6a6a] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c95a5a] transition-transform transform hover:scale-105 shadow-lg">บันทึกข้อมูล</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report -->
+                <div id="report" class="tab-pane hidden">
+                     <div class="bg-white p-6 md:p-8 rounded-2xl shadow-md">
+                        <h2 class="text-xl font-bold text-[#6c5070] mb-6">ค้นหาและกรองรายงานผลตรวจ</h2>
+                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 p-4 border border-gray-200 rounded-lg">
+                             <div>
+                                <label for="search-input" class="text-sm font-medium text-gray-700">ค้นหา (แผนก, No.ถุงเลือด)</label>
+                                <input type="text" id="search-input" placeholder="พิมพ์เพื่อค้นหา..." class="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6c5070]">
+                             </div>
+                             <div>
+                                <label for="status-filter" class="text-sm font-medium text-gray-700">สถานะ</label>
+                                <select id="status-filter" class="mt-1 w-full p-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#6c5070]">
+                                    <option value="">ทั้งหมด</option>
+                                    <option>รอตรวจ</option>
+                                    <option>ตรวจแล้ว</option>
+                                </select>
+                             </div>
+                             <div>
+                                <label for="start-date-filter" class="text-sm font-medium text-gray-700">วันที่ส่ง (เริ่มต้น)</label>
+                                <input type="date" id="start-date-filter" class="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6c5070]">
+                             </div>
+                              <div>
+                                <label for="end-date-filter" class="text-sm font-medium text-gray-700">วันที่ส่ง (สิ้นสุด)</label>
+                                <input type="date" id="end-date-filter" class="mt-1 w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#6c5070]">
+                             </div>
+                         </div>
+                         <div class="flex flex-col md:flex-row gap-4 mb-6">
+                            <button id="apply-filter-btn" class="w-full md:w-auto flex-grow bg-[#df6a6a] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c95a5a] transition shadow-md flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L16 11.414V16a1 1 0 01-.293.707l-2 2A1 1 0 0113 18v-1.586l-3.293-3.293A1 1 0 016 12.414V6.707A1 1 0 015.707 6H4a1 1 0 01-1-1V4z" /></svg>
+                                กรองข้อมูล
+                            </button>
+                            <button id="reset-filter-btn" class="w-full md:w-auto flex-grow bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition shadow-md flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M20 20v-5h-5M4 4l16 16" /></svg>
+                                ล้างการกรอง
+                            </button>
+                            <button id="fetch-data-btn" class="w-full md:w-auto flex-grow bg-[#6c5070] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#563f5a] transition shadow-md flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.51A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v4a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.51-1.276z" clip-rule="evenodd" /></svg>
+                                โหลดข้อมูลใหม่
+                            </button>
+                         </div>
+                         <div id="report-content" class="hidden">
+                             <div class="overflow-x-auto">
+                                 <table id="report-table" class="w-full text-sm text-left text-gray-600">
+                                     <thead class="text-xs text-white uppercase bg-[#6c5070]">
+                                         <tr>
+                                             <th class="px-4 py-3">วันที่ส่ง</th>
+                                             <th class="px-4 py-3">แผนก</th>
+                                             <th class="px-4 py-3">หมายเลขถุงเลือด</th>
+                                             <th class="px-4 py-3">สถานะ</th>
+                                             <th class="px-4 py-3 text-center">ดูรายงาน</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="report-table-body">
+                                         <!-- Report data will be injected here -->
+                                     </tbody>
+                                 </table>
+                             </div>
+                             <div id="report-pagination" class="flex justify-center mt-4"></div>
+                         </div>
+                         <div id="report-placeholder" class="text-center py-10">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <p class="mt-2 text-gray-500">กดปุ่ม "โหลดข้อมูลใหม่" เพื่อแสดงรายงาน</p>
+                         </div>
+                     </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-6 px-4 bg-white/50">
+        <p class="text-xs text-gray-500">
+            © 2025 ระบบส่งตรวจ Sterility test งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์
+            <span class="mx-2 hidden sm:inline">|</span>
+            <br class="sm:hidden">
+            พัฒนาโดย ทนพ.มานพ นันตาบุตร
+        </p>
+    </footer>
+
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content overflow-y-auto max-h-[90vh]">
+            <span id="close-modal-btn" class="close-button">&times;</span>
+            <div id="modal-body">
+                <!-- Report content will be dynamically inserted here -->
+            </div>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIGURATION ---
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxmPV24044vdZUWtyUaJ1Jm8rzchin9_a9wMinMGSpaVsxAvsMApogB3bi3BpHYH4aTmQ/exec';
+    const SAMPLES_PER_PAGE = 10;
+    
+    // --- STATE ---
+    let allData = [];
+    let currentReportData = null; 
+    let myMonthlyChart = null; // Chart instance
+
+    // --- DOM ELEMENTS ---
+    const loginScreen = document.getElementById('login-screen');
+    const appContainer = document.getElementById('app-container');
+    const loginButton = document.getElementById('login-button');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const loginError = document.getElementById('login-error');
+
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    const submissionDateInput = document.getElementById('submission-date');
+    const sampleTableBody = document.getElementById('sample-table-body');
+    const saveFormBtn = document.getElementById('save-form-btn');
+    const clearFormBtn = document.getElementById('clear-form-btn');
+
+    const fetchDataBtn = document.getElementById('fetch-data-btn');
+    const reportContent = document.getElementById('report-content');
+    const reportPlaceholder = document.getElementById('report-placeholder');
+    const reportTableBody = document.getElementById('report-table-body');
+    
+    // Filter controls
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('status-filter');
+    const startDateFilter = document.getElementById('start-date-filter');
+    const endDateFilter = document.getElementById('end-date-filter');
+    const applyFilterBtn = document.getElementById('apply-filter-btn');
+    const resetFilterBtn = document.getElementById('reset-filter-btn');
+
+    const reportModal = document.getElementById('report-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const modalBody = document.getElementById('modal-body');
+
+    // --- INITIALIZATION ---
+    function init() {
+        setupEventListeners();
+        generateSampleRows();
+        setDefaultDate();
+    }
+    
+    function setupEventListeners() {
+        loginButton.addEventListener('click', handleLogin);
+        passwordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => switchTab(button.dataset.tab));
+        });
+
+        clearFormBtn.addEventListener('click', clearForm);
+        saveFormBtn.addEventListener('click', saveData);
+        
+        // Report tab buttons
+        fetchDataBtn.addEventListener('click', fetchData);
+        applyFilterBtn.addEventListener('click', applyFiltersAndRender);
+        resetFilterBtn.addEventListener('click', resetFilters);
+        
+        closeModalBtn.addEventListener('click', () => reportModal.style.display = 'none');
+
+        window.addEventListener('click', (event) => {
+            if (event.target == reportModal) reportModal.style.display = 'none';
+        });
+    }
+
+    // --- LOGIN LOGIC ---
+    function handleLogin() {
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value.trim();
+
+        if (username === 'doctor' && password === '1234') {
+            loginScreen.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            loginError.classList.add('hidden');
+            fetchDashboardData();
+        } else {
+            loginError.classList.remove('hidden');
+        }
+    }
+
+    // --- TAB NAVIGATION ---
+    function switchTab(tabId) {
+        tabPanes.forEach(pane => {
+            pane.classList.add('hidden');
+        });
+        tabButtons.forEach(button => {
+            button.classList.remove('tab-active');
+        });
+
+        document.getElementById(tabId).classList.remove('hidden');
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('tab-active');
+        
+        if(tabId === 'dashboard') {
+            fetchDashboardData();
+        } else if (tabId === 'report' && allData.length === 0) {
+            fetchData(); 
+        }
+    }
+
+    // --- UTILITY & HELPER FUNCTIONS ---
+    function setDefaultDate() {
+        const today = new Date().toISOString().split('T')[0];
+        submissionDateInput.value = today;
+    }
+
+    function jsonpRequest(url, callback) {
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        window[callbackName] = function(data) {
+            delete window[callbackName];
+            document.body.removeChild(script);
+            callback(data);
+        };
+
+        const script = document.createElement('script');
+        script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+        document.body.appendChild(script);
+    }
+    
+    // --- FORM LOGIC (TAB 2) ---
+    function generateSampleRows() {
+        let rowsHtml = '';
+        for (let i = 1; i <= 10; i++) {
+            rowsHtml += `
+                <tr class="sample-row bg-white border-b hover:bg-gray-50">
+                    <td class="p-2 text-center text-gray-500">${i}</td>
+                    <td class="p-2">
+                        <input type="text" class="w-full p-2 border border-gray-200 rounded-md bg-gray-50" placeholder="e.g., B123456">
+                    </td>
+                    <td class="p-2">
+                        <div class="flex flex-wrap gap-x-4 gap-y-2 items-center text-xs">
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">PRC</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">LPRC</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">LDPPC</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">FFP</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">SDP</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">LPPC</label>
+                            <label class="flex items-center"><input type="checkbox" class="mr-1 h-4 w-4">Normal</label>
+                            <label class="flex items-center">
+                                exprid: <input type="text" class="ml-1 w-24 p-1 border border-gray-200 rounded-md">
+                            </label>
+                        </div>
+                    </td>
+                    <td class="p-2"><input type="text" class="w-full p-2 border border-gray-200 rounded-md bg-gray-50"></td>
+                    <td class="p-2"><input type="text" class="w-full p-2 border border-gray-200 rounded-md bg-gray-50"></td>
+                    <td class="p-2"><input type="text" class="w-full p-2 border border-gray-200 rounded-md bg-gray-50"></td>
+                </tr>
+            `;
+        }
+        sampleTableBody.innerHTML = rowsHtml;
+    }
+
+    function clearForm() {
+        document.getElementById('department').selectedIndex = 0;
+        document.getElementById('sample-type').selectedIndex = 0;
+        setDefaultDate();
+        generateSampleRows();
+        Swal.fire({
+            title: 'ล้างข้อมูลสำเร็จ',
+            text: 'ข้อมูลในฟอร์มถูกล้างเรียบร้อยแล้ว',
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false
+        })
+    }
+
+    function saveData() {
+        const submissionDate = submissionDateInput.value;
+        const department = document.getElementById('department').value;
+        const sampleType = document.getElementById('sample-type').value;
+
+        if (!submissionDate || department === '--กรุณาเลือกหน่วยงาน--' || sampleType === '--กรุณาเลือก--') {
+            Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกวันที่, แผนก และประเภทสิ่งส่งตรวจ', 'warning');
+            return;
+        }
+
+        const samples = [];
+        const rows = document.querySelectorAll('.sample-row');
+        rows.forEach((row, index) => {
+            const inputs = row.querySelectorAll('input[type="text"]');
+            const checkboxes = row.querySelectorAll('input[type="checkbox"]');
+            const bloodBagNumber = inputs[0].value;
+            
+            if (bloodBagNumber.trim() !== '') {
+                const productTypes = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) productTypes.push(cb.parentElement.textContent.trim());
+                });
+                const exprid = inputs[1].value;
+                if(exprid) productTypes.push(`exprid: ${exprid}`);
+
+                samples.push({
+                    no: index + 1,
+                    submissionDate: submissionDate,
+                    bloodBagNumber: bloodBagNumber,
+                    productType: productTypes.join(', '),
+                    sterile: inputs[2].value,
+                    nonSterile: inputs[3].value,
+                    remarks: inputs[4].value,
+                    status: 'รอตรวจ'
+                });
+            }
+        });
+
+        if (samples.length === 0) {
+            Swal.fire('ไม่มีข้อมูล', 'กรุณากรอกข้อมูลตัวอย่างอย่างน้อย 1 รายการ (ต้องมีหมายเลขถุงเลือด)', 'info');
+            return;
+        }
+
+        const dataToSave = { submissionDate, department, sampleType, samples };
+        
+        Swal.fire({
+            title: 'กำลังบันทึกข้อมูล...',
+            text: 'กรุณารอสักครู่',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+        
+        const url = `${GAS_URL}?action=saveData&data=${encodeURIComponent(JSON.stringify(dataToSave))}`;
+        
+        jsonpRequest(url, (response) => {
+            if (response.result === 'success') {
+                Swal.fire('บันทึกสำเร็จ!', 'ข้อมูลของคุณถูกบันทึกเรียบร้อยแล้ว', 'success');
+                clearForm();
+                fetchDashboardData();
+            } else {
+                Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถบันทึกข้อมูลได้: ${response.message}`, 'error');
+            }
+        });
+    }
+
+    // --- DASHBOARD LOGIC (TAB 1) ---
+    function fetchDashboardData() {
+        const url = `${GAS_URL}?action=getSummary`;
+        const summaryCardsContainer = document.getElementById('summary-cards');
+        const placeholder = '<div class="animate-pulse bg-gray-200 h-24 rounded-2xl"></div>';
+        summaryCardsContainer.innerHTML = Array(3).fill(placeholder).join('');
+        
+        document.getElementById('latest-submissions-table').querySelector('tbody').innerHTML = `<tr><td colspan="4" class="p-4 text-center">กำลังโหลดข้อมูล...</td></tr>`;
+
+        jsonpRequest(url, (data) => {
+            if (data.result === 'success') {
+                updateSummaryCards(data.summary);
+                renderMonthlyChart(data.monthlyStats);
+                updateLatestSubmissions(data.latest);
+            } else {
+                summaryCardsContainer.innerHTML = `<p class="col-span-full text-red-500">ไม่สามารถโหลดข้อมูลสรุปได้</p>`;
+                document.getElementById('latest-submissions-table').querySelector('tbody').innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500">ไม่สามารถโหลดข้อมูลล่าสุดได้</td></tr>`;
+            }
+        });
+    }
+
+    function updateSummaryCards(summary) {
+        const cardsContainer = document.getElementById('summary-cards');
+        const cards = [
+            { label: 'ตัวอย่างทั้งหมด', value: summary.total, color: 'bg-blue-100', textColor: 'text-blue-800' },
+            { label: 'รอตรวจ', value: summary.pending, color: 'bg-yellow-100', textColor: 'text-yellow-800' },
+            { label: 'ตรวจแล้ว', value: summary.completed, color: 'bg-green-100', textColor: 'text-green-800' }
+        ];
+
+        cardsContainer.innerHTML = cards.map(card => `
+            <div class="${card.color} ${card.textColor} p-6 rounded-2xl shadow-md transition-transform transform hover:scale-105">
+                <p class="text-lg font-semibold">${card.label}</p>
+                <p class="text-4xl font-bold mt-2">${card.value}</p>
+            </div>
+        `).join('');
+    }
+    
+    function renderMonthlyChart(monthlyData) {
+        const ctx = document.getElementById('monthly-chart').getContext('2d');
+        
+        if (myMonthlyChart) {
+            myMonthlyChart.destroy();
+        }
+
+        const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+        const labels = monthlyData.map(d => {
+            const [year, month] = d.month.split('-');
+            const thaiYear = parseInt(year) + 543;
+            return `${thaiMonths[parseInt(month) - 1]} ${thaiYear}`;
+        });
+        const dataCounts = monthlyData.map(d => d.count);
+
+        myMonthlyChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'จำนวนตัวอย่าง',
+                    data: dataCounts,
+                    backgroundColor: 'rgba(108, 80, 112, 0.6)',
+                    borderColor: 'rgba(108, 80, 112, 1)',
+                    borderWidth: 1,
+                    borderRadius: 8,
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+    
+    function updateLatestSubmissions(latestData) {
+        const tableBody = document.getElementById('latest-submissions-table').querySelector('tbody');
+        if (latestData && latestData.length > 0) {
+            tableBody.innerHTML = latestData.map(row => {
+                const displayStatus = row.status === 'รอตรวจ' ? 'รอตรวจ' : 'ตรวจแล้ว';
+                return `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-4 py-3">${row.submissionDate}</td>
+                    <td class="px-4 py-3">${row.department}</td>
+                    <td class="px-4 py-3">${row.bloodBagNumber}</td>
+                    <td class="px-4 py-3">
+                        <span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full ${getStatusColor(row.status)}">
+                            ${displayStatus}
+                        </span>
+                    </td>
+                </tr>
+            `}).join('');
+        } else {
+            tableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center">ยังไม่มีข้อมูลการส่งตรวจ</td></tr>`;
+        }
+    }
+    
+    function getStatusColor(status) {
+        switch(status) {
+            case 'รอตรวจ': 
+                return 'bg-yellow-200 text-yellow-800';
+            default: // Any other status is considered "Completed"
+                return 'bg-green-200 text-green-800';
+        }
+    }
+
+    // --- REPORT LOGIC (TAB 3) ---
+    function fetchData() {
+         Swal.fire({
+            title: 'กำลังโหลดข้อมูล...',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+        
+        const url = `${GAS_URL}?action=getData`;
+        jsonpRequest(url, (data) => {
+            Swal.close();
+            if (data.result === 'success' && data.data.length > 0) {
+                allData = data.data.reverse();
+                applyFiltersAndRender();
+            } else if (data.result === 'success' && data.data.length === 0) {
+                reportPlaceholder.classList.remove('hidden');
+                reportContent.classList.add('hidden');
+                reportPlaceholder.querySelector('p').textContent = 'ไม่พบข้อมูลใน Google Sheet';
+            } else {
+                reportPlaceholder.classList.remove('hidden');
+                reportContent.classList.add('hidden');
+                reportPlaceholder.querySelector('p').textContent = `เกิดข้อผิดพลาด: ${data.message}`;
+            }
+        });
+    }
+    
+    function applyFiltersAndRender() {
+        let filteredData = [...allData];
+        const searchTerm = searchInput.value.toLowerCase();
+        const status = statusFilter.value;
+        const startDate = startDateFilter.value;
+        const endDate = endDateFilter.value;
+
+        if (searchTerm) {
+            filteredData = filteredData.filter(item => 
+                item.department.toLowerCase().includes(searchTerm) ||
+                item.samples.some(s => s.bloodBagNumber.toLowerCase().includes(searchTerm))
+            );
+        }
+        if (status) {
+            if (status === 'ตรวจแล้ว') {
+                filteredData = filteredData.filter(item => 
+                    item.samples.some(s => s.status !== 'รอตรวจ' && s.status)
+                );
+            } else { // 'รอตรวจ'
+                filteredData = filteredData.filter(item => 
+                    item.samples.some(s => s.status === status)
+                );
+            }
+        }
+        if (startDate) {
+            filteredData = filteredData.filter(item => item.submissionDate >= startDate);
+        }
+        if (endDate) {
+            filteredData = filteredData.filter(item => item.submissionDate <= endDate);
+        }
+        
+        if (filteredData.length > 0) {
+            reportPlaceholder.classList.add('hidden');
+            reportContent.classList.remove('hidden');
+            renderReportTable(1, filteredData);
+        } else {
+            reportContent.classList.add('hidden');
+            reportPlaceholder.classList.remove('hidden');
+            reportPlaceholder.querySelector('p').textContent = 'ไม่พบข้อมูลที่ตรงกับการค้นหา';
+        }
+    }
+
+    function resetFilters() {
+        searchInput.value = '';
+        statusFilter.value = '';
+        startDateFilter.value = '';
+        endDateFilter.value = '';
+        if (allData.length > 0) applyFiltersAndRender();
+    }
+
+    function renderReportTable(page, dataToRender) {
+        const start = (page - 1) * SAMPLES_PER_PAGE;
+        const end = start + SAMPLES_PER_PAGE;
+        const paginatedItems = dataToRender.slice(start, end);
+        
+        reportTableBody.innerHTML = paginatedItems.map((item) => {
+            const originalIndex = allData.indexOf(item);
+            const primaryStatus = item.samples[0]?.status || 'N/A';
+            const displayStatus = primaryStatus === 'รอตรวจ' ? 'รอตรวจ' : 'ตรวจแล้ว';
+            return `
+                <tr class="bg-white border-b hover:bg-gray-50">
+                    <td class="px-4 py-3">${item.submissionDate || 'N/A'}</td>
+                    <td class="px-4 py-3">${item.department || 'N/A'}</td>
+                    <td class="px-4 py-3">${item.samples[0] ? item.samples[0].bloodBagNumber : 'N/A'} ${item.samples.length > 1 ? `และอีก ${item.samples.length - 1} รายการ` : ''}</td>
+                    <td class="px-4 py-3"><span class="px-2 py-1 font-semibold leading-tight text-xs rounded-full ${getStatusColor(primaryStatus)}">${displayStatus}</span></td>
+                    <td class="px-4 py-3 text-center">
+                        <button class="view-report-btn bg-blue-500 text-white px-3 py-1 rounded-md text-xs hover:bg-blue-600" data-index="${originalIndex}">ดูรายงาน</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        
+        document.querySelectorAll('.view-report-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const dataIndex = e.target.getAttribute('data-index');
+                openReportModal(allData[dataIndex]);
+            });
+        });
+        
+        renderPagination(page, dataToRender);
+    }
+    
+    function renderPagination(currentPage, dataToRender) {
+        const pageCount = Math.ceil(dataToRender.length / SAMPLES_PER_PAGE);
+        const paginationContainer = document.getElementById('report-pagination');
+        if (pageCount <= 1) {
+            paginationContainer.innerHTML = '';
+            return;
+        }
+        
+        let paginationHtml = '';
+        for (let i = 1; i <= pageCount; i++) {
+            const activeClass = i === currentPage ? 'bg-[#6c5070] text-white' : 'bg-white text-gray-700';
+            paginationHtml += `<button class="pagination-btn px-4 py-2 mx-1 border rounded-md ${activeClass}" data-page="${i}">${i}</button>`;
+        }
+        paginationContainer.innerHTML = paginationHtml;
+        
+        document.querySelectorAll('.pagination-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                renderReportTable(parseInt(e.target.dataset.page), dataToRender);
+            });
+        });
+    }
+
+    function openReportModal(data) {
+        currentReportData = data;
+        const reportDate = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+        const samplesHtml = data.samples.map(sample => `
+            <tr class="border-b">
+                <td class="p-2 text-center">${sample.no}</td>
+                <td class="p-2">${data.submissionDate}</td>
+                <td class="p-2">${sample.bloodBagNumber}</td>
+                <td class="p-2">${sample.productType}</td>
+                <td class="p-2">${sample.sterile}</td>
+                <td class="p-2">${sample.nonSterile}</td>
+                <td class="p-2">${sample.remarks}</td>
+            </tr>
+        `).join('');
+
+        modalBody.innerHTML = `
+            <div id="pdf-content" class="p-2 md:p-4">
+                <div class="text-center mb-6">
+                    <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Logo" class="h-24 w-24 object-contain mx-auto" crossorigin="anonymous">
+                    <h3 class="text-xl font-bold mt-2">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h3>
+                    <h4 class="text-lg font-semibold text-[#6c5070]">ใบรายงานผลตรวจเพาะเชื้อจากเลือด (Sterility Test Report)</h4>
+                    <p class="text-sm text-gray-500">เลขที่รายงาน: FM-09-156-080</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm mb-6">
+                    <p><strong>วันที่รายงาน:</strong> ${reportDate}</p>
+                    <p><strong>แผนก/หน่วยงาน:</strong> ${data.department}</p>
+                </div>
+                <div class="overflow-x-auto border rounded-lg">
+                    <table class="w-full text-xs">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 font-semibold">ลำดับ</th>
+                                <th class="p-2 font-semibold">วันที่ส่งตรวจ</th>
+                                <th class="p-2 font-semibold">หมายเลขถุงเลือด</th>
+                                <th class="p-2 font-semibold">ชนิดผลิตภัณฑ์เลือด</th>
+                                <th class="p-2 font-semibold">ปลอดเชื้อ</th>
+                                <th class="p-2 font-semibold">ไม่ปลอดเชื้อ</th>
+                                <th class="p-2 font-semibold">หมายเหตุ</th>
+                            </tr>
+                        </thead>
+                        <tbody>${samplesHtml}</tbody>
+                    </table>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8 text-sm border-t pt-6">
+                    <div>
+                        <p><strong>ผู้รายงานผล:</strong> ทนพ.มานพ นันตาบุตร</p>
+                        <p class="text-gray-600">นักเทคนิคการแพทย์ (ทน.17500)</p>
+                        <p><strong>วันที่:</strong> ${data.submissionDate}</p>
+                    </div>
+                    <div>
+                        <p><strong>ผู้ตรวจสอบผล:</strong> ทนพญ.นริศรา มังการแก้ว</p>
+                        <p class="text-gray-600">นักเทคนิคการแพทย์ (ทน.5596)</p>
+                         <p><strong>วันที่:</strong> ${data.submissionDate}</p>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-4 mt-8 no-print">
+                    <button id="export-pdf-btn" class="bg-[#df6a6a] text-white px-5 py-2 rounded-lg font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd" /></svg>
+                        Export PDF
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('export-pdf-btn').addEventListener('click', exportReportToPDF);
+
+        reportModal.style.display = 'flex';
+    }
+
+    function exportReportToPDF() {
+        const { jsPDF } = window.jspdf;
+        const pdfContent = document.getElementById('pdf-content');
+        const exportButton = document.getElementById('export-pdf-btn');
+
+        if(exportButton) exportButton.style.display = 'none';
+
+        Swal.fire({
+            title: 'กำลังสร้างไฟล์ PDF...',
+            text: 'กรุณารอสักครู่',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        html2canvas(pdfContent, {
+             scale: 2, 
+             useCORS: true 
+        }).then(canvas => {
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = canvasWidth / canvasHeight;
+            const imgWidth = pdfWidth - 20; 
+            const imgHeight = imgWidth / ratio;
+            let heightLeft = imgHeight;
+            let position = 10; 
+
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= (pdfHeight - 20);
+
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight + 10;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= (pdfHeight - 20);
+            }
+            if(exportButton) exportButton.style.display = 'flex';
+            Swal.close();
+            pdf.save(`report-${currentReportData.submissionId || Date.now()}.pdf`);
+        }).catch(err => {
+            if(exportButton) exportButton.style.display = 'flex';
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถสร้างไฟล์ PDF ได้', 'error');
+        });
+    }
+
+    // --- START THE APP ---
+    init();
+});
+</script>
+
+</body>
+</html>

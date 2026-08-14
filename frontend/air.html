@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIR-01: Air Sampling (ตรวจคุณภาพอากาศ) - TUH Microbiology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .sample-row {
+      display: grid;
+      grid-template-columns: 50px 1.5fr 1.5fr 120px 120px 1.2fr 40px;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .sample-header {
+      display: grid;
+      grid-template-columns: 50px 1.5fr 1.5fr 120px 120px 1.2fr 40px;
+      gap: 0.5rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--border);
+    }
+    @media (max-width: 900px) {
+      .sample-row, .sample-header {
+        grid-template-columns: 40px 1fr 1fr 90px 90px 1fr 35px;
+        font-size: 0.8rem;
+      }
+    }
+    .status-stepper {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .step-pill {
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #e2e8f0;
+      color: #64748b;
+    }
+    .step-pill.active {
+      background: var(--primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <a href="index.html" class="nav-brand">
+      <span class="nav-brand-badge">AIR-01</span>
+      <span>Air Sampling (ตรวจคุณภาพอากาศ)</span>
+    </a>
+    <ul class="nav-menu">
+      <li><a href="index.html" class="nav-link">🏠 หน้าหลัก</a></li>
+      <li><a href="air.html" class="nav-link active">💨 Air Sampling</a></li>
+      <li><a href="booking.html" class="nav-link">📅 ปฏิทินจอง</a></li>
+      <li><a href="audit.html" class="nav-link">📋 Audit Trail</a></li>
+      <li id="user-nav-item">
+        <a href="login.html" class="btn btn-primary btn-sm">เข้าสู่ระบบ</a>
+      </li>
+    </ul>
+  </nav>
+
+  <main class="container">
+    
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h1 class="page-title" id="page-heading">แบบบันทึกส่งตรวจ / รายงานผล Air Sampling</h1>
+          <span id="submission-status-badge" class="badge badge-submitted" style="font-size: 0.85rem; display: none;"></span>
+        </div>
+        <p class="page-subtitle" id="submission-sub-text">งานอาชีวอนามัยและความปลอดภัย โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)</p>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" id="btn-audit-history" style="display: none;" onclick="openAuditModal()">
+          📜 ประวัติการแก้ไข (Audit Trail)
+        </button>
+        <button type="button" class="btn btn-secondary" id="btn-download-pdf" style="display: none;" onclick="downloadPdf()">
+          📄 ดาวน์โหลดรายงาน PDF
+        </button>
+        <a href="air.html" class="btn btn-primary">➕ สร้างใบใหม่</a>
+      </div>
+    </div>
+
+    <!-- Status Flow Stepper -->
+    <div class="card" id="status-card" style="display: none;">
+      <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 0.75rem; color: var(--text-muted);">
+        ขั้นตอนการดำเนินงาน (Workflow Transition):
+      </div>
+      <div class="status-stepper">
+        <div class="step-pill" id="step-SUBMITTED">1. กำลังส่งตรวจ (Submitted)</div>
+        <span>→</span>
+        <div class="step-pill" id="step-RECEIVED">2. รับตัวอย่างแล้ว (Received)</div>
+        <span>→</span>
+        <div class="step-pill" id="step-IN_PROGRESS">3. กำลังตรวจวิเคราะห์ (In Progress)</div>
+        <span>→</span>
+        <div class="step-pill" id="step-COMPLETED">4. บันทึกผลตรวจแล้ว (Completed)</div>
+        <span>→</span>
+        <div class="step-pill" id="step-REPORTED">5. ออกรายงานผลสมบูรณ์ (Reported)</div>
+      </div>
+
+      <!-- Action Buttons Toolbar for Lab Tech / Approver -->
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;" id="action-buttons-toolbar">
+        <!-- Injected via JS based on current status and user role -->
+      </div>
+    </div>
+
+    <!-- Alert Message Box -->
+    <div id="alert-box" style="display: none; padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;"></div>
+
+    <!-- Main Submission & Results Form -->
+    <form id="air-form">
+      
+      <!-- Section 1: Header Info -->
+      <div class="card">
+        <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary);">
+          1. ข้อมูลการส่งตรวจ (Submission Information)
+        </h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="submission-date">วันที่ส่งตรวจ (Submission Date) *</label>
+            <input type="date" id="submission-date" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="department-select">หน่วยงานส่งตรวจ (Department) *</label>
+            <select id="department-select" class="form-control" required>
+              <option value="">-- กรุณาเลือกหน่วยงาน --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sender-name">ผู้ส่งตรวจ (Sender Name)</label>
+            <input type="text" id="sender-name" class="form-control" placeholder="ชื่อ-สกุล ผู้ส่ง">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="sender-email">อีเมลรับผลตรวจ (Email)</label>
+            <input type="email" id="sender-email" class="form-control" placeholder="occhealth@tu.ac.th">
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top: 0.5rem;">
+          <div class="form-group" style="max-width: 250px;">
+            <label class="form-label" for="row-count-select">จำนวนจุดเก็บตัวอย่าง (Number of Rows)</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="number" id="row-count-input" class="form-control" min="1" max="100" value="5">
+              <button type="button" class="btn btn-secondary" onclick="adjustRowCount()">ปรับแถว</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Samples & Results Table -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--primary);">
+            2. จุดเก็บตัวอย่างและผลการตรวจนับโคโลนี (Sampling Points & Colonies Count)
+          </h2>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="addSampleRow()">➕ เพิ่ม 1 แถว</button>
+        </div>
+
+        <div class="sample-header">
+          <div>ลำดับ</div>
+          <div>หอผู้ป่วย / หน่วยงาน (Ward) *</div>
+          <div>ตำแหน่งที่เก็บตัวอย่าง (Location)</div>
+          <div>แบคทีเรีย (CFU)</div>
+          <div>เชื้อรา (CFU)</div>
+          <div>หมายเหตุ (Remarks)</div>
+          <div>ลบ</div>
+        </div>
+
+        <div id="samples-container" style="margin-top: 0.5rem;">
+          <!-- Dynamically generated sample rows -->
+        </div>
+      </div>
+
+      <!-- Section 3: Signatures (ISO 15189 Electronic Signatures) -->
+      <div class="card" id="signature-card">
+        <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--primary);">
+          3. ผู้ตรวจวิเคราะห์และผู้อนุมัติผล (ISO 15189 Electronic Signatures)
+        </h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="reporter-select">ผู้รายงานผล (Reporter / Medical Technologist)</label>
+            <select id="reporter-select" class="form-control">
+              <option value="">-- เลือกผู้รายงานผล --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="reviewer-select">ผู้ตรวจสอบและอนุมัติผล (Reviewer / Approver)</label>
+            <select id="reviewer-select" class="form-control">
+              <option value="">-- เลือกผู้ตรวจสอบ/อนุมัติ --</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="amended-reason-group" class="form-group" style="display: none; margin-top: 1rem; background: #fff1f2; padding: 1rem; border-radius: var(--radius-sm); border: 1px solid #fecdd3;">
+          <label class="form-label" for="edit-reason" style="color: #9f1239;">
+            ⚠️ เหตุผลการแก้ไขผลตรวจ (Amended Reason - บังคับตาม ISO 15189)
+          </label>
+          <input type="text" id="edit-reason" class="form-control" placeholder="ระบุเหตุผลการเปลี่ยนแปลงผลตรวจที่ออกรายงานไปแล้ว">
+        </div>
+      </div>
+
+      <!-- Submit Actions -->
+      <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-bottom: 3rem;">
+        <a href="index.html" class="btn btn-secondary">ยกเลิก</a>
+        <button type="submit" class="btn btn-primary" id="btn-save-submission" style="min-width: 180px;">
+          💾 บันทึกข้อมูล
+        </button>
+      </div>
+
+    </form>
+
+  </main>
+
+  <!-- Modal: ISO 15189 Audit Trail History -->
+  <div class="modal-backdrop" id="audit-modal" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title">📋 บันทึกประวัติการเปลี่ยนแปลง (ISO 15189 Audit Trail)</h3>
+        <button class="close-btn" onclick="closeAuditModal()">&times;</button>
+      </div>
+      <div id="audit-modal-body">
+        <p style="text-align: center; color: var(--text-muted);">กำลังโหลดประวัติ...</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    let currentSubmissionId = null;
+    let masterWards = [];
+    let masterDepartments = [];
+    let masterStaff = [];
+    let submissionData = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      checkAuth();
+      await loadMasterData();
+      
+      // Check query param ?id=123
+      const urlParams = new URLSearchParams(window.location.search);
+      const subId = urlParams.get('id');
+
+      if (subId) {
+        currentSubmissionId = parseInt(subId);
+        await loadExistingSubmission(currentSubmissionId);
+      } else {
+        // Initialize new form
+        document.getElementById('submission-date').valueAsDate = new Date();
+        adjustRowCount(5);
+      }
+
+      document.getElementById('air-form').addEventListener('submit', handleFormSubmit);
+    });
+
+    function checkAuth() {
+      const user = Api.getUser();
+      const navItem = document.getElementById('user-nav-item');
+      if (user) {
+        navItem.innerHTML = `
+          <div class="user-badge">
+            <span>👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="btn btn-secondary btn-sm" style="padding: 0.2rem 0.4rem;">ออก</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadMasterData() {
+      try {
+        [masterWards, masterDepartments, masterStaff] = await Promise.all([
+          Api.getWards(),
+          Api.getDepartments(),
+          Api.getStaff()
+        ]);
+
+        // Populate Departments Dropdown
+        const deptSelect = document.getElementById('department-select');
+        deptSelect.innerHTML = '<option value="">-- กรุณาเลือกหน่วยงาน --</option>' + 
+          masterDepartments.map(d => `<option value="${d.id}">${d.name_th}</option>`).join('');
+
+        // Select Occ Health by default if new
+        const occDept = masterDepartments.find(d => d.name_th.includes('อาชีวอนามัย'));
+        if (occDept) deptSelect.value = occDept.id;
+
+        // Populate Staff Dropdowns
+        const repSelect = document.getElementById('reporter-select');
+        const revSelect = document.getElementById('reviewer-select');
+        const staffOptions = '<option value="">-- กรุณาเลือก --</option>' + 
+          masterStaff.map(s => `<option value="${s.id}">${s.title}${s.first_name} ${s.last_name} (${s.license_no})</option>`).join('');
+        
+        repSelect.innerHTML = staffOptions;
+        revSelect.innerHTML = staffOptions;
+
+      } catch (err) {
+        showAlert('เกิดข้อผิดพลาดในการโหลด Master Data: ' + err.message, 'danger');
+      }
+    }
+
+    function createSampleRowHtml(index, wardId = '', location = '', bac = '', fun = '', remarks = '') {
+      const wardOptions = masterWards.map(w => `<option value="${w.id}" ${w.id == wardId ? 'selected' : ''}>${w.name_th}</option>`).join('');
+      
+      return `
+        <div class="sample-row" id="row-${index}">
+          <div style="font-weight: 700; text-align: center;">${index}</div>
+          <div>
+            <select class="form-control ward-select" required>
+              <option value="">-- เลือก Ward --</option>
+              ${wardOptions}
+            </select>
+          </div>
+          <div>
+            <input type="text" class="form-control location-input" placeholder="ตำแหน่งที่เก็บ เช่น หน้าต่าง" value="${escapeHtml(location)}">
+          </div>
+          <div>
+            <input type="number" min="0" class="form-control bacteria-input" placeholder="CFU" value="${bac}">
+          </div>
+          <div>
+            <input type="number" min="0" class="form-control fungus-input" placeholder="CFU" value="${fun}">
+          </div>
+          <div>
+            <input type="text" class="form-control remarks-input" placeholder="หมายเหตุ" value="${escapeHtml(remarks)}">
+          </div>
+          <div style="text-align: center;">
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeSampleRow(${index})" style="padding: 0.2rem 0.5rem;">✕</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function adjustRowCount(targetCount) {
+      const count = targetCount || parseInt(document.getElementById('row-count-input').value) || 5;
+      const container = document.getElementById('samples-container');
+      const currentRows = container.querySelectorAll('.sample-row').length;
+
+      if (count > currentRows) {
+        for (let i = currentRows + 1; i <= count; i++) {
+          container.insertAdjacentHTML('beforeend', createSampleRowHtml(i));
+        }
+      } else if (count < currentRows) {
+        for (let i = currentRows; i > count; i--) {
+          const row = document.getElementById(`row-${i}`);
+          if (row) row.remove();
+        }
+      }
+      reindexRows();
+    }
+
+    function addSampleRow() {
+      const container = document.getElementById('samples-container');
+      const nextIdx = container.querySelectorAll('.sample-row').length + 1;
+      container.insertAdjacentHTML('beforeend', createSampleRowHtml(nextIdx));
+      document.getElementById('row-count-input').value = nextIdx;
+    }
+
+    function removeSampleRow(index) {
+      const row = document.getElementById(`row-${index}`);
+      if (row) row.remove();
+      reindexRows();
+    }
+
+    function reindexRows() {
+      const container = document.getElementById('samples-container');
+      const rows = container.querySelectorAll('.sample-row');
+      rows.forEach((r, idx) => {
+        const num = idx + 1;
+        r.id = `row-${num}`;
+        r.querySelector('div:first-child').innerText = num;
+        r.querySelector('button').setAttribute('onclick', `removeSampleRow(${num})`);
+      });
+      document.getElementById('row-count-input').value = rows.length;
+    }
+
+    async function loadExistingSubmission(id) {
+      try {
+        submissionData = await Api.getSubmission(id);
+        
+        document.getElementById('page-heading').innerText = `ใบส่งตรวจ ${submissionData.submission_no}`;
+        const badge = document.getElementById('submission-status-badge');
+        badge.className = `badge badge-${submissionData.status.toLowerCase()}`;
+        badge.innerText = submissionData.status;
+        badge.style.display = 'inline-flex';
+
+        document.getElementById('status-card').style.display = 'block';
+        document.getElementById('btn-audit-history').style.display = 'inline-flex';
+        document.getElementById('btn-download-pdf').style.display = 'inline-flex';
+
+        // Update stepper active
+        document.querySelectorAll('.step-pill').forEach(p => p.classList.remove('active'));
+        const activePill = document.getElementById(`step-${submissionData.status}`);
+        if (activePill) activePill.classList.add('active');
+
+        // Fill form fields
+        document.getElementById('submission-date').value = submissionData.submission_date;
+        document.getElementById('department-select').value = submissionData.department_id;
+        document.getElementById('sender-name').value = submissionData.sender_name || '';
+        document.getElementById('sender-email').value = submissionData.sender_email || '';
+
+        if (submissionData.reporter_name) {
+          // find staff
+        }
+        if (submissionData.status === 'REPORTED') {
+          document.getElementById('amended-reason-group').style.display = 'block';
+        }
+
+        // Fill samples
+        const container = document.getElementById('samples-container');
+        container.innerHTML = '';
+        submissionData.samples.forEach(s => {
+          const bacObj = s.results.find(r => r.analyte_code === 'bacteria_colonies');
+          const funObj = s.results.find(r => r.analyte_code === 'fungus_colonies');
+          const bacVal = bacObj && bacObj.result_value !== null ? bacObj.result_value : '';
+          const funVal = funObj && funObj.result_value !== null ? funObj.result_value : '';
+          const remarks = (bacObj && bacObj.remarks) || (funObj && funObj.remarks) || '';
+
+          container.insertAdjacentHTML('beforeend', createSampleRowHtml(s.sample_no, s.ward_id, s.label, bacVal, funVal, remarks));
+        });
+
+        document.getElementById('row-count-input').value = submissionData.samples.length;
+        renderActionButtons();
+
+      } catch (err) {
+        showAlert('ไม่สามารถโหลดข้อมูลใบส่งตรวจได้: ' + err.message, 'danger');
+      }
+    }
+
+    function renderActionButtons() {
+      const bar = document.getElementById('action-buttons-toolbar');
+      if (!submissionData) return;
+
+      const st = submissionData.status;
+      let btns = '';
+
+      if (st === 'SUBMITTED') {
+        btns += `<button type="button" class="btn btn-primary" onclick="transitionStatus('RECEIVED')">📥 รับสิ่งส่งตรวจ (Receive)</button>`;
+        btns += `<button type="button" class="btn btn-danger" onclick="transitionStatus('REJECTED')">✕ ปฏิเสธ/ยกเลิก (Reject)</button>`;
+      } else if (st === 'RECEIVED') {
+        btns += `<button type="button" class="btn btn-primary" onclick="transitionStatus('IN_PROGRESS')">🔬 เริ่มตรวจวิเคราะห์ (In Progress)</button>`;
+      } else if (st === 'IN_PROGRESS') {
+        btns += `<button type="button" class="btn btn-success" onclick="saveAndComplete()">✓ ตรวจเสร็จสิ้น (Mark Completed)</button>`;
+      } else if (st === 'COMPLETED') {
+        btns += `<button type="button" class="btn btn-success" onclick="approveAndReport()">🛡️ อนุมัติออกรายงานผล (Approve & Report)</button>`;
+      } else if (st === 'REPORTED') {
+        btns += `<button type="button" class="btn btn-primary" onclick="downloadPdf()">📄 ดาวน์โหลดรายงาน PDF</button>`;
+      }
+
+      bar.innerHTML = btns || '<span style="color: var(--text-muted); font-size: 0.85rem;">ไม่มีขั้นตอนดำเนินการเพิ่มเติม</span>';
+    }
+
+    async function transitionStatus(to_status) {
+      let reason = null;
+      if (to_status === 'REJECTED') {
+        reason = prompt('กรุณาระบุเหตุผลในการปฏิเสธ/ยกเลิกใบส่งตรวจ (Required):');
+        if (!reason) return;
+      }
+
+      try {
+        await Api.changeStatus(currentSubmissionId, to_status, reason);
+        showAlert(`เปลี่ยนสถานะเป็น ${to_status} เรียบร้อยแล้ว`, 'success');
+        await loadExistingSubmission(currentSubmissionId);
+      } catch (err) {
+        showAlert(err.message, 'danger');
+      }
+    }
+
+    async function saveAndComplete() {
+      await saveFormData(true);
+      await transitionStatus('COMPLETED');
+    }
+
+    async function approveAndReport() {
+      const repId = document.getElementById('reporter-select').value;
+      const revId = document.getElementById('reviewer-select').value;
+
+      if (!repId || !revId) {
+        alert('กรุณาเลือกทั้งผู้รายงานผล (Reporter) และผู้อนุมัติผล (Reviewer) ให้ครบถ้วน');
+        return;
+      }
+      if (repId === revId) {
+        alert('ISO 15189 Requirement: ผู้รายงานผลและผู้อนุมัติผลต้องเป็นคนละคนกัน');
+        return;
+      }
+
+      try {
+        await Api.changeStatus(currentSubmissionId, 'REPORTED', 'อนุมัติออกรายงานผลทางการ', parseInt(repId), parseInt(revId));
+        // Auto generate PDF
+        await Api.generateReport(currentSubmissionId);
+        showAlert('อนุมัติผลและสร้างรายงาน PDF สำเร็จเรียบร้อย!', 'success');
+        await loadExistingSubmission(currentSubmissionId);
+      } catch (err) {
+        showAlert(err.message, 'danger');
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      await saveFormData(false);
+    }
+
+    async function saveFormData(silent = false) {
+      const subDate = document.getElementById('submission-date').value;
+      const deptId = parseInt(document.getElementById('department-select').value);
+      const senderName = document.getElementById('sender-name').value.trim();
+      const senderEmail = document.getElementById('sender-email').value.trim();
+      const repId = document.getElementById('reporter-select').value ? parseInt(document.getElementById('reporter-select').value) : null;
+      const revId = document.getElementById('reviewer-select').value ? parseInt(document.getElementById('reviewer-select').value) : null;
+      const editReason = document.getElementById('edit-reason').value.trim();
+
+      const samples = [];
+      const rows = document.querySelectorAll('.sample-row');
+      rows.forEach((r, idx) => {
+        const wardId = parseInt(r.querySelector('.ward-select').value) || null;
+        const loc = r.querySelector('.location-input').value.trim();
+        const bacVal = r.querySelector('.bacteria-input').value;
+        const funVal = r.querySelector('.fungus-input').value;
+        const remarks = r.querySelector('.remarks-input').value.trim();
+
+        const results = [];
+        if (bacVal !== '') {
+          results.push({ analyte_code: 'bacteria_colonies', result_value: bacVal, numeric_value: parseFloat(bacVal), result_flag: parseFloat(bacVal) > 50 ? 'ABNORMAL' : 'NORMAL', remarks });
+        }
+        if (funVal !== '') {
+          results.push({ analyte_code: 'fungus_colonies', result_value: funVal, numeric_value: parseFloat(funVal), result_flag: parseFloat(funVal) > 0 ? 'ABNORMAL' : 'NORMAL', remarks });
+        }
+
+        samples.push({
+          sample_no: idx + 1,
+          ward_id: wardId,
+          label: loc,
+          results: results.length > 0 ? results : null
+        });
+      });
+
+      try {
+        if (!currentSubmissionId) {
+          // Create
+          const created = await Api.createSubmission({
+            service_code: 'AIR-01',
+            department_id: deptId,
+            submission_date: subDate,
+            sender_name: senderName,
+            sender_email: senderEmail,
+            sample_type: 'อากาศ',
+            samples: samples
+          });
+          currentSubmissionId = created.id;
+          window.history.pushState({}, '', `air.html?id=${created.id}`);
+          if (!silent) showAlert(`สร้างใบส่งตรวจสำเร็จ เลขที่: ${created.submission_no}`, 'success');
+          await loadExistingSubmission(currentSubmissionId);
+        } else {
+          // Update
+          await Api.updateSubmission(currentSubmissionId, {
+            department_id: deptId,
+            submission_date: subDate,
+            sender_name: senderName,
+            sender_email: senderEmail,
+            reporter_id: repId,
+            reviewer_id: revId,
+            samples: samples,
+            edit_reason: editReason
+          });
+          if (!silent) showAlert('บันทึกการเปลี่ยนแปลงเรียบร้อยแล้ว (ISO 15189 Logged)', 'success');
+          await loadExistingSubmission(currentSubmissionId);
+        }
+      } catch (err) {
+        showAlert('เกิดข้อผิดพลาด: ' + err.message, 'danger');
+      }
+    }
+
+    async function downloadPdf() {
+      if (!currentSubmissionId) return;
+      window.open(Api.getReportDownloadUrl(currentSubmissionId), '_blank');
+    }
+
+    async function openAuditModal() {
+      if (!currentSubmissionId) return;
+      document.getElementById('audit-modal').style.display = 'flex';
+      const body = document.getElementById('audit-modal-body');
+      body.innerHTML = '<p style="text-align:center; padding: 1rem;">กำลังโหลดประวัติ...</p>';
+
+      try {
+        const logs = await Api.getAuditLogs(currentSubmissionId);
+        if (logs.length === 0) {
+          body.innerHTML = '<p style="text-align:center; padding: 1rem; color: var(--text-muted);">ยังไม่มีประวัติการแก้ไข</p>';
+          return;
+        }
+
+        body.innerHTML = logs.map(l => {
+          const dateStr = new Date(l.timestamp).toLocaleString('th-TH');
+          return `
+            <div style="border-bottom: 1px solid var(--border); padding: 0.75rem 0; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                <span class="badge badge-submitted">${l.action}</span>
+                <span style="color: var(--text-muted);">${dateStr}</span>
+              </div>
+              <div style="margin-top: 0.35rem;"><strong>ผู้ดำเนินการ:</strong> ${l.user_name || 'SYSTEM'}</div>
+              <div style="margin-top: 0.2rem;"><strong>เหตุผล:</strong> ${l.reason || '-'}</div>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        body.innerHTML = `<p style="color: var(--danger); text-align:center;">เกิดข้อผิดพลาด: ${err.message}</p>`;
+      }
+    }
+
+    function closeAuditModal() {
+      document.getElementById('audit-modal').style.display = 'none';
+    }
+
+    function showAlert(msg, type) {
+      const box = document.getElementById('alert-box');
+      box.style.display = 'block';
+      box.style.background = type === 'success' ? '#dcfce7' : '#fee2e2';
+      box.style.color = type === 'success' ? '#15803d' : '#b91c1c';
+      box.style.border = `1px solid ${type === 'success' ? '#86efac' : '#fca5a5'}`;
+      box.innerText = msg;
+      setTimeout(() => { box.style.display = 'none'; }, 6000);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

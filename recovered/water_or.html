@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบรายงานผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700&family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body { font-family: 'Noto Sans Thai', sans-serif; background-color: #f8fafc; }
+        .tab-active { background-color: #4a5568; color: white; border-bottom-width: 4px; border-color: #718096; }
+        .form-input { width: 100%; padding: 0.5rem; border: 1px solid #cbd5e0; border-radius: 0.375rem; transition: all 0.2s; }
+        .form-input:focus { outline: none; border-color: #4a5568; box-shadow: 0 0 0 2px rgba(113, 128, 150, 0.2); }
+        .form-input:disabled { background-color: #f1f5f9; cursor: not-allowed; }
+        .form-label { display: block; font-weight: 500; color: #4a5568; margin-bottom: 0.25rem; font-size: 0.875rem; }
+        .signature-font { font-family: 'Dancing Script', cursive; }
+        .pdf-temp-text {
+            padding: 0.5rem;
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+        @media print {
+            body * { visibility: hidden; }
+            #pdf-export-area, #pdf-export-area * { visibility: visible; }
+            #pdf-export-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center">
+            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Logo" class="mx-auto mb-4" style="max-width: 120px;">
+            <h2 class="text-2xl font-bold text-slate-700 mb-2">ระบบรายงานผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h2>
+            <p class="text-gray-600 mb-6">กรุณาเข้าสู่ระบบเพื่อใช้งาน</p>
+            <div class="space-y-4">
+                <input type="text" id="username" placeholder="ชื่อผู้ใช้" class="form-input">
+                <input type="password" id="password" placeholder="รหัสผ่าน" class="form-input">
+            </div>
+            <p id="login-error" class="text-red-500 text-sm mt-4 h-4"></p>
+            <button id="login-button" class="w-full bg-slate-700 text-white py-3 mt-4 rounded-lg hover:bg-slate-800 transition-all duration-300 font-bold">
+                เข้าสู่ระบบ
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Application Container -->
+    <div id="app-container" class="hidden">
+        <header class="py-4 px-4 sm:px-8">
+            <div class="container mx-auto flex flex-col items-center text-center">
+                <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="h-auto" style="max-width: 150px;">
+                 <h1 class="text-xl sm:text-2xl font-bold text-[#6c5070] mt-2">ระบบรายงานผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h1>
+                 <div id="user-info" class="text-xs text-gray-500 mt-2"></div>
+            </div>
+        </header>
+
+        <nav class="bg-white shadow-md sticky top-0 z-30 no-print">
+            <div id="nav-tabs-container" class="container mx-auto flex justify-center"></div>
+        </nav>
+
+        <main class="container mx-auto p-4 sm:p-8">
+            <!-- New Form Tab -->
+            <div id="form-tab" class="tab-content hidden">
+                <div class="bg-white p-6 rounded-2xl shadow-lg max-w-7xl mx-auto">
+                    <h2 class="text-2xl font-bold text-slate-700 mb-6 text-center">แบบฟอร์มส่งตรวจสิ่งแวดล้อม</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 mb-6 border-b pb-6">
+                        <div>
+                            <label for="submission-date" class="form-label">วันที่ส่งตรวจ</label>
+                            <input type="date" id="submission-date" class="form-input">
+                        </div>
+                        <div>
+                            <label for="department" class="form-label">หน่วยงานส่งตรวจ</label>
+                            <input type="text" id="department" list="department-list" class="form-input" placeholder="เลือกหรือพิมพ์">
+                            <datalist id="department-list">
+                                <option value="--กรุณาเลือกหน่วยงาน--"></option>
+                                <option value="งานควบคุมโรคติดเชื้อ"></option>
+                                <option value="ห้องผ่าตัด"></option>
+                                <option value="ไตเทียม"></option>
+                                <option value="งานอาชีวะอนามัยและศูนย์บริการสุขภาพบุคลากร"></option>
+                                <option value="งานโภชนาการ"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="specimen-type" class="form-label">ประเภทสิ่งส่งตรวจ</label>
+                            <input type="text" id="specimen-type" list="specimen-type-list" class="form-input" placeholder="เลือกหรือพิมพ์">
+                            <datalist id="specimen-type-list">
+                                <option value="--กรุณาเลือก --"></option>
+                                <option value="น้ำ"></option>
+                                <option value="อาหาร"></option>
+                                <option value="อากาศ"></option>
+                                <option value="เลือด"></option>
+                                <option value="ยา"></option>
+                                <option value="อื่นๆโปรดระบุ"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="sample-count" class="form-label">จำนวน (Sample)</label>
+                            <input type="number" id="sample-count" class="form-input" value="10" min="1" max="20">
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-max text-sm text-left">
+                            <thead class="bg-slate-100 text-slate-600">
+                                <tr>
+                                    <th class="p-3 font-medium text-center w-16">ลำดับ</th>
+                                    <th class="p-3 font-medium">สถานที่</th>
+                                    <th class="p-3 font-medium">E.coli</th>
+                                    <th class="p-3 font-medium">P.aeruginosa</th>
+                                    <th class="p-3 font-medium">หมายเหตุ (Remarks)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="new-samples-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="flex justify-center gap-4 mt-8">
+                        <button id="new-save-button" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 transition-all">บันทึกข้อมูล</button>
+                        <button id="new-clear-button" class="bg-gray-300 text-gray-700 font-bold py-3 px-8 rounded-lg hover:bg-gray-400 transition-all">ล้างข้อมูล</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="bg-white p-6 rounded-2xl shadow-lg text-center"><p class="text-gray-500">ตัวอย่างทั้งหมด</p><h3 id="total-samples" class="text-4xl font-bold text-[#6c5070] mt-2">0</h3></div><div class="bg-white p-6 rounded-2xl shadow-lg text-center"><p class="text-gray-500">รอตรวจ</p><h3 id="pending-samples" class="text-4xl font-bold text-yellow-500 mt-2">0</h3></div><div class="bg-white p-6 rounded-2xl shadow-lg text-center"><p class="text-gray-500">ตรวจแล้ว</p><h3 id="completed-samples" class="text-4xl font-bold text-green-500 mt-2">0</h3></div></div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg mb-8"><h2 class="text-xl font-bold text-[#6c5070] mb-4">สถิติจำนวนตัวอย่างทั้งหมดรายเดือน</h2><canvas id="monthly-chart"></canvas></div>
+                <div class="bg-white p-6 rounded-2xl shadow-lg"><h2 class="text-xl font-bold text-[#6c5070] mb-4">รายการส่งตรวจล่าสุด</h2><div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b-2 border-gray-200"><th class="py-2 px-3">วันที่ส่ง</th><th class="py-2 px-3">หน่วยงาน</th><th class="py-2 px-3">ประเภทสิ่งส่งตรวจ</th><th class="py-2 px-3">จำนวน</th><th class="py-2 px-3">สถานะ</th></tr></thead><tbody id="latest-submissions-body"><tr><td colspan="5" class="text-center py-8 text-gray-500">ยังไม่มีข้อมูล...</td></tr></tbody></table></div></div>
+            </div>
+
+            <!-- Report Tab -->
+            <div id="report-tab" class="tab-content hidden">
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-bold text-slate-700 mb-6 text-center">รายงานผลตรวจล่าสุด</h2>
+                     <div class="flex items-center justify-center gap-4 mb-6">
+                         <button id="fetch-data-button" class="w-full md:w-auto bg-slate-700 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-800 transition-all flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 110 2H4a1 1 0 01-1-1V4a1 1 0 011-1zm10 8a1 1 0 110 2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 111.885-.666A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h3z" clip-rule="evenodd" /></svg>เรียกดูข้อมูลทั้งหมด</button>
+                     </div>
+                    <div class="overflow-x-auto"><table class="w-full text-left"><thead><tr class="border-b-2 border-gray-200"><th class="py-2 px-3">วันที่ส่ง</th><th class="py-2 px-3">หน่วยงาน</th><th class="py-2 px-3">ประเภทสิ่งส่งตรวจ</th><th class="py-2 px-3">สถานะ</th><th class="py-2 px-3 text-center">ดูรายงาน</th></tr></thead><tbody id="report-list-body"><tr><td colspan="5" class="text-center py-8 text-gray-500">กดปุ่ม "เรียกดูข้อมูล" เพื่อแสดงรายการ</td></tr></tbody></table></div>
+                </div>
+            </div>
+        </main>
+        <footer class="text-center py-6 mt-8"><p class="text-xs sm:text-sm text-gray-500">© 2025 ระบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์ | พัฒนาโดย ทนพ.มานพ นันตาบุตร</p></footer>
+    </div>
+    
+    <!-- Report Modal -->
+    <div id="report-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-40 hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-full overflow-y-auto">
+             <div id="pdf-export-area" class="p-8">
+                <div class="text-center mb-6">
+                    <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto" style="max-width: 150px;">
+                    <h2 class="text-xl font-bold mt-2">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h2>
+                    <h3 class="text-lg font-semibold text-slate-700">แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</h3>
+                    <p class="text-sm text-gray-500">(Environmental microbial analysis report form)</p>
+                </div>
+                 <div class="grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-2 text-sm mb-6 border-b pb-4">
+                    <div><strong>วันที่ส่งตรวจ:</strong> <span id="modal-submission-date"></span></div>
+                    <div><strong>หน่วยงานส่งตรวจ:</strong> <span id="modal-department"></span></div>
+                    <div><strong>ประเภทสิ่งส่งตรวจ:</strong> <span id="modal-specimen-type"></span></div>
+                    <div class="col-span-full"><strong>จำนวน (Sample):</strong> <span id="modal-sample-count"></span></div>
+                 </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left border-collapse border border-slate-400">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-2 border border-slate-300 text-center">ลำดับ</th>
+                                <th class="p-2 border border-slate-300">สถานที่</th>
+                                <th class="p-2 border border-slate-300">E.coli</th>
+                                <th class="p-2 border border-slate-300">P.aeruginosa</th>
+                                <th class="p-2 border border-slate-300">หมายเหตุ</th>
+                                <th class="p-2 border border-slate-300 text-center">สถานะ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-report-table-body"></tbody>
+                    </table>
+                </div>
+                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-12 text-sm">
+                    <div class="text-center">
+                        <div class="h-16 flex items-end justify-center">
+                            <span class="signature-font text-2xl text-slate-800">N.MANOP</span>
+                        </div>
+                        <p>...........................................................</p>
+                        <select id="reporter-name-select" class="form-input text-center mx-auto w-4/5 my-1 text-sm"></select>
+                        <p>ผู้รายงานผล : นักเทคนิคการแพทย์</p>
+                        <p>วันที่: <span id="modal-reported-date"></span></p>
+                    </div>
+                    <div class="text-center">
+                        <div class="h-16 flex items-end justify-center">
+                            <span class="signature-font text-2xl text-slate-800">N. NARISARA</span>
+                        </div>
+                        <p>...........................................................</p>
+                        <select id="reviewer-name-select" class="form-input text-center mx-auto w-4/5 my-1 text-sm"></select>
+                        <p>ผู้ตรวจสอบผล : นักเทคนิคการแพทย์ </p>
+                        <p>(หัวหน้าห้องปฎิบัติการจุลชีววิทยา)</p>
+                        <p>วันที่: <span id="modal-reviewed-date"></span></p>
+                    </div>
+                </div>
+                <!-- TAT Summary Container -->
+                <div id="tat-summary-container" class="mt-8 pt-4 border-t border-slate-200"></div>
+            </div>
+            <div id="modal-actions" class="flex justify-end gap-4 p-4 bg-gray-50 rounded-b-2xl no-print"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- Config ---
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzIos1GBYLyVB79PNN8gasxNzVX0o3UB-1KhW2HmAxGDD7-MXm80Lmp7qNzUMFdmu0i-A/exec";
+        let allJobs = [];
+        let monthlyChartInstance = null;
+        let currentUserRole = null;
+
+        const staffNames = [
+            "--- กรุณาเลือก ---", "ทนพญ.นริศรา มังกรแก้ว(ทน.5596)", "ทนพ.มานพ นันตาบุตร(ทน.17500)",
+            "ทนพญ.อนันตพร ฉันท์ผ่อง(ทน.5653)", "ทนพญ.พนารัตน์ เหมะธุลิน(ทน.5969)", "ทนพญ.รุจิรา แย้มนวล(ทน.11667)",
+            "ทนพญ.ปราญชลี หรั่งอ่อน(ทน.23412)"
+        ];
+
+        const DOMElements = {
+            loginModal: document.getElementById('login-modal'), loginButton: document.getElementById('login-button'), passwordInput: document.getElementById('password'), loginError: document.getElementById('login-error'),
+            appContainer: document.getElementById('app-container'), navTabsContainer: document.getElementById('nav-tabs-container'), userInfo: document.getElementById('user-info'),
+            sampleCountInput: document.getElementById('sample-count'), newSamplesTableBody: document.getElementById('new-samples-table-body'),
+            newSaveButton: document.getElementById('new-save-button'), newClearButton: document.getElementById('new-clear-button'),
+            fetchDataButton: document.getElementById('fetch-data-button'), reportListBody: document.getElementById('report-list-body'),
+            reportModal: document.getElementById('report-modal'), modalActions: document.getElementById('modal-actions'),
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            DOMElements.loginButton.addEventListener('click', handleLogin);
+            DOMElements.passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(); });
+            DOMElements.newSaveButton.addEventListener('click', saveNewData);
+            DOMElements.newClearButton.addEventListener('click', clearNewForm);
+            DOMElements.fetchDataButton.addEventListener('click', () => fetchData());
+            DOMElements.sampleCountInput.addEventListener('change', () => generateNewSampleRows(DOMElements.sampleCountInput.value));
+            
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('submission-date').value = today;
+            generateNewSampleRows(10);
+            populateDropdowns();
+        });
+
+        function populateDropdowns() {
+            const reporterSelect = document.getElementById('reporter-name-select');
+            const reviewerSelect = document.getElementById('reviewer-name-select');
+            const optionsHtml = staffNames.map(name => `<option value="${name}">${name}</option>`).join('');
+            reporterSelect.innerHTML = optionsHtml;
+            reviewerSelect.innerHTML = optionsHtml;
+        }
+
+        function handleLogin() {
+            const user = document.getElementById('username').value.trim();
+            const pass = DOMElements.passwordInput.value.trim();
+            const roles = { 'doctor': '1234', 'admin': '1234' };
+            if (roles[user] && roles[user] === pass) {
+                currentUserRole = user;
+                DOMElements.loginModal.classList.add('hidden');
+                DOMElements.appContainer.classList.remove('hidden');
+                DOMElements.userInfo.textContent = `Logged in as: ${user}`;
+                setupUIForRole();
+                fetchData(true);
+            } else { DOMElements.loginError.textContent = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'; }
+        }
+        
+        function setupUIForRole() {
+            const tabs = `<button data-tab="form" class="tab-button text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">แบบฟอร์มส่งตรวจ</button>
+                          <button data-tab="dashboard" class="tab-button text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">แดชบอร์ด</button>
+                          <button data-tab="report" class="tab-button text-sm sm:text-base font-medium py-4 px-6 focus:outline-none transition-colors duration-300">รายงานผล</button>`;
+            DOMElements.navTabsContainer.innerHTML = tabs;
+            DOMElements.navTabsContainer.querySelectorAll('.tab-button').forEach(button => button.addEventListener('click', () => switchTab(button.dataset.tab)));
+            switchTab('dashboard'); // Default to dashboard after login
+        }
+
+        function switchTab(targetTab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById(`${targetTab}-tab`).classList.remove('hidden');
+            DOMElements.navTabsContainer.querySelectorAll('.tab-button').forEach(b => {
+                b.classList.remove('tab-active', 'text-gray-600');
+                if (b.dataset.tab === targetTab) {
+                    b.classList.add('tab-active');
+                } else {
+                    b.classList.add('text-gray-600');
+                }
+            });
+        }
+
+        function generateNewSampleRows(count) {
+            let html = '';
+            const locationDatalistId = "location-list";
+            for (let i = 1; i <= count; i++) {
+                html += `
+                <tr class="border-b border-gray-200">
+                    <td class="p-2 text-center text-gray-500">${i}</td>
+                    <td class="p-2"><input type="text" list="${locationDatalistId}" class="form-input sample-location"></td>
+                    <td class="p-2"><input type="text" class="form-input sample-ecoli"></td>
+                    <td class="p-2"><input type="text" class="form-input sample-paeruginosa"></td>
+                    <td class="p-2"><input type="text" class="form-input sample-remarks"></td>
+                </tr>`;
+            }
+            DOMElements.newSamplesTableBody.innerHTML = `${html}<datalist id="${locationDatalistId}"><option value="อ่างล้างมือ"></option><option value="ประตู"></option></datalist>`;
+        }
+
+        function clearNewForm() {
+            document.getElementById('form-tab').querySelectorAll('input').forEach(input => { 
+                if (input.type !== 'date' && input.id !== 'sample-count') {
+                     input.value = ''; 
+                }
+            });
+            generateNewSampleRows(DOMElements.sampleCountInput.value);
+        }
+
+        async function postRequest(action, payload) {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action, payload }),
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8', 
+                }
+            });
+            if (!response.ok) {
+                 const errorText = await response.text();
+                 throw new Error(`Server error: ${response.status} - ${errorText}`);
+            }
+            const res = await response.json();
+            if (res.result !== 'success') {
+                throw new Error(res.message);
+            }
+            return res;
+        }
+        
+        async function handleSendEmail() {
+            const { value: email } = await Swal.fire({
+                title: 'กรอกอีเมลผู้รับ', input: 'email', inputLabel: 'ที่อยู่อีเมล', inputPlaceholder: 'กรอกอีเมลผู้รับที่นี่'
+            });
+
+            if (email) {
+                Swal.fire({ title: 'กำลังส่งอีเมล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+                const reportHtml = document.getElementById('pdf-export-area').innerHTML;
+                const subject = `รายงานผลการตรวจ: ${document.getElementById('modal-specimen-type').textContent}`;
+                const payload = { recipient: email, subject, body: reportHtml };
+                try {
+                     const res = await postRequest('sendEmail', payload);
+                     Swal.fire('สำเร็จ!', res.message, 'success');
+                } catch(e) {
+                    console.error('Email send error:', e);
+                    Swal.fire('ผิดพลาด!', `ไม่สามารถส่งอีเมลได้: ${e.message}`, 'error');
+                }
+            }
+        }
+
+        async function saveNewData() {
+            const dataToSave = {
+                submissionDate: document.getElementById('submission-date').value,
+                department: document.getElementById('department').value,
+                specimenType: document.getElementById('specimen-type').value,
+                sampleCount: DOMElements.sampleCountInput.value,
+                samples: Array.from(DOMElements.newSamplesTableBody.querySelectorAll('tr'))
+                    .map((row, i) => ({
+                        no: i + 1,
+                        location: row.querySelector('.sample-location').value,
+                        ecoli: row.querySelector('.sample-ecoli').value,
+                        paeruginosa: row.querySelector('.sample-paeruginosa').value,
+                        remarks: row.querySelector('.sample-remarks').value
+                    }))
+                    .filter(s => s.location)
+            };
+            if (dataToSave.samples.length === 0) return Swal.fire('ข้อผิดพลาด', 'กรุณากรอกข้อมูลตัวอย่างอย่างน้อย 1 รายการ โดยต้องระบุ "สถานที่"', 'error');
+            
+            Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await postRequest('save', dataToSave);
+                Swal.fire('สำเร็จ!', 'บันทึกข้อมูลเรียบร้อย', 'success'); 
+                clearNewForm(); 
+                fetchData(true);
+            } catch (e) { Swal.fire('ผิดพลาด!', `เกิดข้อผิดพลาด: ${e.message}`, 'error'); }
+        }
+        
+        async function fetchData(isSilent = false) {
+             if (!isSilent) Swal.fire({ title: 'กำลังโหลดข้อมูล...', text: 'กรุณารอสักครู่...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+             try {
+                const res = await postRequest('fetch', {}); 
+                if (!isSilent) Swal.close();
+
+                if (res.result === 'success' && res.data) {
+                    allJobs = groupSamplesIntoJobs(res.data);
+                    updateDashboard();
+                    filterAndRenderReports();
+                } else {
+                    throw new Error(res.message || 'No data returned.');
+                }
+             } catch(e) { 
+                 console.error("Fetch data error:", e);
+                 if (!isSilent) {
+                     Swal.fire({
+                         icon: 'error',
+                         title: 'ผิดพลาด!',
+                         html: `ไม่สามารถโหลดข้อมูลได้: ${e.message}<br><br><b>ข้อแนะนำ:</b> กรุณาตรวจสอบว่าคุณได้ Deploy สคริปต์ (Code.gs) เวอร์ชันล่าสุด และใช้ URL ที่ถูกต้อง (ลงท้ายด้วย /exec)`
+                     });
+                 }
+             }
+        }
+        
+        async function updateReportInSheet() {
+            const updatePayload = {
+                submissionId: DOMElements.reportModal.dataset.submissionId,
+                reporterName: document.getElementById('reporter-name-select').value,
+                reviewerName: document.getElementById('reviewer-name-select').value,
+                samples: Array.from(document.getElementById('modal-report-table-body').querySelectorAll('tr')).map(r => ({ 
+                    sampleId: r.dataset.sampleId,
+                    ecoli: r.querySelector('.modal-ecoli').value,
+                    paeruginosa: r.querySelector('.modal-paeruginosa').value,
+                    remarks: r.querySelector('.modal-remarks').value,
+                    status: r.querySelector('.modal-status').value 
+                }))
+            };
+            Swal.fire({ title: 'กำลังอัปเดต...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+            try {
+                await postRequest('update', updatePayload);
+                Swal.fire('สำเร็จ!', 'อัปเดตข้อมูลเรียบร้อย', 'success'); 
+                DOMElements.reportModal.classList.add('hidden'); 
+                fetchData(true);
+            } catch (e) { Swal.fire('ผิดพลาด!', `เกิดข้อผิดพลาดในการอัปเดต: ${e.message}`, 'error'); }
+        }
+
+        function groupSamplesIntoJobs(flatSamples) {
+            if (!Array.isArray(flatSamples)) return [];
+            const jobsMap = new Map();
+            flatSamples.forEach(s => {
+                if (!s || !s.SubmissionID) return;
+                if (!jobsMap.has(s.SubmissionID)) {
+                    jobsMap.set(s.SubmissionID, { 
+                        submissionId: s.SubmissionID,
+                        submissionDate: s.SubmissionDate,
+                        department: s.Department,
+                        specimenType: s.SpecimenType,
+                        sampleCount: s.SampleCount,
+                        reporterName: s.ReporterName,
+                        reviewerName: s.ReviewerName,
+                        TimestampSubmitting: s.TimestampSubmitting,
+                        TimestampReceived: s.TimestampReceived,
+                        TimestampPending: s.TimestampPending,
+                        TimestampCompleted: s.TimestampCompleted,
+                        samples: [] 
+                    });
+                }
+                jobsMap.get(s.SubmissionID).samples.push({
+                    sampleId: s.SampleID,
+                    no: s.SampleNo,
+                    location: s.Location,
+                    ecoli: s.Ecoli,
+                    paeruginosa: s.Paeruginosa,
+                    remarks: s.Remarks,
+                    status: s.Status
+                });
+            });
+            return Array.from(jobsMap.values()).sort((a,b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+        }
+        
+        function updateDashboard() {
+            const statusCounts = { 'กำลังส่งตรวจ': 0, 'รับสิ่งส่งตรวจแล้ว': 0, 'รอตรวจ': 0, 'ตรวจแล้ว': 0 };
+            let totalSamples = 0;
+            allJobs.forEach(job => {
+                totalSamples += job.samples.length;
+                job.samples.forEach(sample => {
+                    statusCounts[sample.status] = (statusCounts[sample.status] || 0) + 1;
+                });
+            });
+            document.getElementById('total-samples').textContent = totalSamples;
+            document.getElementById('pending-samples').textContent = (statusCounts['กำลังส่งตรวจ'] || 0) + (statusCounts['รับสิ่งส่งตรวจแล้ว'] || 0) + (statusCounts['รอตรวจ'] || 0) ;
+            document.getElementById('completed-samples').textContent = (statusCounts['ตรวจแล้ว'] || 0);
+            
+            const latestBody = document.getElementById('latest-submissions-body');
+            latestBody.innerHTML = '';
+            if (allJobs.length === 0) {
+                latestBody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-gray-500">ยังไม่มีข้อมูล...</td></tr>';
+                renderMonthlyChart([]);
+                return;
+            }
+
+            const recentJobs = allJobs.slice(0, 5);
+            recentJobs.forEach(job => {
+                const row = latestBody.insertRow();
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-2 px-3">${formatDate(job.submissionDate)}</td>
+                    <td class="py-2 px-3">${job.department}</td>
+                    <td class="py-2 px-3">${job.specimenType}</td>
+                    <td class="py-2 px-3">${job.samples.length}</td>
+                    <td class="py-2 px-3">${getStatusBadge(getOverallStatus(job.samples))}</td>`;
+            });
+            renderMonthlyChart(allJobs);
+        }
+
+        function renderMonthlyChart(jobs) {
+            const ctx = document.getElementById('monthly-chart').getContext('2d');
+            const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            const labels = [];
+            const monthlyData = {};
+            const today = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+                labels.push(`${thaiMonths[d.getMonth()]} ${d.getFullYear() + 543}`);
+                monthlyData[key] = 0;
+            }
+            jobs.forEach(job => {
+                 const d = new Date(job.submissionDate);
+                 const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, '0')}`;
+                 if(monthlyData.hasOwnProperty(key)) monthlyData[key] += job.samples.length;
+            });
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+            monthlyChartInstance = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'จำนวนตัวอย่าง', data: Object.values(monthlyData), backgroundColor: 'rgba(108, 80, 112, 0.6)', borderColor: 'rgba(108, 80, 112, 1)', borderWidth: 1, borderRadius: 8 }] }, options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } } });
+        }
+        
+        function filterAndRenderReports() {
+            const reportBody = DOMElements.reportListBody;
+            reportBody.innerHTML = '';
+            if (!allJobs || allJobs.length === 0) {
+                reportBody.innerHTML = `<tr><td colspan="5" class="text-center py-8 text-gray-500">ไม่พบข้อมูล (กรุณากด "เรียกดูข้อมูลทั้งหมด" หรือยังไม่มีข้อมูลในระบบ)</td></tr>`;
+                return;
+            }
+            allJobs.forEach(job => {
+                const row = reportBody.insertRow();
+                row.className = 'border-b hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-2 px-3">${formatDate(job.submissionDate)}</td>
+                    <td class="py-2 px-3">${job.department}</td>
+                    <td class="py-2 px-3">${job.specimenType}</td>
+                    <td class="py-2 px-3">${getStatusBadge(getOverallStatus(job.samples))}</td>
+                    <td class="py-2 px-3 text-center"><button class="view-report-btn bg-slate-200 text-slate-600 p-2 rounded-lg hover:bg-slate-300" data-job-id="${job.submissionId}">ดู</button></td>`;
+            });
+            document.querySelectorAll('.view-report-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                const jobData = allJobs.find(j => j.submissionId === e.currentTarget.dataset.jobId);
+                if (jobData) showReportModal(jobData);
+            }));
+        }
+        
+        function showReportModal(job) {
+            const reportDate = formatDate(new Date());
+            DOMElements.reportModal.dataset.submissionId = job.submissionId;
+
+            document.querySelector('#modal-submission-date').textContent = formatDate(job.submissionDate) || 'N/A';
+            document.querySelector('#modal-department').textContent = job.department || 'N/A';
+            document.querySelector('#modal-specimen-type').textContent = job.specimenType || 'N/A';
+            document.querySelector('#modal-sample-count').textContent = job.sampleCount || 'N/A';
+            document.querySelector('#modal-reported-date').textContent = reportDate;
+            document.querySelector('#modal-reviewed-date').textContent = reportDate;
+
+            const body = document.getElementById('modal-report-table-body');
+            body.innerHTML = '';
+            const isAdmin = currentUserRole === 'admin';
+            const statuses = ['กำลังส่งตรวจ', 'รับสิ่งส่งตรวจแล้ว', 'รอตรวจ', 'ตรวจแล้ว'];
+            
+            job.samples.forEach(s => {
+                const row = body.insertRow();
+                row.dataset.sampleId = s.sampleId;
+                const statusHtml = isAdmin ? 
+                    `<select class="form-input p-1 modal-status">${statuses.map(st => `<option value="${st}" ${s.status === st ? 'selected' : ''}>${st}</option>`).join('')}</select>` :
+                    getStatusBadge(s.status);
+                
+                row.innerHTML = `
+                    <td class="p-1 border border-slate-300 text-center">${s.no}</td>
+                    <td class="p-1 border border-slate-300">${s.location}</td>
+                    <td class="p-1 border border-slate-300"><input type="text" class="form-input p-1 modal-ecoli" value="${s.ecoli || ''}" ${!isAdmin ? 'disabled' : ''}></td>
+                    <td class="p-1 border border-slate-300"><input type="text" class="form-input p-1 modal-paeruginosa" value="${s.paeruginosa || ''}" ${!isAdmin ? 'disabled' : ''}></td>
+                    <td class="p-1 border border-slate-300"><input type="text" class="form-input p-1 modal-remarks" value="${s.remarks || ''}" ${!isAdmin ? 'disabled' : ''}></td>
+                    <td class="p-1 border border-slate-300 text-center">${statusHtml}</td>`;
+            });
+            
+            const reporterSelect = document.getElementById('reporter-name-select');
+            const reviewerSelect = document.getElementById('reviewer-name-select');
+            
+            reporterSelect.value = job.reporterName || '--- กรุณาเลือก ---';
+            reviewerSelect.value = job.reviewerName || '--- กรุณาเลือก ---';
+
+            let buttonsHTML = '';
+            if (isAdmin) {
+                reporterSelect.disabled = false;
+                reviewerSelect.disabled = false;
+                buttonsHTML += '<button id="update-report-button" class="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700">อัปเดตข้อมูล</button>';
+                buttonsHTML += '<button id="send-email-button" class="bg-teal-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-teal-700">Send Email</button>';
+            } else {
+                reporterSelect.disabled = true;
+                reviewerSelect.disabled = true;
+            }
+            buttonsHTML += '<button id="export-pdf-button" class="bg-red-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-red-700">Export PDF</button>';
+            buttonsHTML += '<button id="close-modal-button" class="bg-gray-300 text-gray-700 font-bold py-2 px-6 rounded-lg hover:bg-gray-400">ปิด</button>';
+            DOMElements.modalActions.innerHTML = buttonsHTML;
+
+            document.getElementById('close-modal-button').addEventListener('click', () => DOMElements.reportModal.classList.add('hidden'));
+            document.getElementById('export-pdf-button').addEventListener('click', exportPDF);
+            if(isAdmin) {
+                document.getElementById('update-report-button').addEventListener('click', updateReportInSheet);
+                document.getElementById('send-email-button').addEventListener('click', handleSendEmail);
+            } 
+            
+            displayTatSummary(job);
+            DOMElements.reportModal.classList.remove('hidden');
+        }
+
+        function displayTatSummary(job) {
+            const container = document.getElementById('tat-summary-container');
+            container.innerHTML = '';
+
+            const formatMilliseconds = (ms) => {
+                if (ms === null || isNaN(ms) || ms < 0) return 'N/A';
+                const totalSeconds = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            };
+
+            const tsSubmitting = job.TimestampSubmitting ? new Date(job.TimestampSubmitting) : null;
+            const tsReceived = job.TimestampReceived ? new Date(job.TimestampReceived) : null;
+            const tsPending = job.TimestampPending ? new Date(job.TimestampPending) : null;
+            const tsCompleted = job.TimestampCompleted ? new Date(job.TimestampCompleted) : null;
+
+            let summaryHTML = `<h4 class="text-md font-semibold text-slate-700 mb-2">สรุป Turn Around Time (TAT)</h4><dl class="text-sm grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">`;
+            
+            const tatPairs = [
+                { label: 'กำลังส่งตรวจ → รับแล้ว', time: tsSubmitting && tsReceived ? tsReceived - tsReceived : null },
+                { label: 'รับแล้ว → รอตรวจ', time: tsReceived && tsPending ? tsPending - tsReceived : null },
+                { label: 'รอตรวจ → ตรวจแล้ว', time: tsPending && tsCompleted ? tsCompleted - tsPending : null }
+            ];
+
+            tatPairs.forEach(pair => {
+                summaryHTML += `<dt class="text-gray-600">${pair.label}:</dt><dd class="font-medium">${formatMilliseconds(pair.time)}</dd>`;
+            });
+
+            summaryHTML += `</dl>`;
+
+            if (tsSubmitting && tsCompleted) {
+                const totalTAT = tsCompleted - tsSubmitting;
+                const benchmarkMs = 72 * 60 * 60 * 1000;
+                const isOverdue = totalTAT > benchmarkMs;
+                
+                summaryHTML += `<div class="mt-3 pt-3 border-t border-slate-200">`;
+                summaryHTML += `<p class="font-semibold">เวลารวมทั้งหมด: <span class="text-lg ${isOverdue ? 'text-red-600' : 'text-green-600'}">${formatMilliseconds(totalTAT)}</span></p>`;
+                
+                if (isOverdue) {
+                    const overageMs = totalTAT - benchmarkMs;
+                    summaryHTML += `<p class="text-sm text-red-600">เกินกำหนดเวลา 72 ชั่วโมงไป ${formatMilliseconds(overageMs)}</p>`;
+                } else {
+                    summaryHTML += `<p class="text-sm text-green-600">อยู่ในกำหนดเวลา 72 ชั่วโมง</p>`;
+                }
+                summaryHTML += `</div>`;
+            }
+            container.innerHTML = summaryHTML;
+        }
+
+        function exportPDF() {
+            const exportArea = document.getElementById('pdf-export-area');
+            Swal.fire({ title: 'กำลังสร้าง PDF...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+            const interactiveElements = exportArea.querySelectorAll('input, select');
+            interactiveElements.forEach(el => {
+                const textSpan = document.createElement('span');
+                textSpan.className = 'pdf-temp-text';
+                const value = el.tagName === 'SELECT' ? el.options[el.selectedIndex].text : el.value;
+                if (el.classList.contains('modal-status')) {
+                    textSpan.innerHTML = getStatusBadge(el.value);
+                } else {
+                    textSpan.textContent = value;
+                }
+                if(el.tagName === 'SELECT'){
+                     textSpan.style.textAlign = el.style.textAlign || 'center';
+                     textSpan.style.margin = 'auto';
+                }
+                el.style.display = 'none';
+                el.parentNode.insertBefore(textSpan, el);
+            });
+
+            html2canvas(exportArea, { scale: 2, useCORS: true }) 
+            .then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const imgProps = pdf.getImageProperties(imgData);
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                pdf.addImage(imgData, 'PNG', 10, 10, pdfWidth - 20, pdfHeight > 277 ? 277 : pdfHeight); 
+                pdf.save(`report-${Date.now()}.pdf`);
+                Swal.close();
+            })
+            .catch((err) => {
+                console.error("PDF generation error:", err);
+                Swal.fire('ผิดพลาด!', 'ไม่สามารถสร้าง PDF ได้', 'error');
+            })
+            .finally(() => {
+                exportArea.querySelectorAll('.pdf-temp-text').forEach(span => span.remove());
+                interactiveElements.forEach(el => {
+                    el.style.display = '';
+                });
+            });
+        }
+
+        function getOverallStatus(samples) {
+            if (!samples || samples.length === 0) return 'N/A';
+            if (samples.every(s => s.status === 'ตรวจแล้ว')) return 'ตรวจแล้ว';
+            if (samples.some(s => s.status === 'รอตรวจ')) return 'รอตรวจ';
+            if (samples.some(s => s.status === 'รับสิ่งส่งตรวจแล้ว')) return 'รับสิ่งส่งตรวจแล้ว';
+            return 'กำลังส่งตรวจ';
+        }
+
+        function formatDate(d) {
+            if (!d) return 'N/A';
+            const date = new Date(d);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            return `${day}/${month}/${date.getFullYear() + 543}`;
+        }
+        
+        function getStatusBadge(status) {
+            const colors = { 'กำลังส่งตรวจ': 'bg-orange-100 text-orange-800', 'รับสิ่งส่งตรวจแล้ว': 'bg-blue-100 text-blue-800', 'รอตรวจ': 'bg-yellow-100 text-yellow-800', 'ตรวจแล้ว': 'bg-green-100 text-green-800' };
+            return `<span class="px-2 py-1 text-xs font-medium rounded-full ${colors[status] || 'bg-gray-100 text-gray-800'}">${status}</span>`;
+        }
+    </script>
+</body>
+</html>

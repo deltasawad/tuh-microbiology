@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard สถิติสิ่งส่งตรวจ</title>
+    
+    <!-- Google Fonts: Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Noto Sans Thai"', 'sans-serif'],
+                    },
+                    colors: {
+                        fuchsia: {
+                            50: '#fdf4ff',
+                            100: '#fae8ff',
+                            400: '#e879f9',
+                            500: '#d946ef',
+                            600: '#c026d3',
+                        },
+                        purple: {
+                            500: '#a855f7',
+                            600: '#9333ea',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #fcf9fc;
+            background-image: radial-gradient(at 0% 0%, hsla(293,100%,96%,1) 0, transparent 50%), radial-gradient(at 100% 100%, hsla(280,100%,96%,1) 0, transparent 50%);
+            background-attachment: fixed;
+            color: #334155;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 32px 0 rgba(192, 38, 211, 0.05);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #d946ef 0%, #9333ea 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .btn-outline {
+            background: white;
+            border: 2px solid #e879f9;
+            color: #d946ef;
+            transition: all 0.3s ease;
+        }
+        .btn-outline:hover {
+            background: #fdf4ff;
+            transform: translateY(-2px);
+        }
+
+        /* Custom Scrollbar for minimal look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e9d5ff; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d8b4fe; }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-gradient mb-2">Specimen Dashboard</h1>
+                <p class="text-gray-500 text-sm md:text-base">ระบบจัดการและสถิติสิ่งส่งตรวจรายเดือน</p>
+            </div>
+            <div class="flex gap-3 items-center">
+                <button onclick="fetchDataFromSheet()" class="btn-outline px-6 py-2.5 rounded-full font-medium text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-down"></i> เรียกดูข้อมูลจาก Sheet
+                </button>
+            </div>
+        </header>
+
+        <!-- Quick Stats Row (Updated Layout) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="glass-card rounded-[2rem] p-5 text-center">
+                <div class="w-10 h-10 mx-auto bg-fuchsia-100 text-fuchsia-500 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-vials text-lg"></i>
+                </div>
+                <p class="text-xs text-gray-500 mb-1 font-medium">รวมสิ่งส่งตรวจ</p>
+                <h3 class="text-2xl font-bold text-gray-800" id="statTotal">0</h3>
+            </div>
+            <div class="glass-card rounded-[2rem] p-5 text-center">
+                <div class="w-10 h-10 mx-auto bg-purple-100 text-purple-500 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-crown text-lg"></i>
+                </div>
+                <p class="text-xs text-gray-500 mb-1 font-medium">ประเภทที่พบบ่อย</p>
+                <h3 class="text-lg font-bold text-gray-800 truncate" id="statTopType">-</h3>
+            </div>
+            <div class="glass-card rounded-[2rem] p-5 text-center">
+                <div class="w-10 h-10 mx-auto bg-pink-100 text-pink-500 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-building text-lg"></i>
+                </div>
+                <p class="text-xs text-gray-500 mb-1 font-medium">หน่วยงานส่งตรวจสูงสุด</p>
+                <h3 class="text-lg font-bold text-gray-800 truncate" id="statTopDept">-</h3>
+            </div>
+            <div class="glass-card rounded-[2rem] p-5 text-center">
+                <div class="w-10 h-10 mx-auto bg-blue-100 text-blue-500 rounded-full flex items-center justify-center mb-3">
+                    <i class="fa-solid fa-calendar-check text-lg"></i>
+                </div>
+                <p class="text-xs text-gray-500 mb-1 font-medium">เดือนที่มีงานสูงสุด</p>
+                <h3 class="text-lg font-bold text-gray-800 truncate" id="statTopMonth">-</h3>
+            </div>
+        </div>
+
+        <!-- Main Content (Charts & Tables) -->
+        <div class="space-y-6">
+            
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Line Chart (Monthly Trend) -->
+                <div class="glass-card rounded-[2rem] p-6 lg:col-span-8">
+                    <h3 class="text-base font-bold text-gray-700 mb-4">แนวโน้มปริมาณงานรายเดือน</h3>
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Doughnut Chart (Types) -->
+                <div class="glass-card rounded-[2rem] p-6 lg:col-span-4">
+                    <h3 class="text-base font-bold text-gray-700 mb-4">สัดส่วนประเภทสิ่งส่งตรวจ</h3>
+                    <div class="relative h-[300px] w-full flex justify-center">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tables Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Top Departments Table -->
+                <div class="glass-card rounded-[2rem] p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-gray-700">สรุปจำนวนสิ่งส่งตรวจ แยกตามหน่วยงาน</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="text-gray-500 bg-gray-50/50 sticky top-0 backdrop-blur-md">
+                                <tr>
+                                    <th class="py-3 px-4 rounded-tl-xl font-medium">ลำดับ</th>
+                                    <th class="py-3 px-4 font-medium">หน่วยงาน</th>
+                                    <th class="py-3 px-4 rounded-tr-xl font-medium text-right">จำนวนรวม (ตัวอย่าง)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topDeptTable" class="divide-y divide-gray-100">
+                                <!-- Data will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Type Summary Table -->
+                <div class="glass-card rounded-[2rem] p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-gray-700">สรุปจำนวนสิ่งส่งตรวจ แยกตามประเภท</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[350px] overflow-y-auto">
+                        <table class="w-full text-left text-sm relative">
+                            <thead class="text-gray-500 bg-gray-50/50 sticky top-0 backdrop-blur-md">
+                                <tr>
+                                    <th class="py-3 px-4 rounded-tl-xl font-medium">ลำดับ</th>
+                                    <th class="py-3 px-4 font-medium">ประเภทสิ่งส่งตรวจ</th>
+                                    <th class="py-3 px-4 rounded-tr-xl font-medium text-right">จำนวนรวม (ตัวอย่าง)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="typeSummaryTable" class="divide-y divide-gray-100">
+                                <!-- Data will be injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Logic -->
+    <script>
+        // --- Configuration ---
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzlVZ9rVCCCiplUzRFKSZXfpyTX1LsjV0l4EkS3YPA0h04pntzS8G71Oqyk9CS5EDuKmw/exec';
+        
+        const initialMockData = [
+            { "หน่วยงาน": "งานอาชีวอนามัย", "สิ่งส่งตรวจ": "อากาศ", "จำนวน": 40, "วันที่จอง": "2025-11-05" },
+            { "หน่วยงาน": "ศูนย์บริการสุขภาพบุคลากร", "สิ่งส่งตรวจ": "ยา", "จำนวน": 35, "วันที่จอง": "2025-11-15" },
+            { "หน่วยงาน": "งานควบคุมโรคติดเชื้อ", "สิ่งส่งตรวจ": "อากาศ", "จำนวน": 50, "วันที่จอง": "2025-10-10" },
+            { "หน่วยงาน": "งานควบคุมโรคติดเชื้อ", "สิ่งส่งตรวจ": "ยา", "จำนวน": 20, "วันที่จอง": "2025-10-25" },
+            { "หน่วยงาน": "ศูนย์ดูแลผู้ป่วย", "สิ่งส่งตรวจ": "น้ำ", "จำนวน": 15, "วันที่จอง": "2025-08-10" },
+            { "หน่วยงาน": "คลินิกพิเศษ", "สิ่งส่งตรวจ": "พื้นผิว", "จำนวน": 12, "วันที่จอง": "2025-09-05" },
+            { "หน่วยงาน": "งานอาชีวอนามัย", "สิ่งส่งตรวจ": "อากาศ", "จำนวน": 20, "วันที่จอง": "2025-12-05" },
+            { "หน่วยงาน": "ศูนย์บริการสุขภาพบุคลากร", "สิ่งส่งตรวจ": "อากาศ", "จำนวน": 15, "วันที่จอง": "2026-01-10" }
+        ];
+
+        let appData = JSON.parse(localStorage.getItem('labDashboardData')) || initialMockData;
+        let monthlyChartInstance = null;
+        let typeChartInstance = null;
+
+        // --- JSONP Helper Function ---
+        function makeJSONPCall(params, successCallback, errorCallback) {
+            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                successCallback(data);
+            };
+            const script = document.createElement('script');
+            const queryParams = new URLSearchParams(params);
+            queryParams.append('callback', callbackName);
+            script.src = `${SCRIPT_URL}?${queryParams.toString()}`;
+            script.onerror = function() {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                if(errorCallback) errorCallback('Network Error or CORS issue');
+            };
+            document.body.appendChild(script);
+        }
+
+        function fetchDataFromSheet(isAutoLoad = false) {
+            if (!isAutoLoad) {
+                Swal.fire({
+                    title: 'กำลังโหลดข้อมูล...',
+                    text: 'โปรดรอสักครู่ ระบบกำลังดึงข้อมูลจาก Google Sheet',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading() }
+                });
+            } else {
+                // แสดง Toast เล็กๆ มุมขวาบนตอนโหลดอัตโนมัติ เพื่อไม่ให้รบกวนการใช้งาน
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'info',
+                    title: 'กำลังซิงค์ข้อมูลล่าสุด...',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            }
+
+            makeJSONPCall(
+                { action: 'read' },
+                function(response) {
+                    if (response && response.status === 'success') {
+                        appData = response.data;
+                        localStorage.setItem('labDashboardData', JSON.stringify(appData));
+                        updateDashboard();
+                        
+                        if (!isAutoLoad) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'โหลดข้อมูลสำเร็จ',
+                                text: `พบข้อมูลทั้งหมด ${appData.length} รายการ`,
+                                confirmButtonColor: '#d946ef'
+                            });
+                        } else {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'success',
+                                title: 'อัปเดตข้อมูลล่าสุดเรียบร้อย',
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
+                        }
+                    } else {
+                        if (!isAutoLoad) {
+                            Swal.fire('ข้อผิดพลาด!', 'เกิดข้อผิดพลาดในการดึงข้อมูล: ' + (response.message || 'ไม่ทราบสาเหตุ'), 'error');
+                        }
+                    }
+                },
+                function(error) {
+                    if (!isAutoLoad) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เชื่อมต่อไม่สำเร็จ!',
+                            html: `
+                                <div class="text-left text-sm mt-2 text-gray-600">
+                                    <p class="mb-2">ไม่สามารถเชื่อมต่อกับ Google Apps Script ได้</p>
+                                    <b>สาเหตุที่พบบ่อย:</b>
+                                    <ul class="list-disc pl-5 mt-1 space-y-1 text-red-500">
+                                        <li>ลืมกด <b>Deploy > New deployment</b> ใน Apps Script</li>
+                                        <li>สิทธิ์เข้าถึงไม่ได้ตั้งเป็น <b>"ทุกคน" (Anyone)</b></li>
+                                        <li>URL ที่ใส่ใน SCRIPT_URL ไม่ถูกต้อง</li>
+                                    </ul>
+                                </div>
+                            `,
+                            confirmButtonColor: '#d946ef'
+                        });
+                    } else {
+                        console.error('Auto-load failed:', error);
+                    }
+                }
+            );
+        }
+
+        // --- Data Processing & UI Update ---
+        function updateDashboard() {
+            if (!appData || appData.length === 0) return;
+
+            Chart.defaults.color = '#64748b';
+            Chart.defaults.font.family = '"Noto Sans Thai", sans-serif';
+
+            let totalQty = 0;
+            const typeCount = {};
+            const deptCount = {};
+            const monthlyCount = {};
+
+            appData.forEach(item => {
+                const qty = parseInt(item['จำนวน']) || 0;
+                totalQty += qty;
+
+                const type = item['สิ่งส่งตรวจ'];
+                typeCount[type] = (typeCount[type] || 0) + qty;
+
+                const dept = item['หน่วยงาน'];
+                deptCount[dept] = (deptCount[dept] || 0) + qty;
+
+                if (item['วันที่จอง']) {
+                    try {
+                        const dateObj = new Date(item['วันที่จอง']);
+                        if (!isNaN(dateObj)) {
+                            const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+                            const monthKey = `${monthNames[dateObj.getMonth()]} ${(dateObj.getFullYear() + 543).toString().substr(2)}`;
+                            const sortKey = `${dateObj.getFullYear()}-${String(dateObj.getMonth()+1).padStart(2,'0')}`;
+                            
+                            if(!monthlyCount[sortKey]) monthlyCount[sortKey] = { label: monthKey, val: 0 };
+                            monthlyCount[sortKey].val += qty;
+                        }
+                    } catch(e) {}
+                }
+            });
+
+            // Find Tops
+            let topType = "-"; let maxTypeVal = 0;
+            for (let t in typeCount) if (typeCount[t] > maxTypeVal) { maxTypeVal = typeCount[t]; topType = t; }
+
+            let topDept = "-"; let maxDeptVal = 0;
+            for (let d in deptCount) if (deptCount[d] > maxDeptVal) { maxDeptVal = deptCount[d]; topDept = d; }
+
+            let topMonth = "-"; let maxMonthVal = 0;
+            for (let m in monthlyCount) if (monthlyCount[m].val > maxMonthVal) { maxMonthVal = monthlyCount[m].val; topMonth = monthlyCount[m].label; }
+
+            document.getElementById('statTotal').innerText = totalQty.toLocaleString();
+            document.getElementById('statTopType').innerText = topType;
+            if(document.getElementById('statTopDept')) document.getElementById('statTopDept').innerText = topDept;
+            if(document.getElementById('statTopMonth')) document.getElementById('statTopMonth').innerText = topMonth;
+
+            // 2. Render Monthly Chart
+            const sortedMonths = Object.keys(monthlyCount).sort();
+            const monthLabels = sortedMonths.map(k => monthlyCount[k].label);
+            const monthData = sortedMonths.map(k => monthlyCount[k].val);
+
+            if (monthlyChartInstance) monthlyChartInstance.destroy();
+            const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+            const gridColor = '#f1f5f9';
+
+            monthlyChartInstance = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: monthLabels,
+                    datasets: [{
+                        label: 'จำนวนสิ่งส่งตรวจ (ตัวอย่าง)',
+                        data: monthData,
+                        backgroundColor: '#e879f9',
+                        borderRadius: Number.MAX_VALUE,
+                        borderSkipped: false,
+                        barThickness: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    onHover: (event, chartElement) => {
+                        // เปลี่ยนเคอร์เซอร์เป็นรูปนิ้วมือเมื่อชี้ที่กราฟ
+                        event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                    },
+                    onClick: (event, elements) => {
+                        // เมื่อคลิกที่แท่งกราฟ
+                        if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const selectedMonthKey = sortedMonths[index]; // เช่น "2025-10"
+                            const selectedMonthLabel = monthLabels[index]; // เช่น "ต.ค. 68"
+                            showMonthDetails(selectedMonthKey, selectedMonthLabel);
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { borderDash: [4, 4], color: gridColor },
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { display: false },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 3. Render Type Chart (Doughnut)
+            const typeLabels = Object.keys(typeCount);
+            const typeData = Object.values(typeCount);
+
+            if (typeChartInstance) typeChartInstance.destroy();
+            const ctxType = document.getElementById('typeChart').getContext('2d');
+            typeChartInstance = new Chart(ctxType, {
+                type: 'doughnut',
+                data: {
+                    labels: typeLabels,
+                    datasets: [{
+                        data: typeData,
+                        backgroundColor: [
+                            '#d946ef', '#a855f7', '#ec4899', '#f472b6', '#c084fc'
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8 } }
+                    }
+                }
+            });
+
+            // 4. Update Top Department Table
+            const sortedDepts = Object.entries(deptCount).sort((a, b) => b[1] - a[1]);
+            const tbodyDept = document.getElementById('topDeptTable');
+            tbodyDept.innerHTML = '';
+            
+            sortedDepts.forEach((dept, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-fuchsia-50/50 transition-colors";
+                
+                let rankStyle = "text-gray-500 font-medium";
+                if(index === 0) rankStyle = "text-fuchsia-600 font-bold text-lg";
+                else if(index === 1) rankStyle = "text-purple-500 font-bold";
+                else if(index === 2) rankStyle = "text-pink-400 font-bold";
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 ${rankStyle}">#${index + 1}</td>
+                    <td class="py-3 px-4 font-medium text-gray-700">${dept[0]}</td>
+                    <td class="py-3 px-4 font-semibold text-fuchsia-600 text-right">${dept[1].toLocaleString()}</td>
+                `;
+                tbodyDept.appendChild(tr);
+            });
+
+            // 5. Update Type Summary Table
+            const sortedTypes = Object.entries(typeCount).sort((a, b) => b[1] - a[1]);
+            const tbodyType = document.getElementById('typeSummaryTable');
+            if (tbodyType) {
+                tbodyType.innerHTML = '';
+                
+                sortedTypes.forEach((type, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-purple-50/50 transition-colors";
+                    
+                    let rankStyle = "text-gray-500 font-medium";
+                    if(index === 0) rankStyle = "text-fuchsia-600 font-bold text-lg";
+
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 ${rankStyle}">#${index + 1}</td>
+                        <td class="py-3 px-4 font-medium text-gray-700">${type[0]}</td>
+                        <td class="py-3 px-4 font-semibold text-purple-600 text-right">${type[1].toLocaleString()}</td>
+                    `;
+                    tbodyType.appendChild(tr);
+                });
+            }
+        }
+
+        // Initialize Dashboard on Load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDashboard(); // โหลดข้อมูลเดิมจาก LocalStorage ขึ้นมาโชว์ก่อนทันที
+            fetchDataFromSheet(true); // สั่งดึงข้อมูลล่าสุดจาก Sheet อัตโนมัติ (แบบทำงานเบื้องหลัง)
+        });
+
+        // --- Drill-down Function ---
+        function showMonthDetails(monthKey, monthLabel) {
+            
+            // กรองเอาเฉพาะข้อมูลของเดือนที่คลิก
+            const filteredData = appData.filter(item => {
+                if(!item['วันที่จอง']) return false;
+                const d = new Date(item['วันที่จอง']);
+                if(isNaN(d)) return false;
+                const mKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+                return mKey === monthKey;
+            });
+
+            // เรียงลำดับตามวันที่
+            filteredData.sort((a, b) => new Date(a['วันที่จอง']) - new Date(b['วันที่จอง']));
+
+            let tableHTML = `
+                <div class="overflow-x-auto mt-2 max-h-[300px] rounded-xl border border-gray-100">
+                    <table class="w-full text-left text-sm text-gray-700">
+                        <thead class="bg-gray-50 sticky top-0 backdrop-blur-md">
+                            <tr>
+                                <th class="py-3 px-4 font-medium border-b">วันที่</th>
+                                <th class="py-3 px-4 font-medium border-b">หน่วยงาน</th>
+                                <th class="py-3 px-4 font-medium border-b">ประเภท</th>
+                                <th class="py-3 px-4 font-medium border-b text-right">จำนวน</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+            `;
+
+            if(filteredData.length === 0) {
+                tableHTML += `<tr><td colspan="4" class="text-center py-4 text-gray-400">ไม่พบข้อมูล</td></tr>`;
+            } else {
+                filteredData.forEach(row => {
+                    const d = new Date(row['วันที่จอง']);
+                    const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()+543}`;
+                    tableHTML += `
+                        <tr class="hover:bg-fuchsia-50/50 transition-colors">
+                            <td class="py-2.5 px-4 whitespace-nowrap text-gray-500">${dateStr}</td>
+                            <td class="py-2.5 px-4 font-medium">${row['หน่วยงาน']}</td>
+                            <td class="py-2.5 px-4"><span class="px-2.5 py-1 bg-fuchsia-100 text-fuchsia-600 rounded-full text-xs">${row['สิ่งส่งตรวจ']}</span></td>
+                            <td class="py-2.5 px-4 text-right font-semibold">${row['จำนวน']}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            tableHTML += `</tbody></table></div>`;
+
+            // แสดงหน้าต่าง Popup
+            Swal.fire({
+                title: `รายการส่งตรวจเดือน<br><span class="text-fuchsia-500">${monthLabel}</span>`,
+                html: tableHTML,
+                width: '600px',
+                showCloseButton: true,
+                showConfirmButton: false,
+                customClass: {
+                    title: 'text-xl font-bold text-gray-800',
+                    popup: 'rounded-[2rem] shadow-2xl border border-gray-100',
+                    closeButton: 'focus:outline-none hover:text-fuchsia-500'
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>

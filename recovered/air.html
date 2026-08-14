@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบส่งตรวจ Air sampling - รพ.ธรรมศาสตร์</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;700&family=Caveat&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans Thai', sans-serif;
+            background-color: #f8f7fa;
+        }
+        :root {
+            --primary-color: #6c5070;
+            --secondary-color: #df6a6a;
+            --accent-color: #c2dbc1;
+            --text-color: #333;
+        }
+        .k-minimal-card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        /* Navbar Styles */
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: #f8f7fa;
+            padding-top: 1rem;
+            padding-bottom: 0;
+            transition: all 0.3s ease;
+        }
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            max-width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .tab-button {
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: none;
+            margin: 0 4px;
+            color: #666;
+            background-color: transparent;
+        }
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+            box-shadow: 0 2px 8px rgba(108, 80, 112, 0.3);
+        }
+        .tab-button:not(.active):hover {
+            background-color: #e6e9ed;
+            color: #333;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #5a425d;
+        }
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #c95d5d;
+        }
+        .btn-outline {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .form-input, .form-select {
+            border: 1px solid #ddd;
+            border-radius: 0.75rem;
+            padding: 0.75rem;
+            width: 100%;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(108, 80, 112, 0.2);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 2rem;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 1200px;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .close-button {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover, .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-50 to-pink-50">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="w-full max-w-sm">
+        <div class="k-minimal-card text-center">
+             <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto mb-4" style="max-width: 120px;" onerror="this.onerror=null; this.src='https://placehold.co/120x120/6c5070/FFFFFF?text=Logo'; this.alt='Logo not found';">
+            <h1 class="text-xl font-bold text-[var(--primary-color)]">ระบบส่งตรวจ Air Sampling</h1>
+            <p class="text-sm text-gray-500 mb-6">สำหรับงานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร</p>
+            <form id="login-form">
+                <input id="username" type="text" placeholder="ชื่อผู้ใช้" class="form-input mb-4" required>
+                <input id="password" type="password" placeholder="รหัสผ่าน" class="form-input mb-4" required>
+                <button type="submit" class="btn-primary w-full">เข้าสู่ระบบ</button>
+                <p id="login-error" class="text-red-500 text-sm mt-4 hidden">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="hidden w-full max-w-7xl mx-auto pb-10">
+        <header class="text-center py-6">
+            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto" style="max-width: 150px;" onerror="this.onerror=null; this.src='https://placehold.co/150x150/6c5070/FFFFFF?text=Logo'; this.alt='Logo not found';">
+            <h1 class="text-2xl font-bold text-[var(--primary-color)] mt-2">ระบบส่งตรวจ Air samplingและรายงานผลงานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์</h1>
+            <p class="text-md text-gray-600">Air sampling testing system for microbiology work at Thammasat University Hospital</p>
+        </header>
+
+        <main>
+            <!-- New Sticky Navbar -->
+            <div class="sticky-nav">
+                <div class="nav-container">
+                    <button id="btn-dashboard" class="tab-button active">
+                        <span class="mr-1">📊</span> แดชบอร์ด
+                    </button>
+                    <button id="btn-form" class="tab-button">
+                        <span class="mr-1">📝</span> แบบฟอร์มส่งตรวจ
+                    </button>
+                    <button id="btn-report" class="tab-button">
+                        <span class="mr-1">📋</span> รายงานผลตรวจ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="k-minimal-card mt-2">
+                <!-- Dashboard Tab -->
+                <div id="dashboard-tab">
+                    <h2 class="text-xl font-semibold text-[var(--primary-color)] mb-6">สรุปข้อมูลภาพรวม</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                        <div class="p-6 bg-blue-50 rounded-xl">
+                            <h3 class="text-lg text-blue-800 font-semibold">จำนวนส่งตรวจทั้งหมด</h3>
+                            <p id="total-samples" class="text-4xl font-bold text-blue-900 mt-2">0</p>
+                        </div>
+                        <div class="p-6 bg-yellow-50 rounded-xl">
+                            <h3 class="text-lg text-yellow-800 font-semibold">รอตรวจ</h3>
+                            <p id="pending-samples" class="text-4xl font-bold text-yellow-900 mt-2">0</p>
+                        </div>
+                        <div class="p-6 bg-green-50 rounded-xl">
+                            <h3 class="text-lg text-green-800 font-semibold">ตรวจแล้ว</h3>
+                            <p id="completed-samples" class="text-4xl font-bold text-green-900 mt-2">0</p>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold text-[var(--primary-color)] mb-4">สถิติจำนวนตัวอย่างทั้งหมดรายเดือน</h3>
+                        <div class="p-4 border rounded-xl bg-white h-64 md:h-80">
+                           <canvas id="monthly-total-chart"></canvas>
+                        </div>
+                    </div>
+                    <div class="mt-8">
+                        <h3 class="text-xl font-semibold text-[var(--primary-color)] mb-4">ข้อมูลงานที่ส่งล่าสุด</h3>
+                        <div id="latest-submissions-container" class="space-y-4">
+                            <p class="text-center text-gray-500">ยังไม่มีข้อมูลการส่งตรวจล่าสุด</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submission Form Tab -->
+                <div id="form-tab" class="hidden">
+                    <h2 class="text-xl font-semibold text-[var(--primary-color)] mb-6">แบบฟอร์มส่งตรวจอากาศ (Air Sampling)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="submission-date" class="block text-sm font-medium text-gray-700 mb-1">วันที่ส่งตรวจ</label>
+                            <input type="date" id="submission-date" class="form-input">
+                        </div>
+                        <div>
+                            <label for="department" class="block text-sm font-medium text-gray-700 mb-1">หน่วยงานส่งตรวจ (ชื่อหน่วยงานที่เข้าไปวางเพลต)</label>
+                            <input list="department-list" id="department" class="form-input" placeholder="พิมพ์หรือเลือกหน่วยงาน">
+                            <datalist id="department-list">
+                                <option value="หน่วยงานส่งตรวจ(ชื่อหน่วยงานที่เข้าไปวางเพลต)"></option>
+                                
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="sample-type" class="block text-sm font-medium text-gray-700 mb-1">ประเภทสิ่งส่งตรวจ</label>
+                            <input list="sample-type-list" id="sample-type" class="form-input" placeholder="พิมพ์หรือเลือกประเภท">
+                             <datalist id="sample-type-list">
+                                <option value="อากาศ"></option>
+                            </datalist>
+                        </div>
+                        <div>
+                            <label for="sender-email" class="block text-sm font-medium text-gray-700 mb-1">Email ผู้ส่งตรวจ (สำหรับแจ้งเตือนผล)</label>
+                            <input type="email" id="sender-email" class="form-input" placeholder="example@email.com">
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <label for="row-count-input" class="block text-sm font-medium text-gray-700 mb-1">จำนวนตัวอย่าง (รายการ)</label>
+                        <input type="number" id="row-count-input" class="form-input bg-purple-50 border-purple-200 w-full md:w-1/3" min="1" max="100" value="10" placeholder="ระบุจำนวน">
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-100 text-gray-600 rounded-t-lg">
+                                <tr>
+                                    <th class="p-3 w-12 text-center">ลำดับ</th>
+                                    <th class="p-3 min-w-[250px] text-center">หน่วยงาน</th>
+                                    <th class="p-3 min-w-[200px] text-center">ตำแหน่งที่เก็บ</th>
+                                    <th class="p-3 min-w-[150px] text-center">Number of colonies (Bacteria)</th>
+                                    <th class="p-3 min-w-[150px] text-center">Number of colonies (Fungus)</th>
+                                    <th class="p-3 min-w-[200px] text-center">หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sample-table-body">
+                                <!-- Rows will be generated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <datalist id="ward-list"></datalist>
+
+                    <div class="flex justify-end gap-4 mt-8">
+                        <button id="clear-form-btn" class="btn-outline">ล้างข้อมูล</button>
+                        <button id="save-data-btn" class="btn-primary">บันทึกข้อมูล</button>
+                    </div>
+                </div>
+
+                <!-- Report Tab -->
+                <div id="report-tab" class="hidden">
+                     <h2 class="text-xl font-semibold text-[var(--primary-color)] mb-6">รายงานผลการตรวจ</h2>
+                     <!-- Removed sticky from control bar, added padding and border for separation -->
+                     <div class="flex items-center gap-4 mb-4 bg-white p-4 rounded-lg shadow-sm border">
+                        <button id="fetch-data-btn" class="btn-primary flex items-center gap-2">
+                             <span>🔄</span> เรียกดูข้อมูลจาก Google Sheet
+                        </button>
+                        <p class="text-sm text-gray-500">กดเพื่ออัปเดตข้อมูลทั้งหมดและสถานะ</p>
+                    </div>
+                    <!-- Added fixed height and internal scrolling -->
+                    <div id="report-data-container" class="overflow-auto max-h-[65vh] border rounded-xl shadow-inner bg-white">
+                       <p class="text-center text-gray-500 py-8">ยังไม่มีข้อมูล กรุณากด "เรียกดูข้อมูลจาก Google Sheet"</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center py-8 text-gray-500 text-sm">
+            © 2025 ระบบส่งตรวจน้ำงานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์ | พัฒนาโดย ทนพ.มานพ นันตาบุตร
+        </footer>
+    </div>
+    
+    <!-- Report Modal -->
+    <div id="report-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal-btn" class="close-button">&times;</span>
+            <div id="pdf-export-content">
+                 <div class="text-center mb-6">
+                    <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="Hospital Logo" class="mx-auto" style="max-width: 100px;" onerror="this.onerror=null; this.src='https://placehold.co/100x100/6c5070/FFFFFF?text=Logo'; this.alt='Logo not found';">
+                    <h2 class="text-xl font-bold mt-2">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h2>
+                    <h3 class="text-lg font-semibold text-[var(--primary-color)]">ใบรายงานผลตรวจคุณภาพอากาศ (Air sampling Quality Test Report)</h3>
+                    <p class="text-sm text-gray-500">เลขที่รายงาน: FM-09-156-080</p>
+                </div>
+                <div class="grid grid-cols-2 gap-x-8 text-sm mb-4">
+                    <p><strong>หน่วยงานส่งตรวจ:</strong> <span id="modal-department"></span></p>
+                    <p><strong>วันที่ส่งตรวจ:</strong> <span id="modal-submission-date"></span></p>
+                </div>
+                <div class="overflow-x-auto mb-4">
+                    <table class="w-full text-sm border">
+                         <thead class="bg-gray-100">
+                             <tr>
+                                <th class="p-2 border text-center">ลำดับ</th>
+                                <th class="p-2 border text-center">หน่วยงาน</th>
+                                <th class="p-2 border text-center">ตำแหน่งที่เก็บ</th>
+                                <th class="p-2 border text-center">Number of colonies (Bacteria)</th>
+                                <th class="p-2 border text-center">Number of colonies (Fungus)</th>
+                                <th class="p-2 border text-center">สถานะ</th>
+                                <th class="p-2 border text-center">หมายเหตุ</th>
+                             </tr>
+                         </thead>
+                         <tbody id="modal-report-table-body">
+                         </tbody>
+                    </table>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm mt-8 pt-4 border-t">
+                    <div class="text-center">
+                        <p>(ทนพ.มานพ นันตาบุตร)</p>
+                        <p>ผู้รายงานผล</p>
+                        <p>นักเทคนิคการแพทย์ (17500)</p>
+                        <p>วันที่: <span id="modal-reported-date"></span></p>
+                    </div>
+                    <div class="text-center">
+                        <p>(ทนพญ.นริศรา มังกรแก้ว)</p>
+                        <p>ผู้ตรวจสอบผล</p>
+                        <p>นักเทคนิคการแพทย์ (ทน.5596)</p>
+                        <p>วันที่: <span id="modal-reviewed-date"></span></p>
+                    </div>
+                </div>
+            </div>
+             <div class="text-right mt-8 flex justify-end gap-2">
+                <button id="email-report-btn" class="btn-primary !bg-blue-600 hover:!bg-blue-700">ส่งผลทาง Email</button>
+                <button id="export-pdf-btn" class="btn-secondary">Export PDF</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Constants & Global State ---
+        // UPDATE: Updated GAS URL
+        const GAS_URL = 'https://script.google.com/macros/s/AKfycbxksmDNbZhIYFoxKFz_I1jfJY7cjjsaV1mEgzJwwDUdoKiWPwXK5q0LIyxyfFHUU43V2A/exec';
+        let allSubmissions = [];
+        let monthlyTotalChartInstance = null;
+        let currentSubmissionId = null; 
+        
+        const wardOptionsList = [
+            'ศัลยกรรมอุบัติเหตุ', 'อายุรกรรมกิตติวัฒนา', 'ICU CVT', 'SICU', 'ANICU', 'กึ่งวิกฤตทารกแรกเกิด', 'NICU', 'PICU', 'ICU Burn', 'NSICU', 'RCU', 'ศัลยกรรม 1', 'ศัลยกรรม 2', 'ศัลยกรรม 3', 'ศัลยกรรมพิเศษ 1', 'งานการพยาบาลรังสีวิทยา', 'โรคไตและไตเทียม', 'งานอุบัติเหตุและฉุกเฉิน', 'งานการพยาบาลสุขภาพจิต', 'งานการพยาบาลผู้คลอด', 'งานการพยาบาลเวชศาสตร์มารดาและทารกในครรภ์', 'หน่วยการพยาบาลอิตถีบูรณา', 'หน่วยการพยาบาลมะเร็งนรีเวช', 'งานการพยาบาลตรวจโรคกุมารเวชกรรม', 'งานการพยาบาลตรวจโรคติดเชื้อแพร่กระจายทางอากาศ', 'คัดกรองและรับผู้ป่วยใน', 'ศัลยกรรมพิเศษ 2', 'ศัลยกรรมระบบประสาท', 'สูติ-นรีเวชกรรมสามัญ', 'สูติ-นรีเวชกรรมพิเศษ', 'เคมีบำบัด', 'ผู้ป่วยนอกเคมีบำบัดและหอผู้ป่วยพิเศษเคมีบำบัด', 'ศัลยกรรมกระดูกและข้อสามัญ', 'ศัลยกรรมกระดูกและข้อพิเศษ', 'พิเศษยูงทอง 5', 'พิเศษยูงทอง 6', 'พิเศษยูงทอง 3', 'พิเศษยูงทอง 4', 'อายุรกรรมความดันลบ', 'พิเศษยูงทอง 1', 'พิเศษยูงทอง 2', 'งานการพยาบาลตรวจโรคหู คอ จมูก', 'งานการพยาบาลตรวจโรคศัลยกรรม 1', 'งานการพยาบาลตรวจโรคอายุรกรรม 1', 'งานการพยาบาลตรวจโรคอายุรกรรม 2', 'งานการพยาบาลตรวจโรคเวชศาสตร์ทั่วไปและครอบครัว', 'งานการพยาบาลตรวจโรคจักษุ', 'โรคหัวใจและหลอดเลือด (ศูนย์หัวใจ)', 'งานการพยาบาลผู้ป่วยผ่าตัดเปลี่ยนข้อ', 'งานการพยาบาลตรวจโรคศัลยกรรมกระดูก', 'งานการพยาบาลตรวจโรคสูติ-นรีเวชกรรม', 'งานการพยาบาลตรวจโรคศัลยกรรม 2', 'โรคหลอดเลือดสมองและระบบประสาท', 'CCU', 'MICU', 'พิเศษดุลโสภาคย์ 4', 'พิเศษดุลโสภาคย์ 5', 'กุมารเวชกรรม 1', 'จักษุ', 'หู คอ จมูก ทันตกรรม และศัลยกรรมช่องปาก', 'อายุรกรรมชายสามัญ', 'อายุรกรรมชายพิเศษ', 'อายุรกรรมหญิงสามัญ', 'อายุรกรรมหญิงพิเศษ', 'กุมารเวชกรรม 2', 'กุมารพิเศษ', 'ปัญจา', 'ก่อนและหลังผ่าตัด', 'ผ่าตัดไม่ค้างคืน', 'งานการพยาบาลผู้ป่วยผ่าตัด', 'วิสัญญี', 'ส่องกล้องและหัตถการพิเศษ', 'หน่วยการพยาบาลตรวจโรคภูมิแพ้โรคหืดฯ', 'ศูนย์ thammasat Lifestyle and wellness medical center', 'งานการพยาบาลเวชศาสตร์การเจริญพันธ์(ผู้มีบุตรยาก)', 'หน่วยการพยาบาลตรวจโรคผิวหนัง', 'ศูนย์ไตเทียมประสิทธิภาพสูง', 'หน่วยการพยาบาลตรวจโรคเวชศาสตร์ฟื้นฟู'
+        ];
+
+        // --- DOM Elements ---
+        const loginScreen = document.getElementById('login-screen');
+        const appContainer = document.getElementById('app-container');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+
+        const tabs = {
+            dashboard: document.getElementById('dashboard-tab'),
+            form: document.getElementById('form-tab'),
+            report: document.getElementById('report-tab'),
+        };
+        const tabButtons = {
+            dashboard: document.getElementById('btn-dashboard'),
+            form: document.getElementById('btn-form'),
+            report: document.getElementById('btn-report'),
+        };
+
+        const submissionDateInput = document.getElementById('submission-date');
+        const departmentInput = document.getElementById('department');
+        const sampleTypeInput = document.getElementById('sample-type');
+        const senderEmailInput = document.getElementById('sender-email'); // New Element
+        const sampleTableBody = document.getElementById('sample-table-body');
+        const rowCountInput = document.getElementById('row-count-input'); 
+        const clearFormBtn = document.getElementById('clear-form-btn');
+        const saveDataBtn = document.getElementById('save-data-btn');
+
+        const fetchDataBtn = document.getElementById('fetch-data-btn');
+        const reportDataContainer = document.getElementById('report-data-container');
+        
+        const reportModal = document.getElementById('report-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const exportPdfBtn = document.getElementById('export-pdf-btn');
+        const emailReportBtn = document.getElementById('email-report-btn');
+
+        // --- Functions ---
+        
+        // Login Handler
+        const handleLogin = (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'air' && password === '8416') {
+                loginScreen.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                initializeForm();
+                loadPersistedData(); 
+                handleFetchData();   
+            } else {
+                loginError.classList.remove('hidden');
+            }
+        };
+
+        // Tab Switching
+        const switchTab = (tabName) => {
+            Object.values(tabs).forEach(tab => tab.classList.add('hidden'));
+            Object.values(tabButtons).forEach(btn => btn.classList.remove('active'));
+            tabs[tabName].classList.remove('hidden');
+            tabButtons[tabName].classList.add('active');
+        };
+        
+        // Form Initialization & Dynamic Rows
+        const renderTableRows = (count) => {
+            const currentRows = sampleTableBody.querySelectorAll('tr');
+            const currentCount = currentRows.length;
+
+            if (count > currentCount) {
+                // Add new rows
+                for (let i = currentCount + 1; i <= count; i++) {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="p-2 text-center align-middle border-x border-t">${i}</td>
+                        <td class="p-2 align-middle border-x border-t"><input list="ward-list" class="form-input sample-ward text-center" placeholder="พิมพ์หรือเลือก Ward"></td>
+                        <td class="p-2 align-middle border-x border-t"><input type="text" class="form-input sample-location text-center" placeholder="เช่น โต๊ะกลางห้อง"></td>
+                        <td class="p-2 align-middle border-x border-t"><input type="number" min="0" class="form-input sample-bacteria text-center" placeholder="-"></td>
+                        <td class="p-2 align-middle border-x border-t"><input type="number" min="0" class="form-input sample-fungus text-center" placeholder="-"></td>
+                        <td class="p-2 align-middle border-x border-t"><input type="text" class="form-input sample-remarks text-center"></td>
+                    `;
+                    sampleTableBody.appendChild(row);
+                }
+            } else if (count < currentCount) {
+                // Remove excess rows
+                for (let i = currentCount; i > count; i--) {
+                    sampleTableBody.removeChild(sampleTableBody.lastChild);
+                }
+            }
+        };
+
+        const initializeForm = () => {
+            submissionDateInput.value = new Date().toISOString().slice(0, 10);
+            
+            const wardDatalist = document.getElementById('ward-list');
+            wardDatalist.innerHTML = wardOptionsList.map(opt => `<option value="${opt}"></option>`).join('');
+
+            // Reset to default 10 or input value
+            const initialCount = parseInt(rowCountInput.value) || 10;
+            sampleTableBody.innerHTML = ''; // Clear only on full init
+            renderTableRows(initialCount);
+        };
+        
+        // Event Listener for Dynamic Row Count
+        rowCountInput.addEventListener('change', (e) => {
+            let count = parseInt(e.target.value);
+            if (count < 1) {
+                count = 1;
+                e.target.value = 1;
+            }
+            renderTableRows(count);
+        });
+        
+        const clearForm = () => {
+            if (confirm('คุณต้องการล้างข้อมูลในฟอร์มทั้งหมดใช่หรือไม่?')) {
+                initializeForm();
+                departmentInput.value = '';
+                sampleTypeInput.value = '';
+                senderEmailInput.value = '';
+                rowCountInput.value = 10;
+            }
+        };
+
+        // Data Handling (Save & Load)
+        const handleSaveData = () => {
+            const submissionDate = submissionDateInput.value;
+            const department = departmentInput.value;
+            const sampleType = sampleTypeInput.value;
+            const senderEmail = senderEmailInput.value;
+
+            if (!submissionDate || department === '--กรุณาเลือกหน่วยงาน--' || department.trim() === '' || sampleType.trim() === '' || sampleType === '--กรุณาเลือก --') {
+                Swal.fire('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกวันที่ส่งตรวจ, หน่วยงานส่งตรวจ และประเภทสิ่งส่งตรวจ', 'warning');
+                return;
+            }
+
+            const samples = [];
+            const rows = sampleTableBody.querySelectorAll('tr');
+            let hasData = false;
+            rows.forEach((row, index) => {
+                const ward = row.querySelector('.sample-ward').value;
+                const location = row.querySelector('.sample-location').value;
+                const bacteria = row.querySelector('.sample-bacteria').value;
+                const fungus = row.querySelector('.sample-fungus').value;
+                const remarks = row.querySelector('.sample-remarks').value;
+
+                if(ward || location || fungus || bacteria || remarks) {
+                    hasData = true;
+                    // UPDATED: Default to "N/A" if empty
+                    samples.push({
+                        id: index + 1,
+                        ward: ward || '',
+                        location: location || '',
+                        bacteria: bacteria === "" ? "N/A" : bacteria,
+                        fungus: fungus === "" ? "N/A" : fungus,
+                        remarks: remarks || ''
+                    });
+                }
+            });
+
+            if (!hasData) {
+                Swal.fire('ไม่มีข้อมูล', 'กรุณากรอกข้อมูลตัวอย่างอย่างน้อย 1 รายการ', 'info');
+                return;
+            }
+
+            const dataToSave = {
+                submissionDate,
+                department,
+                sampleType,
+                email: senderEmail, // Save Email
+                samples
+            };
+
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล...', text: 'กรุณารอสักครู่ (ระบบจะแจ้งเตือน Telegram อัตโนมัติ)',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const callbackName = 'gasCallback' + new Date().getTime();
+            window[callbackName] = function(response) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                if (response.status === 'success') {
+                    Swal.fire('บันทึกสำเร็จ!', 'ข้อมูลของคุณถูกบันทึกใน Google Sheet และแจ้งเตือน Telegram แล้ว', 'success');
+                    initializeForm();
+                    departmentInput.value = '';
+                    sampleTypeInput.value = '';
+                    senderEmailInput.value = '';
+                } else {
+                    Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้: ' + response.message, 'error');
+                }
+            };
+
+            const script = document.createElement('script');
+            const dataParam = encodeURIComponent(JSON.stringify(dataToSave));
+            script.src = `${GAS_URL}?action=save&data=${dataParam}&callback=${callbackName}`;
+            document.body.appendChild(script);
+        };
+        
+        const handleFetchData = () => {
+            Swal.fire({
+                title: 'กำลังเรียกดูข้อมูล...', text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+            
+            const callbackName = 'gasFetchCallback' + new Date().getTime();
+            window[callbackName] = function(response) {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                Swal.close();
+                if (response.status === 'success') {
+                    allSubmissions = response.data;
+                    updateUI();
+                    localStorage.setItem('airSamplingData', JSON.stringify(allSubmissions));
+                } else {
+                     Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเรียกดูข้อมูลได้: ' + response.message, 'error');
+                }
+            };
+            
+            const script = document.createElement('script');
+            script.src = `${GAS_URL}?action=load&callback=${callbackName}`;
+            document.body.appendChild(script);
+        };
+
+        const updateUI = () => {
+            updateDashboard();
+            renderMonthlyTotalChart(allSubmissions);
+            renderLatestSubmissionsOnDashboard();
+            renderReportTable();
+        }
+        
+        // Update UI
+        const updateDashboard = () => {
+            if (!allSubmissions || allSubmissions.length === 0) {
+                 document.getElementById('total-samples').textContent = 0;
+                 document.getElementById('pending-samples').textContent = 0;
+                 document.getElementById('completed-samples').textContent = 0;
+                 return;
+            };
+            
+            let stats = { pending: 0, completed: 0 };
+            const uniqueSubmissions = [...new Map(allSubmissions.map(item => [item['submissionId'], item])).values()];
+
+            uniqueSubmissions.forEach(sub => {
+                const isPending = allSubmissions.filter(s => s.submissionId === sub.submissionId).every(s => s.status === 'รอตรวจ');
+                if (isPending) {
+                    stats.pending++;
+                } else {
+                    stats.completed++;
+                }
+            });
+
+            document.getElementById('total-samples').textContent = uniqueSubmissions.length;
+            document.getElementById('pending-samples').textContent = stats.pending;
+            document.getElementById('completed-samples').textContent = stats.completed;
+        };
+        
+        const renderMonthlyTotalChart = (data = []) => {
+            const ctx = document.getElementById('monthly-total-chart')?.getContext('2d');
+            if (!ctx) return; 
+            
+            const labels = [];
+            const monthlyKeys = []; 
+            const monthlyData = {};
+
+            const thaiMonths = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            
+            const now = new Date();
+            for (let i = 11; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const year = d.getFullYear();
+                const month = d.getMonth();
+                const label = `${thaiMonths[month]} ${year + 543}`;
+                const key = `${year}-${month}`;
+                labels.push(label);
+                monthlyKeys.push(key);
+                monthlyData[key] = 0;
+            }
+            
+            data.forEach(sample => {
+                const subDate = new Date(sample.submissionDate);
+                const year = subDate.getFullYear();
+                const month = subDate.getMonth();
+                const key = `${year}-${month}`;
+
+                if (monthlyData.hasOwnProperty(key)) {
+                    monthlyData[key]++;
+                }
+            });
+            
+            const orderedDataCounts = monthlyKeys.map(key => monthlyData[key]);
+            
+            if (monthlyTotalChartInstance) {
+                monthlyTotalChartInstance.destroy();
+            }
+
+            monthlyTotalChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'จำนวนตัวอย่างทั้งหมด',
+                        data: orderedDataCounts,
+                        backgroundColor: 'rgba(108, 80, 112, 0.6)',
+                        borderColor: 'rgba(108, 80, 112, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        };
+
+        const getResultStatusBadge = (status) => {
+            if (status === 'ตรวจแล้ว') {
+                return `<span class="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">${status}</span>`;
+            } else { // 'รอตรวจ'
+                return `<span class="px-2 py-1 text-xs font-medium text-yellow-800 bg-yellow-100 rounded-full">${status}</span>`;
+            }
+        };
+       
+        const renderLatestSubmissionsOnDashboard = () => {
+            const container = document.getElementById('latest-submissions-container');
+            if (!allSubmissions || allSubmissions.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500">ยังไม่มีข้อมูลการส่งตรวจล่าสุด</p>`;
+                return;
+            }
+
+            const groupedBySubmission = allSubmissions.reduce((acc, sample) => {
+                const id = sample.submissionId;
+                if (!acc[id]) {
+                    acc[id] = { submissionDate: sample.submissionDate, department: sample.department, samples: [] };
+                }
+                acc[id].samples.push(sample);
+                return acc;
+            }, {});
+            
+            const sortedGroups = Object.values(groupedBySubmission)
+                .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate))
+                .slice(0, 5); // Show latest 5
+
+            if (sortedGroups.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500">ยังไม่มีข้อมูลการส่งตรวจล่าสุด</p>`;
+                return;
+            }
+
+            container.innerHTML = sortedGroups.map(group => {
+                const hasResult = group.samples.some(s => s.status !== 'รอตรวจ');
+                const resultStatus = hasResult ? 'ตรวจแล้ว' : 'รอตรวจ';
+                const displayWard = [...new Set(group.samples.map(s => s.ward).filter(w => w))];
+                
+                return `
+                <div class="k-minimal-card !p-4 !shadow-md border">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div class="flex-grow">
+                            <p class="font-semibold text-gray-800">${displayWard.length === 1 ? displayWard[0] : (displayWard.length > 1 ? 'หลายหน่วยงาน' : group.department)}</p>
+                            <p class="text-sm text-gray-500">วันที่ส่ง: ${new Date(group.submissionDate).toLocaleDateString('th-TH')}</p>
+                        </div>
+                        <div class="flex items-center gap-4 w-full sm:w-auto">
+                           <span class="text-sm text-gray-700 whitespace-nowrap">${group.samples.length} ตัวอย่าง</span>
+                           ${getResultStatusBadge(resultStatus)}
+                           <button class="btn-primary !px-4 !py-1 !text-sm view-report-btn whitespace-nowrap" data-submission-id="${group.samples[0].submissionId}">ดูรายงาน</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        };
+       
+        const renderReportTable = () => {
+            if (!allSubmissions || allSubmissions.length === 0) {
+                reportDataContainer.innerHTML = `<p class="text-center text-gray-500 py-8">ยังไม่มีข้อมูล กรุณากด "เรียกดูข้อมูลจาก Google Sheet"</p>`;
+                return;
+            }
+             
+            const groupedBySubmission = allSubmissions.reduce((acc, sample) => {
+                const id = sample.submissionId;
+                if (!acc[id]) {
+                    acc[id] = { submissionDate: sample.submissionDate, department: sample.department, samples: [] };
+                }
+                acc[id].samples.push(sample);
+                return acc;
+            }, {});
+            
+            const sortedGroups = Object.values(groupedBySubmission)
+                .sort((a, b) => new Date(b.submissionDate) - new Date(a.submissionDate));
+
+            reportDataContainer.innerHTML = `
+                <table class="w-full text-sm border-collapse">
+                     <thead class="bg-gray-100 text-gray-600 sticky top-0 z-10 shadow-sm">
+                        <tr>
+                            <th class="p-3 text-center bg-gray-100 border-x">วันที่ส่งตรวจ</th>
+                            <th class="p-3 text-center bg-gray-100 border-x">หน่วยงาน</th>
+                            <th class="p-3 text-center bg-gray-100 border-x">จำนวนตัวอย่าง</th>
+                            <th class="p-3 text-center bg-gray-100 border-x">สถานะ</th>
+                            <th class="p-3 text-center bg-gray-100 border-x">จัดการ</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                    ${sortedGroups.map(group => {
+                        const hasResult = group.samples.some(s => s.status !== 'รอตรวจ');
+                        const resultStatus = hasResult ? 'ตรวจแล้ว' : 'รอตรวจ';
+                        const displayWard = [...new Set(group.samples.map(s => s.ward).filter(w => w))];
+                        
+                        return `
+                        <tr class="hover:bg-gray-50">
+                           <td class="p-3 text-center align-middle border-x border-b">${new Date(group.submissionDate).toLocaleDateString('th-TH')}</td>
+                           <td class="p-3 text-center align-middle border-x border-b">${displayWard.length === 1 ? displayWard[0] : (displayWard.length > 1 ? 'หลายหน่วยงาน' : group.department)}</td>
+                           <td class="p-3 text-center align-middle border-x border-b">${group.samples.length}</td>
+                           <td class="p-3 text-center align-middle border-x border-b">${getResultStatusBadge(resultStatus)}</td>
+                           <td class="p-3 text-center align-middle border-x border-b">
+                                <button class="btn-primary !px-4 !py-1 !text-sm view-report-btn" data-submission-id="${group.samples[0].submissionId}">ดูรายงาน</button>
+                           </td>
+                        </tr>
+                        `
+                    }).join('')}
+                    </tbody>
+                </table>
+            `;
+        };
+        
+        // Modal & PDF & Email
+        const openReportModal = (submissionId) => {
+            currentSubmissionId = submissionId; // Set active ID
+            const groupData = allSubmissions.filter(s => s.submissionId === submissionId);
+            if (!groupData.length) return;
+            groupData.sort((a, b) => a.sampleNo - b.sampleNo);
+            
+            const firstSample = groupData[0];
+            document.getElementById('modal-department').textContent = firstSample.department;
+            document.getElementById('modal-submission-date').textContent = new Date(firstSample.submissionDate).toLocaleDateString('th-TH');
+            document.getElementById('modal-reported-date').textContent = new Date(firstSample.submissionDate).toLocaleDateString('th-TH');
+            document.getElementById('modal-reviewed-date').textContent = new Date(firstSample.submissionDate).toLocaleDateString('th-TH');
+            
+            // Logic Display Status (Only 2 states: Waiting / Checked)
+            const getSimpleStatus = (status) => {
+                return (status === 'รอตรวจ') ? 'รอตรวจ' : 'ตรวจแล้ว';
+            };
+
+            const getSimpleStatusColor = (status) => {
+                if (status === 'รอตรวจ') return 'text-yellow-600 font-bold';
+                return 'text-green-600 font-bold'; // 'ตรวจแล้ว' color
+            };
+            
+            const modalTableBody = document.getElementById('modal-report-table-body');
+            modalTableBody.innerHTML = groupData.map(sample => `
+                <tr class="border-b">
+                    <td class="p-2 text-center align-middle border">${sample.sampleNo}</td>
+                    <td class="p-2 text-center align-middle border">${sample.ward}</td>
+                    <td class="p-2 text-center align-middle border">${sample.location}</td>
+                    <td class="p-2 text-center align-middle border">${sample.bacteria === "N/A" ? "-" : sample.bacteria}</td>
+                    <td class="p-2 text-center align-middle border">${sample.fungus === "N/A" ? "-" : sample.fungus}</td>
+                    <td class="p-2 text-center align-middle border ${getSimpleStatusColor(sample.status)}">${getSimpleStatus(sample.status)}</td>
+                    <td class="p-2 text-center align-middle border">${sample.remarks || '-'}</td>
+                </tr>
+            `).join('');
+
+            reportModal.style.display = 'block';
+        };
+
+        const handleExportPdf = () => {
+            const { jsPDF } = window.jspdf;
+            const content = document.getElementById('pdf-export-content');
+            
+            Swal.fire({
+                title: 'กำลังสร้าง PDF...', allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading() }
+            });
+
+            html2canvas(content, { scale: 2, useCORS: true }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+                const imgProps= pdf.getImageProperties(imgData);
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                pdf.save(`air-sampling-report-${Date.now()}.pdf`);
+                Swal.close();
+            }).catch(err => {
+                Swal.fire('เกิดข้อผิดพลาด', `ไม่สามารถสร้าง PDF ได้: ${err.message}`, 'error');
+            });
+        };
+
+        const handleSendEmail = async () => {
+             // Find saved email from this submission if available
+            let defaultEmail = "";
+            if (currentSubmissionId && allSubmissions.length > 0) {
+                 const currentSub = allSubmissions.find(s => s.submissionId === currentSubmissionId);
+                 if (currentSub && currentSub.email) {
+                     defaultEmail = currentSub.email;
+                 }
+            }
+
+            const { value: email } = await Swal.fire({
+                title: 'ส่งผลการตรวจทางอีเมล',
+                input: 'email',
+                inputLabel: 'กรุณาระบุอีเมลผู้รับ',
+                inputPlaceholder: 'example@email.com',
+                inputValue: defaultEmail, // Pre-fill with saved email
+                showCancelButton: true,
+                confirmButtonText: 'ส่งอีเมล',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'กรุณาระบุอีเมล!';
+                    }
+                }
+            });
+
+            if (email) {
+                Swal.fire({
+                    title: 'กำลังส่งอีเมล...',
+                    text: 'กรุณารอสักครู่',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+
+                const callbackName = 'gasEmailCallback' + new Date().getTime();
+                window[callbackName] = function(response) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    if (response.status === 'success') {
+                        Swal.fire('สำเร็จ!', 'ส่งอีเมลเรียบร้อยแล้ว', 'success');
+                    } else {
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถส่งอีเมลได้: ' + response.message, 'error');
+                    }
+                };
+
+                const script = document.createElement('script');
+                // Use action 'sendEmail'
+                script.src = `${GAS_URL}?action=sendEmail&submissionId=${currentSubmissionId}&email=${encodeURIComponent(email)}&callback=${callbackName}`;
+                document.body.appendChild(script);
+            }
+        };
+        
+        const loadPersistedData = () => {
+             const persistedData = localStorage.getItem('airSamplingData');
+            if (persistedData) {
+                 try {
+                    allSubmissions = JSON.parse(persistedData);
+                    updateUI();
+                 } catch(e) {
+                    console.error("Failed to parse persisted data", e);
+                    localStorage.removeItem('airSamplingData');
+                 }
+            } else {
+                updateUI(); // Render empty state if no persisted data
+            }
+        }
+
+        // --- Event Listeners ---
+        loginForm.addEventListener('submit', handleLogin);
+        Object.keys(tabButtons).forEach(key => tabButtons[key].addEventListener('click', () => switchTab(key)));
+        clearFormBtn.addEventListener('click', clearForm);
+        saveDataBtn.addEventListener('click', handleSaveData);
+        fetchDataBtn.addEventListener('click', handleFetchData);
+        closeModalBtn.addEventListener('click', () => reportModal.style.display = 'none');
+        window.addEventListener('click', (event) => {
+            if (event.target == reportModal) { reportModal.style.display = 'none'; }
+        });
+        exportPdfBtn.addEventListener('click', handleExportPdf);
+        emailReportBtn.addEventListener('click', handleSendEmail);
+        document.body.addEventListener('click', (event) => {
+            if (event.target.classList.contains('view-report-btn')) {
+                openReportModal(event.target.dataset.submissionId);
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

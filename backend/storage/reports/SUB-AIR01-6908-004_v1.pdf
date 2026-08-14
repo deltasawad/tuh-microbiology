@@ -1,0 +1,48 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 915 >>
+stream
+BT /F1 12 Tf 50 780 Td
+(TUH AIR SAMPLING MICROBIOLOGICAL REPORT) Tj 0 -20 Td
+(Department of Pathology - Microbiology Section \(ISO 15189\)) Tj 0 -14 Td
+(----------------------------------------------------------------) Tj 0 -14 Td
+(Submission No : SUB-AIR01-6908-004) Tj 0 -14 Td
+(Submission Date : 2026-08-14) Tj 0 -14 Td
+(Department : ANICU) Tj 0 -14 Td
+(Status : REPORTED) Tj 0 -14 Td
+(Reporter : ?????? \(Medical Technologist\)) Tj 0 -14 Td
+(Reviewer/Approver : ????) Tj 0 -14 Td
+(----------------------------------------------------------------) Tj 0 -14 Td
+(RESULTS TABLE:) Tj 0 -14 Td
+(Sample #1: ANICU \(?????????? 1\) -> Bacteria: 8 CFU | Fungus: 0 CFU) Tj 0 -14 Td
+(Sample #2: CCU \(?????????? 2\) -> Bacteria: 12 CFU | Fungus: 0 CFU) Tj 0 -14 Td
+(----------------------------------------------------------------) Tj 0 -14 Td
+(Generated at: 2026-08-14 03:06:07 UTC \(ISO 15189 Validated\)) Tj 0 -14 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000234 00000 n 
+0000001179 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1215
+%%EOF
