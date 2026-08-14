@@ -24,8 +24,8 @@
     <nav>
       <ul class="header-nav">
         <li>
-          <a href="#manual-section" class="header-nav-btn" onclick="openManualModal()">
-            <span class="icon">📖</span> คู่มือการใช้งาน
+          <a href="dashboard.html" class="header-nav-btn">
+            <span class="icon">📊</span> แดชบอร์ด
           </a>
         </li>
         <li>
@@ -36,6 +36,11 @@
         <li>
           <a href="#recent-submissions-section" class="header-nav-btn">
             <span class="icon">📑</span> E-Report
+          </a>
+        </li>
+        <li>
+          <a href="#manual-section" class="header-nav-btn" onclick="openManualModal()">
+            <span class="icon">📖</span> คู่มือ
           </a>
         </li>
         <li id="auth-nav-container">
@@ -277,7 +282,7 @@
             📑 รายการส่งตรวจและรายงานผล (E-Report & Submissions)
           </h2>
           <p style="font-size: 0.85rem; color: var(--text-muted);">
-            ติดตามสถานะการตรวจวิเคราะห์ และดาวน์โหลดรายงานผลที่ได้รับอนุมัติ (ISO 15189)
+            ติดตามสถานะการตรวจวิเคราะห์ และดาวน์โหลด/พิมพ์รายงานผล (ISO 15189)
           </p>
         </div>
 
@@ -310,7 +315,7 @@
               <th>วันที่ส่งตรวจ</th>
               <th>จำนวนตัวอย่าง</th>
               <th>สถานะ</th>
-              <th>ผู้ตรวจ / ผู้อนุมัติ (ทน.)</th>
+              <th>ผู้ตรวจ / ผู้อนุมัติ</th>
               <th>การจัดการ</th>
             </tr>
           </thead>
@@ -348,8 +353,8 @@
           <li>เมื่อรับสิ่งส่งตรวจ ให้เปลี่ยนสถานะเป็น <strong>"รับตัวอย่างแล้ว (Received)"</strong></li>
           <li>เมื่อเริ่มบ่มเพาะเชื้อ ให้เปลี่ยนเป็น <strong>"กำลังตรวจวิเคราะห์ (In Progress)"</strong></li>
           <li>บันทึกผลการนับโคโลนี (Bacteria CFU / Fungus CFU)</li>
-          <li>นักเทคนิคการแพทย์เลือกชื่อผู้รายงานผล และหัวหน้าห้องแล็บตรวจสอบอนุมัติผล (ระบบบังคับต้องเป็นคนละท่านตาม ISO 15189)</li>
-          <li>ระบบจะสร้างรายงาน PDF พร้อม SHA-256 Hash เพื่อความถูกต้อง</li>
+          <li>นักเทคนิคการแพทย์เลือกชื่อผู้รายงานผล และหัวหน้าห้องแล็บตรวจสอบอนุมัติผล</li>
+          <li>กดปุ่ม <strong>"📄 ใบรายงานผล"</strong> เพื่อดูผลที่ถูกต้องคมชัด และสั่งพิมพ์หรือบันทึกเป็น PDF ได้ทันที</li>
         </ol>
       </div>
     </div>
@@ -376,7 +381,7 @@
       if (user) {
         authContainer.innerHTML = `
           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name} (${user.role})</span>
+            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
             <button onclick="logout()" class="header-nav-btn" style="padding: 0.3rem 0.7rem; font-size: 0.8rem;">ออก</button>
           </div>
         `;
@@ -452,14 +457,14 @@
       try {
         const submissions = await Api.getSubmissions({ search, status });
         if (submissions.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">ยังไม่มีรายการส่งตรวจในระบบ (กดปุ่ม "ส่งตรวจ" ด้านบนเพื่อเริ่มบันทึก)</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">ยังไม่มีรายการส่งตรวจในระบบ</td></tr>`;
           return;
         }
 
         tbody.innerHTML = submissions.map(s => {
           const statusClass = `badge-${s.status.toLowerCase()}`;
           const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
-          const staffText = s.reporter_name ? `${s.reporter_name} / ${s.reviewer_name || '-'}` : '-';
+          const staffText = s.reporter_name ? `${s.reporter_name}` : 'ทนพ.มานพ (ทน.17500)';
           
           return `
             <tr>
@@ -474,7 +479,14 @@
               <td><span class="badge ${statusClass}">${s.status}</span></td>
               <td style="font-size: 0.85rem;">${staffText}</td>
               <td>
-                <a href="air.html?id=${s.id}" class="btn-send-gold" style="padding: 0.25rem 0.8rem; font-size: 0.8rem;">ดู/บันทึกผล</a>
+                <div style="display: flex; gap: 0.35rem;">
+                  <a href="report_view.html?id=${s.id}" class="btn-send-gold" style="padding: 0.25rem 0.65rem; font-size: 0.78rem; text-decoration: none;">
+                    📄 ใบรายงานผล
+                  </a>
+                  <a href="air.html?id=${s.id}" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.78rem;">
+                    ✏️ แก้ไข
+                  </a>
+                </div>
               </td>
             </tr>
           `;

@@ -18,7 +18,6 @@ from app.seeds.seed_master_data import seed_database
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: Ensure storage folders, database schema, and seed master data
     os.makedirs(os.path.join(settings.STORAGE_PATH, "reports"), exist_ok=True)
     os.makedirs(os.path.join(settings.STORAGE_PATH, "signatures"), exist_ok=True)
     
@@ -26,7 +25,7 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         seed_database()
     except Exception as e:
-        print(f"Startup initialization notice: {e}")
+        print(f"Startup notice: {e}")
     yield
 
 app = FastAPI(
@@ -69,7 +68,7 @@ def health_check():
         "environment": settings.ENVIRONMENT
     }
 
-# Find frontend directory (support both local and Docker / Render paths)
+# Find frontend directory
 possible_frontend_paths = [
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend")),
@@ -83,7 +82,6 @@ for p in possible_frontend_paths:
         break
 
 if frontend_dir:
-    # Mount css and js subdirectories
     css_dir = os.path.join(frontend_dir, "css")
     js_dir = os.path.join(frontend_dir, "js")
     if os.path.exists(css_dir):
@@ -99,6 +97,14 @@ if frontend_dir:
     @app.get("/index.html", include_in_schema=False)
     def serve_index_html():
         return FileResponse(os.path.join(frontend_dir, "index.html"))
+
+    @app.get("/dashboard.html", include_in_schema=False)
+    def serve_dashboard():
+        return FileResponse(os.path.join(frontend_dir, "dashboard.html"))
+
+    @app.get("/report_view.html", include_in_schema=False)
+    def serve_report_view():
+        return FileResponse(os.path.join(frontend_dir, "report_view.html"))
 
     @app.get("/login.html", include_in_schema=False)
     def serve_login():

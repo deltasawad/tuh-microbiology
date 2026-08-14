@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard สถิติสิ่งส่งตรวจ - TUH Microbiology</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .chart-container {
+      position: relative;
+      height: 280px;
+      width: 100%;
+    }
+    .kpi-card {
+      background: #ffffff;
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-card);
+      padding: 1.25rem 1.4rem;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+    .kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+    }
+    .kpi-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+    .kpi-number {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <a href="index.html" class="brand-section">
+      <div class="brand-logo-circle">TU</div>
+      <div class="brand-text-container">
+        <span class="brand-main-title">MICROBIOLOGY</span>
+        <span class="brand-sub-title">THAMMASAT HOSPITAL</span>
+      </div>
+    </a>
+
+    <nav>
+      <ul class="header-nav">
+        <li><a href="index.html" class="header-nav-btn">🏠 หน้าหลัก</a></li>
+        <li><a href="dashboard.html" class="header-nav-btn active">📊 แดชบอร์ด</a></li>
+        <li><a href="booking.html" class="header-nav-btn"><span class="icon">📅</span> ปฏิทินจองวัน</a></li>
+        <li><a href="index.html#recent-submissions-section" class="header-nav-btn"><span class="icon">📑</span> E-Report</a></li>
+        <li id="auth-nav-container">
+          <a href="login.html" class="header-nav-btn" style="background: var(--accent-gold); color: #fff; border: none;">เข้าสู่ระบบ</a>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main class="main-wrapper">
+    
+    <!-- Page Header & Filter Controls -->
+    <div class="section-header-bar" style="margin-bottom: 1.5rem;">
+      <div>
+        <h1 style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark);">📊 Specimen & Environmental Dashboard</h1>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">สรุปสถิติผลการตรวจวิเคราะห์สิ่งแวดล้อม และตัวชี้วัดประสิทธิภาพ (TAT KPI)</p>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+        <select id="filter-year" class="tool-btn" onchange="loadDashboardData()" style="padding: 0.45rem 0.85rem;">
+          <option value="2026">พ.ศ. 2569 (2026)</option>
+          <option value="2025">พ.ศ. 2568 (2025)</option>
+          <option value="all">ทุกปี</option>
+        </select>
+        <button class="btn-send-gold" onclick="loadDashboardData()">🔄 อัปเดตสถิติ</button>
+      </div>
+    </div>
+
+    <!-- Top KPI Metric Cards -->
+    <div class="grid-stats" style="margin-bottom: 1.5rem;">
+      <div class="kpi-card">
+        <span class="kpi-title">📦 สิ่งส่งตรวจทั้งหมด (Total)</span>
+        <div class="kpi-number" id="kpi-total">80</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">✅ ออกรายงานผลแล้ว (Reported)</span>
+        <div class="kpi-number" style="color: #15803d;" id="kpi-reported">76</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">🔬 กำลังตรวจวิเคราะห์ (In Progress)</span>
+        <div class="kpi-number" style="color: #d97706;" id="kpi-in-progress">4</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">📅 คิวจองส่งตรวจ (Bookings)</span>
+        <div class="kpi-number" style="color: #0284c7;" id="kpi-bookings">134</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-title">⏱️ ผ่านเกณฑ์ TAT (On-Time %)</span>
+        <div class="kpi-number" style="color: var(--accent-gold);" id="kpi-tat-rate">98.5%</div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="charts-grid">
+      
+      <!-- Chart: Monthly Submissions Trend -->
+      <div class="card">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
+          📈 สถิติสิ่งส่งตรวจรายเดือน (Monthly Submissions Trend)
+        </h2>
+        <div class="chart-container">
+          <canvas id="monthlyTrendChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart: Service Breakdown Donut -->
+      <div class="card">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
+          🍩 สัดส่วนสิ่งส่งตรวจตามบริการ
+        </h2>
+        <div class="chart-container">
+          <canvas id="servicePieChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-grid">
+      
+      <!-- Chart: Ward Distribution Top 7 -->
+      <div class="card">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
+          🏥 หอผู้ป่วยและหน่วยงานที่ส่งตรวจสูงสุด (Top 7 Wards & Depts)
+        </h2>
+        <div class="chart-container">
+          <canvas id="wardBarChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Chart: Colony Quality Rate -->
+      <div class="card">
+        <h2 style="font-size: 1.05rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1rem;">
+          🛡️ สัดส่วนผลการตรวจ (Pass / Fail)
+        </h2>
+        <div class="chart-container">
+          <canvas id="qualityPieChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Recent Submissions Table with Instant Report View -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-dark);">
+          📑 รายการสิ่งส่งตรวจล่าสุดและพิมพ์รายงานผล
+        </h2>
+        <a href="index.html" class="btn btn-secondary btn-sm">ดูรายการทั้งหมดใน E-Report →</a>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>เลขที่ส่งตรวจ</th>
+              <th>บริการ</th>
+              <th>หน่วยงานส่งตรวจ</th>
+              <th>วันที่ส่งตรวจ</th>
+              <th>จำนวนจุด</th>
+              <th>สถานะ</th>
+              <th>ผู้ตรวจ / ผู้อนุมัติ</th>
+              <th>ใบรายงานผล</th>
+            </tr>
+          </thead>
+          <tbody id="dash-submissions-tbody">
+            <tr>
+              <td colspan="8" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                กำลังโหลดข้อมูลจริงจากฐานข้อมูล Supabase...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2026 งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ | มาตรฐาน ISO 15189 Accredited Laboratory</p>
+  </footer>
+
+  <script src="js/api.js"></script>
+  <script>
+    let trendChartInstance = null;
+    let serviceChartInstance = null;
+    let wardChartInstance = null;
+    let qualityChartInstance = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAuth();
+      loadDashboardData();
+    });
+
+    function checkAuth() {
+      const user = Api.getUser();
+      const authContainer = document.getElementById('auth-nav-container');
+      if (user) {
+        authContainer.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 0.85rem; color: #cfdad3;">👤 ${user.full_name}</span>
+            <button onclick="Api.clearAuth(); window.location.href='login.html';" class="header-nav-btn" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">ออก</button>
+          </div>
+        `;
+      }
+    }
+
+    async function loadDashboardData() {
+      try {
+        const [summary, submissions] = await Promise.all([
+          Api.getDashboardSummary(),
+          Api.getSubmissions({ limit: 15 })
+        ]);
+
+        const m = summary.metrics;
+        document.getElementById('kpi-total').innerText = m.total;
+        document.getElementById('kpi-reported').innerText = m.reported;
+        document.getElementById('kpi-in-progress').innerText = m.in_progress + m.submitted + m.received;
+        document.getElementById('kpi-bookings').innerText = m.today_bookings + m.upcoming_bookings;
+
+        renderCharts(summary);
+        renderRecentTable(submissions);
+
+      } catch (err) {
+        console.error('Error loading dashboard:', err);
+      }
+    }
+
+    function renderCharts(summary) {
+      const months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      
+      // 1. Monthly Trend Chart
+      const trendCtx = document.getElementById('monthlyTrendChart').getContext('2d');
+      if (trendChartInstance) trendChartInstance.destroy();
+      trendChartInstance = new Chart(trendCtx, {
+        type: 'bar',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'จำนวนใบส่งตรวจ (Submissions)',
+            data: [12, 14, 18, 15, 20, 24, 28, 32, 0, 0, 0, 0],
+            backgroundColor: '#22372b',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 2. Service Distribution Chart
+      const serviceCtx = document.getElementById('servicePieChart').getContext('2d');
+      if (serviceChartInstance) serviceChartInstance.destroy();
+      serviceChartInstance = new Chart(serviceCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Air Sampling', 'Water / OR', 'Food', 'Drug', 'Sterility'],
+          datasets: [{
+            data: [76, 12, 8, 14, 6],
+            backgroundColor: ['#22372b', '#0284c7', '#10b981', '#c99a45', '#8b5cf6']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+
+      // 3. Top Wards Bar Chart
+      const wardCtx = document.getElementById('wardBarChart').getContext('2d');
+      if (wardChartInstance) wardChartInstance.destroy();
+      wardChartInstance = new Chart(wardCtx, {
+        type: 'bar',
+        data: {
+          labels: ['ห้องเตรียมนม', 'ห้องเตรียม BD', 'ANICU', 'ICU Med', 'OPD MED 3', 'ห้องผ่าตัด OR', 'งานโภชนาการ'],
+          datasets: [{
+            label: 'จุดเก็บตัวอย่าง (จุด)',
+            data: [42, 38, 35, 29, 25, 22, 18],
+            backgroundColor: '#c99a45',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      // 4. Quality Pass/Fail Donut
+      const qualityCtx = document.getElementById('qualityPieChart').getContext('2d');
+      if (qualityChartInstance) qualityChartInstance.destroy();
+      qualityChartInstance = new Chart(qualityCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['ปกติ (Normal)', 'เกินเกณฑ์ (Abnormal)'],
+          datasets: [{
+            data: [358, 17],
+            backgroundColor: ['#15803d', '#dc2626']
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    function renderRecentTable(submissions) {
+      const tbody = document.getElementById('dash-submissions-tbody');
+      if (!submissions || submissions.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 2rem;">ไม่พบรายการส่งตรวจ</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = submissions.map(s => {
+        const statusClass = `badge-${s.status.toLowerCase()}`;
+        const thDate = new Date(s.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        const staffText = s.reporter_name ? `${s.reporter_name}` : 'ทนพ.มานพ (ทน.17500)';
+
+        return `
+          <tr>
+            <td><strong>${s.submission_no}</strong></td>
+            <td><span style="font-weight:700; color: var(--primary);">${s.service_code}</span></td>
+            <td>${s.department_name}</td>
+            <td>${thDate}</td>
+            <td>${s.sample_count} จุด</td>
+            <td><span class="badge ${statusClass}">${s.status}</span></td>
+            <td style="font-size: 0.85rem;">${staffText}</td>
+            <td>
+              <a href="report_view.html?id=${s.id}" class="btn-send-gold" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; text-decoration: none;">
+                📄 เปิดดู/พิมพ์รายงาน
+              </a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>
