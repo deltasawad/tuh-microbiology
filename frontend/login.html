@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบเจ้าหน้าที่ - TUH Microbiology</title>
+  <title>เข้าสู่ระบบเจ้าหน้าที่ตามหน่วยงาน - TUH Microbiology</title>
+  
+  <link rel="icon" type="image/png" href="images/tuh-logo.png">
   
   <!-- Google Fonts: Sarabun & Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,36 +41,37 @@
     h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-slate-800 min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-slate-800 min-h-screen flex items-center justify-center p-4 relative overflow-y-auto">
 
-  <!-- Background Decorative Grid -->
+  <!-- Background Decorative Pattern -->
   <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
-  <div class="max-w-md w-full relative z-10">
+  <div class="max-w-xl w-full relative z-10 py-6">
     
     <!-- Brand Title -->
     <div class="text-center mb-6">
       <a href="index.html" class="inline-flex items-center gap-3 group">
-        <div class="w-12 h-12 rounded-2xl bg-white/10 p-1.5 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition shadow-lg">
-          <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="TUH Logo" class="h-9 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+        <div class="w-16 h-16 rounded-2xl bg-white/10 p-2 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition shadow-lg">
+          <img src="images/tuh-logo.png" alt="TUH Logo" class="h-12 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
         </div>
       </a>
-      <h1 class="text-xl font-bold font-heading text-white mt-3 tracking-wide">
+      <h1 class="text-xl sm:text-2xl font-bold font-heading text-white mt-3 tracking-wide">
         TUH MICROBIOLOGY PORTAL
       </h1>
-      <p class="text-xs text-slate-400">
-        ระบบบันทึกและจัดการผลตรวจสิ่งแวดล้อม มาตรฐาน ISO 15189
+      <p class="text-xs text-slate-300">
+        ระบบบันทึกและจัดการผลตรวจสิ่งแวดล้อมแยกตามหน่วยงาน
       </p>
     </div>
 
     <!-- Login Card -->
-    <div class="bg-white rounded-3xl shadow-2xl p-8 border border-slate-100 space-y-6">
-      <div>
-        <h2 class="text-lg font-bold font-heading text-slate-900">
-          เข้าสู่ระบบเจ้าหน้าที่ (Sign In)
+    <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-100 space-y-6">
+      <div class="border-b border-slate-100 pb-3">
+        <h2 class="text-lg font-bold font-heading text-slate-900 flex items-center gap-2">
+          <i class="fas fa-id-badge text-emerald-600"></i>
+          <span>เข้าสู่ระบบเจ้าหน้าที่ (Sign In)</span>
         </h2>
         <p class="text-xs text-slate-500 mt-0.5">
-          กรอกอีเมลและรหัสผ่านเพื่อเข้าสู่ส่วนงานจัดการ
+          กรอกชื่อผู้ใช้งาน (Username) และรหัสผ่านประจำหน่วยงานของท่าน
         </p>
       </div>
 
@@ -80,10 +83,10 @@
 
       <form id="staff-login-form" onsubmit="handleLoginSubmit(event)" class="space-y-4 text-xs">
         <div>
-          <label class="block font-bold text-slate-700 mb-1.5" for="login-email">อีเมลเจ้าหน้าที่ (Email)</label>
+          <label class="block font-bold text-slate-700 mb-1.5" for="login-username">ชื่อผู้ใช้งาน (Username)</label>
           <div class="relative">
-            <i class="fas fa-envelope absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
-            <input type="email" id="login-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden text-slate-800" placeholder="staff@hospital.tu.ac.th" required>
+            <i class="fas fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" id="login-username" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-hidden text-slate-800 font-medium" placeholder="เช่น occ, icn, bloodbank, compounding..." required autofocus>
           </div>
         </div>
 
@@ -104,25 +107,67 @@
         </button>
       </form>
 
-      <!-- Quick 1-Click Demo Accounts for testing -->
+      <!-- Quick 1-Click Department Selectors -->
       <div class="pt-4 border-t border-slate-100 text-xs">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">
-          บัญชีทดสอบด่วน (1-Click Demo)
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            เลือกเข้าสู่ระบบด่วนตามหน่วยงาน:
+          </span>
+          <span class="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded">
+            คลิกเพื่อล็อกอินทันที
+          </span>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="fillDemoCredentials('admin@tuh.lab', 'password123')" class="p-2 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl border border-slate-200 text-left transition">
-            <div class="font-bold text-[11px]">ทนพ.มานพ (Admin)</div>
-            <div class="text-[10px] text-slate-400">admin@tuh.lab</div>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="quick-dept-buttons">
+          <button type="button" onclick="fillAndLogin('occ', '8416')" class="p-2.5 bg-slate-50 hover:bg-teal-50 hover:border-teal-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-teal-800">1. อาชีวอนามัย</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: occ</div>
           </button>
-          <button onclick="fillDemoCredentials('staff@tuh.lab', 'password123')" class="p-2 bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 rounded-xl border border-slate-200 text-left transition">
-            <div class="font-bold text-[11px]">เจ้าหน้าที่ปฏิบัติการ</div>
-            <div class="text-[10px] text-slate-400">staff@tuh.lab</div>
+
+          <button type="button" onclick="fillAndLogin('icn', '9341')" class="p-2.5 bg-slate-50 hover:bg-sky-50 hover:border-sky-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-sky-800">2. ควบคุมโรค (IC)</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: icn</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('bloodbank', '9863')" class="p-2.5 bg-slate-50 hover:bg-rose-50 hover:border-rose-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-rose-800">3. ธนาคารเลือด</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: bloodbank</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('compounding', '9907')" class="p-2.5 bg-slate-50 hover:bg-purple-50 hover:border-purple-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-purple-800">4. ผลิตยา 1 (ปลอดเชื้อ)</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: compounding</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('nutrition', '8406')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-emerald-800">5. โภชนาการ</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: nutrition</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('pharma', '8418')" class="p-2.5 bg-slate-50 hover:bg-amber-50 hover:border-amber-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-amber-800">6. ผลิตยา 2 (ปนเปื้อน)</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: pharma</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('THAMC', '020780086')" class="p-2.5 bg-slate-50 hover:bg-cyan-50 hover:border-cyan-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-cyan-800">7. THAMC (ศูนย์การแพทย์)</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: THAMC</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('or', '9395')" class="p-2.5 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 rounded-xl border border-slate-200 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-slate-800 group-hover:text-indigo-800">8. ห้องผ่าตัด (OR)</div>
+            <div class="text-[10px] text-slate-400 mt-1 font-mono">user: or</div>
+          </button>
+
+          <button type="button" onclick="fillAndLogin('admin', 'password123')" class="p-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl border border-emerald-300 text-left transition flex flex-col justify-between group">
+            <div class="font-bold text-[11px] text-emerald-900">👑 ผู้ดูแลระบบ (Admin)</div>
+            <div class="text-[10px] text-emerald-700 mt-1 font-mono">user: admin</div>
           </button>
         </div>
       </div>
 
       <div class="text-center pt-2">
-        <a href="index.html" class="text-xs text-slate-500 hover:text-emerald-600 transition flex items-center justify-center gap-1">
+        <a href="index.html" class="text-xs text-slate-500 hover:text-emerald-600 transition inline-flex items-center gap-1.5">
           <i class="fas fa-arrow-left"></i> กลับสู่หน้าหลัก
         </a>
       </div>
@@ -154,37 +199,48 @@
       }
     }
 
-    function fillDemoCredentials(email, pwd) {
-      document.getElementById('login-email').value = email;
+    async function fillAndLogin(user, pwd) {
+      document.getElementById('login-username').value = user;
       document.getElementById('login-password').value = pwd;
+      
+      const form = document.getElementById('staff-login-form');
+      form.dispatchEvent(new Event('submit'));
     }
 
     async function handleLoginSubmit(e) {
       e.preventDefault();
-      const email = document.getElementById('login-email').value.trim();
+      const username = document.getElementById('login-username').value.trim();
       const password = document.getElementById('login-password').value;
       const btn = document.getElementById('btn-login-submit');
       const errAlert = document.getElementById('login-error-alert');
       const errText = document.getElementById('login-error-text');
 
       errAlert.classList.add('hidden');
-      btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> กำลังตรวจสอบ...`;
+      btn.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i> กำลังตรวจสอบสิทธิ์...`;
       btn.disabled = true;
 
       try {
-        const { user, error } = await window.AuthManager.signIn(email, password);
+        const { user, error } = await window.AuthManager.signIn(username, password);
         
         if (error) {
-          errText.textContent = error.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+          errText.textContent = error.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
           errAlert.classList.remove('hidden');
         } else {
-          // Success, redirect
-          const urlParams = new URLSearchParams(window.location.search);
-          const redirectUrl = urlParams.get('redirect') ? decodeURIComponent(urlParams.get('redirect')) : 'admin.html';
-          window.location.href = redirectUrl;
+          // Success
+          Swal.fire({
+            icon: 'success',
+            title: `ยินดีต้อนรับ`,
+            text: `${user.displayName}`,
+            timer: 1200,
+            showConfirmButton: false
+          }).then(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') ? decodeURIComponent(urlParams.get('redirect')) : 'workflow.html';
+            window.location.href = redirectUrl;
+          });
         }
       } catch (err) {
-        errText.textContent = err.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        errText.textContent = err.message || 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์';
         errAlert.classList.remove('hidden');
       } finally {
         btn.innerHTML = `<i class="fas fa-right-to-bracket"></i> <span>เข้าสู่ระบบ</span>`;

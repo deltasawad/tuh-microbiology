@@ -49,7 +49,7 @@
         <!-- Hospital Brand Logo -->
         <a href="index.html" class="flex items-center gap-3 group">
           <div class="w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
-            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+            <img src="images/tuh-logo.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
           </div>
           <div>
             <div class="font-heading font-bold text-sm tracking-wide text-white group-hover:text-emerald-400 transition flex items-center gap-2">
@@ -65,8 +65,11 @@
           <a href="index.html" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition">
             <i class="fas fa-globe mr-1"></i> เว็บไซต์หลัก
           </a>
-          <a href="booking.html" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition">
-            <i class="fas fa-calendar mr-1"></i> ปฏิทินจอง
+          <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition border border-emerald-500/30">
+            <i class="fas fa-calendar-days mr-1"></i> จองวัน & ส่งตรวจ & รายงานผล
+          </a>
+          <a href="dashboard.html" class="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition">
+            <i class="fas fa-chart-pie mr-1"></i> Specimen Dashboard
           </a>
         </div>
 
@@ -76,13 +79,33 @@
             <span id="admin-staff-name" class="text-xs font-bold text-slate-200">กำลังโหลด...</span>
             <span id="admin-staff-role" class="text-[10px] text-emerald-400 font-mono">Medical Technologist</span>
           </div>
-          <button onclick="AuthManager.signOut()" class="bg-rose-900/40 hover:bg-rose-900/80 text-rose-200 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-rose-500/30 transition flex items-center gap-1.5">
+          <button onclick="AuthManager.signOut()" class="hidden sm:flex bg-rose-900/40 hover:bg-rose-900/80 text-rose-200 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-lg border border-rose-500/30 transition items-center gap-1.5">
             <i class="fas fa-sign-out-alt"></i>
             <span>ออกจากระบบ</span>
+          </button>
+          <!-- Mobile Hamburger Toggle -->
+          <button type="button" onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-hidden md:hidden" aria-label="Toggle navigation">
+            <i id="mobile-menu-icon" class="fas fa-bars text-lg"></i>
           </button>
         </div>
 
       </div>
+    </div>
+
+    <!-- Mobile Collapsible Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-3 space-y-2 backdrop-blur-md">
+      <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-globe w-4"></i> เว็บไซต์หลัก (8 บริการ)
+      </a>
+      <a href="workflow.html?tab=calendar" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-emerald-400 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-calendar-days w-4"></i> จองวัน & ส่งตรวจ & รายงานผล
+      </a>
+      <a href="dashboard.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-chart-pie w-4"></i> Specimen Dashboard (สถิติ)
+      </a>
+      <button onclick="AuthManager.signOut()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-rose-300 bg-rose-900/30 border border-rose-500/30">
+        <i class="fas fa-sign-out-alt w-4"></i> ออกจากระบบเจ้าหน้าที่
+      </button>
     </div>
   </header>
 
@@ -103,7 +126,7 @@
 
       <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-2xs flex items-center justify-between">
         <div>
-          <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider">ออกผลสมบูรณ์แล้ว (ISO 15189)</div>
+          <div class="text-xs font-bold text-emerald-600 uppercase tracking-wider">ออกผลสมบูรณ์แล้ว</div>
           <div class="text-2xl font-extrabold text-emerald-600 font-heading mt-1" id="adm-kpi-completed">0</div>
         </div>
         <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
@@ -122,18 +145,46 @@
       </div>
     </div>
 
-    <!-- Admin Navigation Tabs -->
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <div class="flex border-b border-slate-200 text-xs sm:text-sm font-bold bg-slate-50/50">
-        <button data-target="tab-new-report" class="admin-nav-tab flex-1 py-3.5 px-4 text-center border-b-2 border-emerald-600 text-emerald-700 bg-emerald-50/50 active-tab transition flex items-center justify-center gap-2">
+    <!-- Department Access Status Banner -->
+    <div id="dept-access-banner" class="bg-gradient-to-r from-slate-900 to-emerald-950 text-white rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm border border-emerald-900/40">
+      <div class="flex items-center gap-3.5">
+        <div id="dept-banner-icon" class="w-12 h-12 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 flex items-center justify-center text-xl shrink-0">
+          <i class="fas fa-hospital-user"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="dept-banner-title" class="font-heading font-bold text-sm sm:text-base text-white">
+              งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
+            </span>
+            <span id="dept-banner-badge" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Department Portal
+            </span>
+          </div>
+          <p id="dept-banner-desc" class="text-xs text-slate-300 mt-0.5">
+            ระบบจัดการและติดตามผลตรวจสิ่งแวดล้อมเฉพาะหน่วยงาน
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <a href="dashboard.html" class="inline-flex items-center gap-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/20 transition">
+          <i class="fas fa-chart-pie text-emerald-400"></i>
+          <span>ดูสถิติสิ่งส่งตรวจ</span>
+        </a>
+      </div>
+    </div>
+
+      <!-- Admin Navigation Tabs (Responsive on Mobile) -->
+      <div class="flex border-b border-slate-200 text-xs sm:text-sm font-bold bg-slate-50/50 overflow-x-auto whitespace-nowrap scrollbar-thin">
+        <button data-target="tab-new-report" class="admin-nav-tab shrink-0 py-3.5 px-4 text-center border-b-2 border-emerald-600 text-emerald-700 bg-emerald-50/50 active-tab transition flex items-center justify-center gap-2">
           <i class="fas fa-pen-to-square"></i>
           <span>1. บันทึกผลการตรวจ (8 บริการ)</span>
         </button>
-        <button data-target="tab-bookings-manager" class="admin-nav-tab flex-1 py-3.5 px-4 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2">
+        <button data-target="tab-bookings-manager" class="admin-nav-tab shrink-0 py-3.5 px-4 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2">
           <i class="fas fa-calendar-days"></i>
           <span>2. จัดการปฏิทินคิวงาน</span>
         </button>
-        <button data-target="tab-reports-archive" class="admin-nav-tab flex-1 py-3.5 px-4 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2">
+        <button data-target="tab-reports-archive" class="admin-nav-tab shrink-0 py-3.5 px-4 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center justify-center gap-2">
           <i class="fas fa-boxes-stacked"></i>
           <span>3. คลังรายงานผลตรวจทั้งหมด</span>
         </button>
@@ -176,7 +227,7 @@
             </div>
 
             <div>
-              <label class="block font-bold text-slate-700 mb-1">หน่วยงาน / ภาควิชา <span class="text-rose-500">*</span></label>
+              <label class="block font-bold text-slate-700 mb-1">หน่วยงาน <span class="text-rose-500">*</span></label>
               <input list="admin-wards-datalist" id="rep-department" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="เลือกหรือพิมพ์หน่วยงาน" required>
             </div>
 
@@ -279,12 +330,12 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-5 rounded-2xl border border-slate-200 text-xs">
             <div>
               <label class="block font-bold text-slate-700 mb-1">ผู้ตรวจและรายงานผล (Reporter) <span class="text-rose-500">*</span></label>
-              <input type="text" id="rep-reporter-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="ทนพ. / นักวิทยาศาสตร์การแพทย์" required>
+              <input type="text" id="rep-reporter-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="ทนพ.มานพ นันตาบุตร" value="ทนพ.มานพ นันตาบุตร" required>
             </div>
 
             <div>
               <label class="block font-bold text-slate-700 mb-1">ผู้อนุมัติผลตรวจ (Approver)</label>
-              <input type="text" id="rep-approver-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="ทนพญ.กรรณิการ์ สิทธิโชค" value="ทนพญ.กรรณิการ์ สิทธิโชค">
+              <input type="text" id="rep-approver-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="ทนพญ.นริศรา มังกรแก้ว" value="ทนพญ.นริศรา มังกรแก้ว">
             </div>
 
             <div>
@@ -310,7 +361,7 @@
               <button type="button" onclick="resetReportForm()" class="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl transition">
                 ล้างข้อมูลฟอร์ม
               </button>
-              <button type="submit" class="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2">
+              <button type="submit" id="btn-save-report-form" class="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-emerald-950/40 flex items-center justify-center gap-2">
                 <i class="fas fa-floppy-disk"></i>
                 <span>บันทึก & ออกผลตรวจ</span>
               </button>
@@ -328,17 +379,23 @@
       <div id="tab-bookings-manager" class="admin-tab-panel hidden p-6 space-y-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 class="text-lg font-bold font-heading text-slate-900">
+            <h2 id="bookings-tab-title" class="text-lg font-bold font-heading text-slate-900">
               จัดการรายการจองคิวส่งตรวจ (Queue Bookings)
             </h2>
-            <p class="text-xs text-slate-500">
+            <p id="bookings-tab-desc" class="text-xs text-slate-500">
               ตรวจสอบรายการจองคิวจากหน่วยงานต่าง ๆ และแปลงคิวเป็นใบรายงานผลตรวจ
             </p>
           </div>
 
-          <button onclick="loadBookingsManagerTable()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
-            <i class="fas fa-rotate"></i> รีเฟรชรายการ
-          </button>
+          <div class="flex items-center gap-2">
+            <a href="workflow.html?tab=calendar" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-xs">
+              <i class="fas fa-calendar-plus"></i>
+              <span>คีย์จองวันในปฏิทิน</span>
+            </a>
+            <button onclick="loadBookingsManagerTable()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5">
+              <i class="fas fa-rotate"></i> รีเฟรช
+            </button>
+          </div>
         </div>
 
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -348,7 +405,7 @@
                 <tr>
                   <th class="p-3">วันที่จอง</th>
                   <th class="p-3">บริการสิ่งแวดล้อม</th>
-                  <th class="p-3">หน่วยงาน / Ward</th>
+                  <th class="p-3">หน่วยงาน</th>
                   <th class="p-3">ผู้ส่ง & เบอร์ติดต่อ</th>
                   <th class="p-3 text-center">จำนวนตัวอย่าง</th>
                   <th class="p-3 text-center">สถานะ</th>
@@ -364,13 +421,13 @@
       </div>
 
       <!-- ============================================================================== -->
-      <!-- TAB 3: คลังรายงานผลตรวจทั้งหมด & ISO 15189 Logs -->
+      <!-- TAB 3: คลังรายงานผลตรวจทั้งหมด & Audit Logs -->
       <!-- ============================================================================== -->
       <div id="tab-reports-archive" class="admin-tab-panel hidden p-6 space-y-6">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h2 class="text-lg font-bold font-heading text-slate-900">
-              คลังรายงานผลตรวจทั้งหมด (ISO 15189 Audit Archive)
+              คลังรายงานผลตรวจทั้งหมด (Audit Archive)
             </h2>
             <p class="text-xs text-slate-500">
               สืบค้น แก้ไข พิมพ์ใบรายงานผลทางการ หรือดาวน์โหลดไฟล์แนบ

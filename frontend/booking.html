@@ -3,30 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม - TUH Microbiology</title>
+  <title>ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม - TUH Environmental Microbiology</title>
   
-  <!-- Google Fonts: Sarabun & Kanit -->
+  <link rel="icon" type="image/png" href="images/tuh-logo.png">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Sarabun', 'sans-serif'],
-            heading: ['Kanit', 'sans-serif'],
-          }
-        }
-      }
-    }
-  </script>
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -34,29 +22,41 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <style>
-    body { font-family: 'Sarabun', sans-serif; }
-    h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
-  </style>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'sans-serif'],
+            heading: ['Prompt', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
 
-  <!-- 1. Universal Top Navigation Bar -->
-  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-emerald-500/30">
+  <!-- 1. Header & Navigation -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16">
+      <div class="flex items-center justify-between h-16 sm:h-20">
         
-        <!-- Hospital Brand Logo -->
+        <!-- Brand Logo & Title -->
         <a href="index.html" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
-            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
+            <img src="images/tuh-logo.png" alt="TUH Logo" class="h-8 sm:h-9 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
           </div>
           <div>
-            <div class="font-heading font-bold text-sm tracking-wide text-white group-hover:text-emerald-400 transition flex items-center gap-2">
-              <span>TUH MICROBIOLOGY</span>
-              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded border border-emerald-500/40">ISO 15189</span>
+            <div class="flex items-center gap-2">
+              <span class="font-heading font-bold text-base sm:text-xl tracking-tight text-white group-hover:text-emerald-400 transition">
+                TUH MICROBIOLOGY
+              </span>
+              <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Online Booking
+              </span>
             </div>
-            <div class="text-[11px] text-slate-400 leading-none">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</div>
+            <p class="text-[11px] sm:text-xs text-slate-400">ระบบปฏิทินจองคิวส่งตรวจสิ่งแวดล้อม รพ.ธรรมศาสตร์ฯ</p>
           </div>
         </a>
 
@@ -65,23 +65,52 @@
           <a href="index.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
             <i class="fas fa-list-check mr-1.5"></i> บริการส่งตรวจ (8)
           </a>
-          <a href="index.html#search-section" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
-            <i class="fas fa-file-waveform mr-1.5"></i> ติดตามผลตรวจ (E-Report)
+          <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition border border-emerald-500/30">
+            <i class="fas fa-calendar-days mr-1.5"></i> จองวัน & ส่งตรวจ & รายงานผล
           </a>
-          <a href="booking.html" class="bg-emerald-700/80 text-white px-3.5 py-2 rounded-lg transition border border-emerald-500/40">
-            <i class="fas fa-calendar-days mr-1.5"></i> ปฏิทินจองวัน
+          <a href="dashboard.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
+            <i class="fas fa-chart-pie mr-1.5"></i> Specimen Dashboard
           </a>
         </nav>
 
-        <!-- Right Side Auth Widget -->
-        <div id="navbar-auth-container" class="flex items-center">
+        <!-- Right Side Auth Widget (Desktop) -->
+        <div id="navbar-auth-container" class="hidden md:flex items-center">
           <a href="login.html" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold py-1.5 px-3.5 rounded-lg transition shadow-sm">
             <i class="fas fa-user-shield"></i>
             <span>เข้าสู่ระบบเจ้าหน้าที่</span>
           </a>
         </div>
 
+        <!-- Mobile Menu Toggle Button -->
+        <div class="flex items-center gap-2 md:hidden">
+          <a href="login.html" class="bg-amber-500 text-slate-950 text-xs font-bold py-1.5 px-2.5 rounded-lg flex items-center gap-1">
+            <i class="fas fa-user-shield"></i>
+          </a>
+          <button type="button" onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-hidden" aria-label="Toggle navigation">
+            <i id="mobile-menu-icon" class="fas fa-bars text-lg"></i>
+          </button>
+        </div>
+
       </div>
+    </div>
+
+    <!-- Mobile Collapsible Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-3 space-y-2 backdrop-blur-md">
+      <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-list-check w-4"></i> บริการส่งตรวจ (8 รายการ)
+      </a>
+      <a href="booking.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 text-white">
+        <i class="fas fa-calendar-days w-4"></i> ปฏิทินจองวันส่งตรวจ
+      </a>
+      <a href="dashboard.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-chart-pie w-4"></i> Specimen Dashboard (สถิติ)
+      </a>
+      <a href="workflow.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-emerald-400 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-file-pen w-4"></i> แบบฟอร์มส่งตรวจ & รายงานผล
+      </a>
+      <a href="login.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
+        <i class="fas fa-user-shield w-4"></i> เข้าสู่ระบบเจ้าหน้าที่
+      </a>
     </div>
   </header>
 
@@ -89,33 +118,40 @@
   <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
     <!-- Page Header & Instructions -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 mb-2">
-          <i class="fas fa-calendar-check"></i> ระบบจองคิวออนไลน์ 8 บริการสิ่งแวดล้อม
+    <div class="bg-emerald-50 border border-emerald-300 rounded-2xl p-4 sm:p-5 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-lg shrink-0 shadow-xs">
+          <i class="fas fa-route"></i>
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900">
-          ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม
-        </h1>
-        <p class="text-xs text-slate-500 mt-1">
-          คลิกเลือกวันที่บนปฏิทินเพื่อดูคิวที่จองแล้ว หรือกดจองคิวส่งตรวจสำหรับหน่วยงานของท่าน
-        </p>
+        <div>
+          <h2 class="text-sm font-bold font-heading text-emerald-950">
+            ระบบจองวันส่งตรวจรวมอยู่ในระบบ 4 ขั้นตอนแล้ว (Workflow Unified)
+          </h2>
+          <p class="text-xs text-emerald-800">
+            ท่านสามารถจองวัน, ส่งตัวอย่าง, และดูผลตรวจได้ครบจบในหน้าเดียว
+          </p>
+        </div>
       </div>
+      <a href="workflow.html?tab=calendar" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition shadow-xs flex items-center gap-1.5 shrink-0">
+        <span>ไปยังระบบส่งตรวจ & รายงานผล</span>
+        <i class="fas fa-arrow-right text-[11px]"></i>
+      </a>
+    </div>
 
-      <!-- Quick Legend & Action -->
-      <div class="flex flex-wrap items-center gap-3 text-xs">
-        <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
-          <span class="text-slate-600">มีคิวจอง</span>
+    <!-- Rule Notification Banner -->
+    <div class="bg-gradient-to-r from-emerald-900 to-slate-900 text-white rounded-2xl p-4 sm:p-5 shadow-sm mb-6 flex items-start gap-3.5 border border-emerald-700/50">
+      <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0 text-lg">
+        <i class="fas fa-bullhorn"></i>
+      </div>
+      <div class="text-xs space-y-1">
+        <div class="font-bold text-sm text-emerald-300 font-heading">
+          📌 กฎและรอบการส่งตรวจสิ่งแวดล้อม (มาตรฐานห้องปฏิบัติการ):
         </div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded-full bg-rose-500"></span>
-          <span class="text-slate-600">วันหยุดนักขัตฤกษ์</span>
-        </div>
-        <div class="flex items-center gap-1.5">
-          <span class="w-3 h-3 rounded-full bg-emerald-200 border border-emerald-500"></span>
-          <span class="text-slate-600">วันนี้</span>
-        </div>
+        <p class="text-slate-200 leading-relaxed">
+          1. ห้องปฏิบัติการเปิดรับสิ่งส่งตรวจเฉพาะ <strong class="text-emerald-300">วันจันทร์, วันอังคาร และวันพุธ</strong> เวลา 08.30 - 15.00 น. เพื่อให้มีระยะเวลาเพาะเลี้ยงเชื้อ 24-48 ชม. ครบตามรอบก่อนวันหยุดสุดสัปดาห์<br>
+          2. <strong class="text-emerald-300">ไม่จำกัดจำนวนการจอง:</strong> ในวันจันทร์ - พุธ หากมีหน่วยงานอื่นจองแล้ว ท่านยังคงสามารถจองส่งตรวจในวันเดียวกันได้แบบไม่จำกัดจำนวน<br>
+          3. ระบบได้ทำการ <strong class="text-rose-300">ล็อคห้ามจอง</strong> ในวันพฤหัสบดี, วันศุกร์, วันเสาร์, วันอาทิตย์ และวันหยุดนักขัตฤกษ์ทุกวัน
+        </p>
       </div>
     </div>
 
@@ -152,42 +188,52 @@
       </div>
 
       <!-- Days Header (Sun - Sat) -->
-      <div class="grid grid-cols-7 bg-slate-100/80 border-b border-slate-200 text-center text-xs font-bold py-2.5 text-slate-600">
-        <div class="text-rose-600">อาทิตย์ (Sun)</div>
-        <div>จันทร์ (Mon)</div>
-        <div>อังคาร (Tue)</div>
-        <div>พุธ (Wed)</div>
-        <div>พฤหัสบดี (Thu)</div>
-        <div>ศุกร์ (Fri)</div>
-        <div class="text-purple-600">เสาร์ (Sat)</div>
+      <div class="grid grid-cols-7 border-b border-slate-200 text-center text-xs font-bold py-2.5">
+        <div class="text-slate-400 bg-slate-100/60 py-1">อาทิตย์ (ปิด)</div>
+        <div class="text-emerald-800 bg-emerald-50/80 py-1 border-x border-emerald-100">จันทร์ (เปิด)</div>
+        <div class="text-emerald-800 bg-emerald-50/80 py-1 border-r border-emerald-100">อังคาร (เปิด)</div>
+        <div class="text-emerald-800 bg-emerald-50/80 py-1 border-r border-emerald-100">พุธ (เปิด)</div>
+        <div class="text-slate-500 bg-slate-100/60 py-1">พฤหัสบดี (งด)</div>
+        <div class="text-slate-500 bg-slate-100/60 py-1">ศุกร์ (งด)</div>
+        <div class="text-slate-400 bg-slate-100/60 py-1">เสาร์ (ปิด)</div>
       </div>
 
       <!-- Calendar Days Grid -->
-      <div id="calendar-days-grid" class="grid grid-cols-7 gap-1 p-2 sm:p-3 bg-slate-100/40">
+      <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 p-2 sm:p-3 bg-slate-100/60">
         <!-- Javascript will render 35-42 days cells here -->
       </div>
 
     </div>
 
     <!-- Booking Instructions & Notes -->
-    <div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+    <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
         <div class="font-bold text-emerald-800 flex items-center gap-1.5">
-          <i class="fas fa-info-circle text-emerald-600"></i>
-          <span>การเตรียมสิ่งส่งตรวจ</span>
+          <i class="fas fa-clock text-emerald-600"></i>
+          <span>ระยะเวลาออกผล (TAT)</span>
         </div>
         <p class="text-slate-600">
-          กรุณาประสานงานรับอาหารเพาะเชื้อและอุปกรณ์เก็บตัวอย่างล่วงหน้าอย่างน้อย 1 วันทำการ ที่ห้องปฏิบัติการจุลชีววิทยา
+          ระยะเวลาตรวจวิเคราะห์และออกผลทางการ <strong class="text-emerald-700">3 - 5 วันทำการ</strong> ทุกรายการตรวจ
         </p>
       </div>
 
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
         <div class="font-bold text-emerald-800 flex items-center gap-1.5">
-          <i class="fas fa-truck text-emerald-600"></i>
-          <span>เวลาส่งสิ่งส่งตรวจ</span>
+          <i class="fas fa-box-open text-emerald-600"></i>
+          <span>การเตรียมอุปกรณ์</span>
         </div>
         <p class="text-slate-600">
-          นำส่งตัวอย่างในวันทำการ เวลา 08.30 - 15.00 น. เพื่อให้เจ้าหน้าที่สามารถนำเข้าตู้อบเพาะเชื้อได้ทันตามรอบ
+          ประสานงานรับอาหารเพาะเชื้อและอุปกรณ์ล่วงหน้าอย่างน้อย 1 วันทำการ ที่ห้องปฏิบัติการ
+        </p>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+        <div class="font-bold text-emerald-800 flex items-center gap-1.5">
+          <i class="fas fa-calendar-check text-emerald-600"></i>
+          <span>วันเวลาส่งตรวจ</span>
+        </div>
+        <p class="text-slate-600">
+          นำส่งตัวอย่างเฉพาะวันจันทร์ - พุธ เวลา 08.30 - 15.00 น. ไม่จำกัดจำนวนคิวในวันเดียวกัน
         </p>
       </div>
 
@@ -197,7 +243,7 @@
           <span>ติดต่อสอบถาม / เคสด่วน</span>
         </div>
         <p class="text-slate-600">
-          งานจุลชีววิทยา ชั้น 3 อาคารคุณากร โทร. 0-2926-9650 หรือต่อสายภายใน 9650
+          งานจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา โทร. 0-2926-9460 หรือต่อสายภายใน 9460
         </p>
       </div>
     </div>
@@ -209,11 +255,14 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
         <p class="font-bold text-slate-200">งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</p>
-        <p class="text-[11px] text-slate-500">Environmental Microbiology Reporting System (ISO 15189:2022)</p>
+        <p class="text-[11px] text-slate-500">ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา | โทร. 0-2926-9460</p>
       </div>
       <div class="flex items-center gap-4 text-slate-400">
         <a href="index.html" class="hover:text-white transition">หน้าแรก</a>
-        <a href="booking.html" class="hover:text-white transition font-semibold text-emerald-400">ปฏิทินจองวัน</a>
+        <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-emerald-300 font-semibold transition flex items-center gap-1">
+          <i class="fas fa-calendar-days"></i> จองวัน & ส่งตรวจ & รายงานผล
+        </a>
+        <a href="dashboard.html" class="hover:text-white transition">Specimen Dashboard</a>
         <a href="login.html" class="hover:text-white transition">สำหรับเจ้าหน้าที่</a>
       </div>
     </div>

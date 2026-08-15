@@ -31,24 +31,82 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadDashboardKPIs();
 });
 
+let currentLoggedUser = null;
+
 /**
- * แสดงชื่อและอีเมลเจ้าหน้าที่
+ * แสดงชื่อและข้อมูลหน่วยงานเจ้าหน้าที่ (Department Portal)
  */
 async function initUserInfo() {
   const user = await window.AuthManager.getCurrentUser();
   if (!user) return;
+  currentLoggedUser = user;
 
-  const displayName = user.user_metadata?.full_name || user.email || 'เจ้าหน้าที่ห้องปฏิบัติการ';
-  const roleName = user.user_metadata?.role || 'Medical Technologist';
+  const displayName = user.displayName || user.user_metadata?.full_name || 'เจ้าหน้าที่';
+  const roleName = user.roleTitle || user.user_metadata?.role || 'Medical Technologist';
 
   const nameEl = document.getElementById('admin-staff-name');
   const roleEl = document.getElementById('admin-staff-role');
   const reporterInput = document.getElementById('rep-reporter-name');
+  const deptInput = document.getElementById('rep-department');
+  const bannerTitle = document.getElementById('dept-banner-title');
+  const bannerDesc = document.getElementById('dept-banner-desc');
+  const bannerBadge = document.getElementById('dept-banner-badge');
+  const bannerIcon = document.getElementById('dept-banner-icon');
 
   if (nameEl) nameEl.textContent = displayName;
   if (roleEl) roleEl.textContent = roleName;
   if (reporterInput && !reporterInput.value) {
-    reporterInput.value = displayName;
+    reporterInput.value = 'ทนพ.มานพ นันตาบุตร';
+  }
+
+  // ปรับแต่งแท็บและปุ่มตามสิทธิ์ (Role-Based Permissions)
+  const tab1Btn = document.querySelector('[data-target="tab-new-report"] span');
+  const tab2Btn = document.querySelector('[data-target="tab-bookings-manager"] span');
+  const tab3Btn = document.querySelector('[data-target="tab-reports-archive"] span');
+  const submitBtn = document.getElementById('btn-save-report-form');
+  const bookingsTabTitle = document.getElementById('bookings-tab-title');
+  const bookingsTabDesc = document.getElementById('bookings-tab-desc');
+
+  if (user.role === 'department_staff') {
+    if (bannerTitle) bannerTitle.textContent = `${user.department}`;
+    if (bannerDesc) bannerDesc.textContent = `บริการหลัก: ${user.serviceName} | สิทธิ์: คีย์จองวัน, คีย์รายการตรวจ, ดูรายงานผล`;
+    if (bannerBadge) {
+      bannerBadge.textContent = `${user.username.toUpperCase()}`;
+      bannerBadge.className = `text-[10px] font-bold px-2.5 py-0.5 rounded-full ${user.badgeColor || 'bg-emerald-500/20 text-emerald-300'}`;
+    }
+    if (bannerIcon && user.icon) {
+      bannerIcon.innerHTML = `<i class="fas ${user.icon}"></i>`;
+    }
+
+    if (tab1Btn) tab1Btn.textContent = `1. คีย์รายการตรวจ / ส่งตัวอย่าง (${user.username.toUpperCase()})`;
+    if (tab2Btn) tab2Btn.textContent = `2. คีย์จองวันในปฏิทิน`;
+    if (tab3Btn) tab3Btn.textContent = `3. ดูรายงานผลตรวจ (${user.username.toUpperCase()})`;
+    if (submitBtn) submitBtn.innerHTML = `<i class="fas fa-paper-plane mr-1.5"></i> <span>บันทึกและส่งรายการตรวจ (Submit Request)</span>`;
+    if (bookingsTabTitle) bookingsTabTitle.textContent = `คิวจองวันส่งตรวจของ ${user.department}`;
+    if (bookingsTabDesc) bookingsTabDesc.textContent = `ตรวจสอบสถานะคิวจองและวันนัดหมายส่งตัวอย่างของหน่วยงาน`;
+
+    // กำหนดบริการและหน่วยงานเริ่มต้น
+    if (user.serviceCode) {
+      selectedServiceCode = user.serviceCode;
+      const select = document.getElementById('rep-service-select');
+      if (select) select.value = user.serviceCode;
+      updateServiceFormTheme();
+    }
+    if (deptInput && user.department) {
+      deptInput.value = user.department;
+    }
+  } else {
+    // Admin Master
+    if (bannerTitle) bannerTitle.textContent = `ผู้ดูแลระบบห้องปฏิบัติการจุลชีววิทยา (Admin Master)`;
+    if (bannerDesc) bannerDesc.textContent = `สิทธิ์ผู้ดูแลระบบส่วนกลาง (เต็มรูปแบบ): บันทึกผล, แก้ไขผล, ลบผลตรวจ, จัดการคิวงาน และดูภาพรวมทุกหน่วยงาน`;
+    if (bannerBadge) bannerBadge.textContent = `ADMIN MASTER`;
+
+    if (tab1Btn) tab1Btn.textContent = `1. บันทึกผลการตรวจและอนุมัติผล (ISO 15189)`;
+    if (tab2Btn) tab2Btn.textContent = `2. จัดการปฏิทินคิวงานทั้งหมด`;
+    if (tab3Btn) tab3Btn.textContent = `3. คลังรายงานผลตรวจ (แก้ไข / ลบผล)`;
+    if (submitBtn) submitBtn.innerHTML = `<i class="fas fa-floppy-disk mr-1.5"></i> <span>บันทึก & ออกผลตรวจ</span>`;
+    if (bookingsTabTitle) bookingsTabTitle.textContent = `จัดการรายการจองคิวส่งตรวจทั้งหมด (Queue Bookings)`;
+    if (bookingsTabDesc) bookingsTabDesc.textContent = `ตรวจสอบรายการจองคิวจากทุกหน่วยงาน และแปลงคิวเป็นใบรายงานผลตรวจ`;
   }
 }
 
@@ -524,7 +582,8 @@ async function saveReportHandler(e) {
  * ล้างข้อมูลฟอร์ม
  */
 function resetReportForm() {
-  document.getElementById('rep-department').value = '';
+  const user = currentLoggedUser;
+  document.getElementById('rep-department').value = (user && user.role === 'department_staff') ? user.department : '';
   document.getElementById('rep-ward-room').value = '';
   document.getElementById('rep-remarks').value = '';
   uploadedAttachments = [];
@@ -543,18 +602,23 @@ async function loadReportsTable() {
 
   const search = document.getElementById('archive-search-input')?.value || '';
   const filterService = document.getElementById('archive-filter-service')?.value || '';
+  const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
+  const filterDept = (user && user.role === 'department_staff') ? user.department : '';
 
   tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-xl mr-2"></i> กำลังโหลดข้อมูลรายงาน...</td></tr>`;
 
   const { data: reports } = await window.ReportDB.getReports({
     serviceCode: filterService,
+    department: filterDept,
     search: search
   });
 
   if (!reports || reports.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่พบรายงานผลตรวจ</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่พบรายงานผลตรวจ${filterDept ? ` ของ ${filterDept}` : ''}</td></tr>`;
     return;
   }
+
+  const isDeptStaff = (user && user.role === 'department_staff');
 
   tbody.innerHTML = reports.map((r, idx) => {
     const isPass = ['pass', 'normal', 'no_growth'].includes(r.overall_result?.toLowerCase());
@@ -586,12 +650,17 @@ async function loadReportsTable() {
           `}
         </td>
         <td class="p-3 text-right space-x-1">
-          <button onclick="previewReportModal('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-slate-700" title="ดูข้อมูล">
-            <i class="fas fa-eye"></i>
-          </button>
-          <button onclick="deleteReportConfirm('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-rose-600" title="ลบรายงาน">
-            <i class="fas fa-trash"></i>
-          </button>
+          <a href="report_view.html?id=${r.id || r.submission_no}" target="_blank" class="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="ดูรายงานผลและพิมพ์">
+            <i class="fas fa-file-lines"></i> <span>ดูผลตรวจ</span>
+          </a>
+          ${!isDeptStaff ? `
+            <button onclick="previewReportModal('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-slate-700" title="แก้ไข / ลงผลตรวจ">
+              <i class="fas fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteReportConfirm('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-rose-600" title="ลบรายงาน">
+              <i class="fas fa-trash"></i>
+            </button>
+          ` : ''}
         </td>
       </tr>
     `;
@@ -599,6 +668,16 @@ async function loadReportsTable() {
 }
 
 async function deleteReportConfirm(reportId) {
+  const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
+  if (user && user.role === 'department_staff') {
+    Swal.fire({
+      icon: 'error',
+      title: 'ไม่มีสิทธิ์ลบรายงาน',
+      text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่มีสิทธิ์ลบรายงานผลตรวจ'
+    });
+    return;
+  }
+
   const result = await Swal.fire({
     title: 'ยืนยันการลบรายงานตรวจ?',
     text: 'การลบรายงานผลตรวจนี้จะไม่สามารถกู้คืนได้ตามมาตรฐาน ISO 15189',
@@ -629,12 +708,19 @@ async function loadBookingsManagerTable() {
   const tbody = document.getElementById('admin-bookings-tbody');
   if (!tbody) return;
 
+  const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
+  const filterDept = (user && user.role === 'department_staff') ? user.department : '';
+  const isDeptStaff = (user && user.role === 'department_staff');
+
   tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-xl mr-2"></i> กำลังโหลดรายการจอง...</td></tr>`;
 
-  const bookings = await window.BookingDB.getAllBookings(50);
+  let bookings = await window.BookingDB.getAllBookings(50);
+  if (filterDept) {
+    bookings = bookings.filter(b => b.department && b.department.includes(filterDept));
+  }
 
   if (!bookings || bookings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ยังไม่มีรายการจองคิว</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ยังไม่มีรายการจองคิว${filterDept ? ` ของ ${filterDept}` : ''}</td></tr>`;
     return;
   }
 
@@ -651,10 +737,12 @@ async function loadBookingsManagerTable() {
         </span>
       </td>
       <td class="p-3 text-right space-x-1">
-        <button onclick="convertBookingToReport('${b.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="ออกผลตรวจจากคิวนี้">
-          <i class="fas fa-file-signature mr-0.5"></i> ออกผลตรวจ
-        </button>
-        <button onclick="deleteBookingConfirm('${b.id}')" class="p-1 text-slate-400 hover:text-rose-600" title="ยกเลิก/ลบการจอง">
+        ${!isDeptStaff ? `
+          <button onclick="convertBookingToReport('${b.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="ออกผลตรวจจากคิวนี้">
+            <i class="fas fa-file-signature mr-0.5"></i> ออกผลตรวจ
+          </button>
+        ` : ''}
+        <button onclick="deleteBookingConfirm('${b.id}')" class="p-1 text-slate-400 hover:text-rose-600" title="ยกเลิกคิวจอง">
           <i class="fas fa-trash"></i>
         </button>
       </td>
@@ -713,14 +801,25 @@ async function deleteBookingConfirm(bookingId) {
 }
 
 async function loadDashboardKPIs() {
-  const stats = await window.ReportDB.getStats();
+  const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
   const elTot = document.getElementById('adm-kpi-total');
   const elComp = document.getElementById('adm-kpi-completed');
   const elBook = document.getElementById('adm-kpi-bookings');
 
-  if (elTot) elTot.textContent = stats.totalReports;
-  if (elComp) elComp.textContent = stats.completedReports;
-  if (elBook) elBook.textContent = stats.totalBookings;
+  if (user && user.role === 'department_staff') {
+    const { data: reports } = await window.ReportDB.getReports({ department: user.department, pageSize: 500 });
+    let bookings = await window.BookingDB.getAllBookings(500);
+    bookings = bookings.filter(b => b.department && b.department.includes(user.department));
+
+    if (elTot) elTot.textContent = reports ? reports.length : 0;
+    if (elComp) elComp.textContent = reports ? reports.filter(r => r.status === 'completed' || ['pass', 'normal', 'no_growth'].includes(r.overall_result?.toLowerCase())).length : 0;
+    if (elBook) elBook.textContent = bookings ? bookings.length : 0;
+  } else {
+    const stats = await window.ReportDB.getStats();
+    if (elTot) elTot.textContent = stats.totalReports;
+    if (elComp) elComp.textContent = stats.completedReports;
+    if (elBook) elBook.textContent = stats.totalBookings;
+  }
 }
 
 window.addSingleItemRow = addSingleItemRow;
@@ -731,5 +830,28 @@ window.resetReportForm = resetReportForm;
 window.loadReportsTable = loadReportsTable;
 window.deleteReportConfirm = deleteReportConfirm;
 window.convertBookingToReport = convertBookingToReport;
-window.deleteBookingConfirm = deleteBookingConfirm;
 window.removeAttachment = removeAttachment;
+
+/**
+ * สลับเมนูนำทางบนมือถือ
+ */
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-nav-menu');
+  const icon = document.getElementById('mobile-menu-icon');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    if (icon) {
+      icon.classList.remove('fa-bars');
+      icon.classList.add('fa-xmark');
+    }
+  } else {
+    menu.classList.add('hidden');
+    if (icon) {
+      icon.classList.remove('fa-xmark');
+      icon.classList.add('fa-bars');
+    }
+  }
+}
+window.toggleMobileMenu = toggleMobileMenu;

@@ -19,27 +19,22 @@ const SUPABASE_CONFIG = {
 };
 
 // ==============================================================================
-// 2. NOTIFICATION CONFIGURATION (LINE Notify / Discord / Telegram Webhook)
+// 2. NOTIFICATION CONFIGURATION (LINE Messaging API & Telegram Bot)
 // ==============================================================================
 const NOTIFY_CONFIG = {
   // เปิด/ปิดการแจ้งเตือนเริ่มต้น
   enabled: true,
 
-  // [ตัวเลือกที่ 1] LINE Notify API Token (หรือส่งผ่าน Cloudflare Worker Webhook Proxy)
-  // วิธีสร้าง: เข้า https://notify-bot.line.me/ -> My Services -> Generate token
-  lineNotifyToken: 'YOUR_LINE_NOTIFY_TOKEN',
+  // [ตัวเลือกที่ 1] LINE Messaging API Channel Access Token & Group ID
+  lineAccessToken: 'REMOVED__USE_ENV_LINE_CHANNEL_ACCESS_TOKEN',
+  lineGroupId: 'C087508cdd6240cfd4c6358d8a88fcaaa',
   
-  // Cloudflare Worker Proxy URL สำหรับแก้ปัญหา CORS เมื่อเรียก LINE Notify จาก Browser โดยตรง
-  // หากไม่มี สามารถใช้ Discord Webhook หรือ Telegram Bot แทนได้ทันที
-  lineProxyUrl: 'https://your-line-proxy.workers.dev/notify',
-
-  // [ตัวเลือกที่ 2 - แนะนำ ฟรี 100% ไม่ติด CORS] Discord Webhook URL
-  // วิธีสร้าง: Discord Server -> Server Settings -> Integrations -> Webhooks -> New Webhook
+  // [ตัวเลือกที่ 2] Discord Webhook URL (ทางเลือกเสริม)
   discordWebhookUrl: '',
 
   // [ตัวเลือกที่ 3] Telegram Bot Token & Chat ID
-  telegramBotToken: '',
-  telegramChatId: ''
+  telegramBotToken: 'REMOVED__USE_ENV_TELEGRAM_BOT_TOKEN',
+  telegramChatId: '-5294922475'
 };
 
 // ==============================================================================

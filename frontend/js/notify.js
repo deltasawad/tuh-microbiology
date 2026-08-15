@@ -1,113 +1,38 @@
 /**
  * ==============================================================================
- * NOTIFICATION MODULE (LINE Notify / Discord / Telegram Webhook)
- * ระบบแจ้งเตือนการออกผลการตรวจวิเคราะห์สิ่งแวดล้อมอัตโนมัติ
+ * NOTIFICATION MODULE (notify.js)
+ * ระบบแจ้งเตือนอัตโนมัติผ่าน Telegram Bot & LINE Messaging API
+ * งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
  * ==============================================================================
  */
 
 const NotifyService = {
   /**
-   * สร้างข้อความแจ้งเตือนมาตรฐานสำหรับผลการตรวจ
+   * ดึงการตั้งค่า Token & Chat/Group IDs
    */
-  buildMessage(reportData) {
-    const isPass = ['pass', 'normal', 'no_growth'].includes(reportData.overall_result?.toLowerCase());
-    const resultEmoji = isPass ? '✅ ผ่านเกณฑ์มาตรฐาน' : '⚠️ ตกเกณฑ์ / พบเชื้อปนเปื้อน';
-    const currentHost = window.location.origin;
-    const reportLink = `${currentHost}/report_view.html?id=${encodeURIComponent(reportData.id || reportData.submission_no)}`;
-
-    let msg = `\n🏥 [TUH Microbiology] แจ้งเตือนผลตรวจสิ่งแวดล้อม\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `📄 เลขที่: ${reportData.submission_no}\n`;
-    msg += `🔬 บริการ: ${reportData.service_name}\n`;
-    msg += `🏢 หน่วยงาน: ${reportData.department}${reportData.ward_room ? ` (${reportData.ward_room})` : ''}\n`;
-    msg += `📅 วันที่เก็บ: ${reportData.sampling_date}\n`;
-    msg += `📅 วันที่ออกผล: ${reportData.reported_date}\n`;
-    msg += `📊 ผลสรุป: ${resultEmoji}\n`;
-    msg += `👨‍🔬 ผู้รายงาน: ${reportData.reporter_name}\n`;
-    if (reportData.remarks) {
-      msg += `📝 หมายเหตุ: ${reportData.remarks}\n`;
-    }
-    msg += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `🔗 ตรวจสอบใบรายงานผลทางการ (PDF):\n${reportData.report_pdf_url || reportLink}`;
-
-    return {
-      text: msg,
-      isPass,
-      link: reportData.report_pdf_url || reportLink
+  getConfig() {
+    return window.NOTIFY_CONFIG || {
+      enabled: true,
+      telegramBotToken: 'REMOVED__USE_ENV_TELEGRAM_BOT_TOKEN',
+      telegramChatId: '-5294922475',
+      lineAccessToken: 'REMOVED__USE_ENV_LINE_CHANNEL_ACCESS_TOKEN',
+      lineGroupId: 'C087508cdd6240cfd4c6358d8a88fcaaa'
     };
   },
 
   /**
-   * ส่งการแจ้งเตือนผ่านช่องทางที่ตั้งค่าไว้
-   * @param {Object} reportData ข้อมูลผลตรวจ
-   * @param {Object} options ตัวเลือกเพิ่มเติม
+   * ส่งข้อความทั่วไปผ่าน Telegram และ LINE พร้อมกัน
    */
-  async sendReportNotification(reportData, options = {}) {
-    const config = window.NOTIFY_CONFIG || {};
+  async broadcastMessage(text, options = {}) {
+    const config = this.getConfig();
     if (!config.enabled) {
-      console.log('ℹ️ Notification is disabled in settings.');
-      return { success: true, message: 'Notification disabled' };
+      console.log('ℹ️ Notification is disabled.');
+      return { success: true };
     }
 
-    const { text, isPass, link } = this.buildMessage(reportData);
     const results = [];
 
-    // 1. ส่งผ่าน Discord Webhook (ถ้ามี)
-    if (config.discordWebhookUrl && config.discordWebhookUrl.startsWith('https://discord.com/api/webhooks/')) {
-      try {
-        const discordPayload = {
-          username: "TUH Microbiology Alerts",
-          avatar_url: "https://img1.pic.in.th/images/core-value-2024.png",
-          embeds: [{
-            title: `🔬 แจ้งเตือนผลตรวจ: ${reportData.service_name}`,
-            description: `หน่วยงาน: **${reportData.department}**\nเลขที่ใบรายงาน: \`${reportData.submission_no}\``,
-            color: isPass ? 3066993 : 15158332, // เขียว หรือ แดง
-            fields: [
-              { name: "📅 วันที่ออกผล", value: reportData.reported_date, inline: true },
-              { name: "📊 ผลสรุป", value: isPass ? "✅ ผ่านเกณฑ์" : "⚠️ ตกเกณฑ์ / พบเชื้อ", inline: true },
-              { name: "👨‍🔬 ผู้รายงาน", value: reportData.reporter_name, inline: true },
-              { name: "📝 หมายเหตุ", value: reportData.remarks || "-" }
-            ],
-            url: link,
-            footer: { text: "TUH Microbiology Environmental Reporting (ISO 15189)" },
-            timestamp: new Date().toISOString()
-          }]
-        };
-
-        const res = await fetch(config.discordWebhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(discordPayload)
-        });
-        results.push({ channel: 'Discord', ok: res.ok });
-      } catch (err) {
-        console.warn('Discord notify error:', err);
-      }
-    }
-
-    // 2. ส่งผ่าน LINE Notify (ผ่าน Proxy Worker เพื่อหลีกเลี่ยง browser CORS)
-    if (config.lineNotifyToken && !config.lineNotifyToken.includes('YOUR_LINE_NOTIFY_TOKEN')) {
-      try {
-        // หากมี Cloudflare Worker proxy
-        if (config.lineProxyUrl && !config.lineProxyUrl.includes('your-line-proxy')) {
-          const res = await fetch(config.lineProxyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              token: config.lineNotifyToken,
-              message: text
-            })
-          });
-          results.push({ channel: 'LINE (Proxy)', ok: res.ok });
-        } else {
-          console.log('ℹ️ LINE Notify direct call is subject to browser CORS. Please use Cloudflare Worker proxy or Discord Webhook.');
-        }
-      } catch (err) {
-        console.warn('LINE notify error:', err);
-      }
-    }
-
-    // 3. ส่งผ่าน Telegram Bot (ถ้ามี)
+    // 1. ส่งผ่าน Telegram Bot API
     if (config.telegramBotToken && config.telegramChatId) {
       try {
         const tgUrl = `https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`;
@@ -120,14 +45,110 @@ const NotifyService = {
             parse_mode: 'HTML'
           })
         });
-        results.push({ channel: 'Telegram', ok: res.ok });
+        const tgResult = await res.json();
+        results.push({ channel: 'Telegram', ok: tgResult.ok, detail: tgResult });
+        console.log('✈️ Telegram Notify Dispatched:', tgResult.ok);
       } catch (err) {
         console.warn('Telegram notify error:', err);
+        results.push({ channel: 'Telegram', ok: false, error: err.message });
       }
     }
 
-    console.log('📢 Notification dispatched:', results);
+    // 2. ส่งผ่าน LINE Messaging API (Push to Group)
+    if (config.lineAccessToken && config.lineGroupId) {
+      try {
+        const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${config.lineAccessToken}`
+          },
+          body: JSON.stringify({
+            to: config.lineGroupId,
+            messages: [{
+              type: 'text',
+              text: text.replace(/<[^>]*>?/gm, '') // Strip HTML tags for LINE
+            }]
+          })
+        });
+        results.push({ channel: 'LINE', ok: lineRes.ok, status: lineRes.status });
+        console.log('💬 LINE Push Notify Dispatched:', lineRes.ok);
+      } catch (err) {
+        console.warn('LINE notify error:', err);
+        results.push({ channel: 'LINE', ok: false, error: err.message });
+      }
+    }
+
     return { success: true, results };
+  },
+
+  /**
+   * 1. แจ้งเตือนเมื่อมีการจองวันส่งตรวจในปฏิทิน (Booking Alert)
+   */
+  async sendBookingNotification(bookingData) {
+    const text = 
+`🏥 <b>[TUH Microbiology Alert]</b>
+📅 <b>มีการจองวันส่งตรวจใหม่!</b>
+━━━━━━━━━━━━━━━━━━━━━
+🔬 <b>บริการ:</b> ${bookingData.service_name || bookingData.service_code || '-'}
+🏢 <b>หน่วยงาน:</b> ${bookingData.department || '-'}
+👤 <b>ผู้ส่งตรวจ:</b> ${bookingData.sender_name || '-'} (โทร: ${bookingData.contact_number || '-'})
+📆 <b>วันที่นัดหมาย:</b> ${bookingData.booking_date || '-'}
+📦 <b>จำนวนสิ่งส่งตรวจ:</b> ${bookingData.sample_count || 1} ตัวอย่าง
+📝 <b>หมายเหตุ/จุดตรวจ:</b> ${bookingData.notes || '-'}
+━━━━━━━━━━━━━━━━━━━━━
+🌐 ระบบส่งตรวจและรายงานผล: ${window.location.origin}/workflow.html`;
+
+    return await this.broadcastMessage(text);
+  },
+
+  /**
+   * 2. แจ้งเตือนเมื่อได้รับตัวอย่างส่งตรวจ (Sample Submission Alert)
+   */
+  async sendSubmissionNotification(subData) {
+    const text = 
+`🏥 <b>[TUH Microbiology Alert]</b>
+📥 <b>ได้รับสิ่งส่งตรวจเข้าระบบแล้ว (รอตรวจ)</b>
+━━━━━━━━━━━━━━━━━━━━━
+📄 <b>เลขที่ใบส่งตรวจ:</b> ${subData.submission_no}
+🔬 <b>บริการ:</b> ${subData.service_name}
+🏢 <b>หน่วยงาน:</b> ${subData.department}
+📍 <b>สถานที่วางเพลต/จุดตรวจ:</b> ${subData.ward_room || subData.department}
+📅 <b>วันที่เก็บตัวอย่าง:</b> ${subData.sampling_date}
+📦 <b>จำนวนตัวอย่าง:</b> ${subData.sample_count || (subData.items ? subData.items.length : 1)} รายการ
+📧 <b>อีเมลรับผล:</b> ${subData.recipient_email || '-'}
+⏳ <b>สถานะ:</b> รอตรวจ (Waiting for testing)
+━━━━━━━━━━━━━━━━━━━━━
+🌐 ดูรายละเอียดในระบบ: ${window.location.origin}/workflow.html?tab=reports`;
+
+    return await this.broadcastMessage(text);
+  },
+
+  /**
+   * 3. แจ้งเตือนเมื่อออกผลตรวจและอนุมัติผลเรียบร้อย (Result Report Alert)
+   */
+  async sendReportNotification(reportData) {
+    const isPass = ['pass', 'normal', 'no_growth', 'tested', 'completed'].includes(reportData.overall_result?.toLowerCase());
+    const resultEmoji = isPass ? '✅ ผ่านเกณฑ์มาตรฐาน (Pass)' : '⚠️ ตกเกณฑ์ / พบเชื้อปนเปื้อน (Fail)';
+    const reportLink = `${window.location.origin}/report_view.html?id=${encodeURIComponent(reportData.id || reportData.submission_no)}`;
+
+    const text = 
+`🏥 <b>[TUH Microbiology Alert]</b>
+📋 <b>รายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม</b>
+━━━━━━━━━━━━━━━━━━━━━
+📄 <b>เลขที่:</b> ${reportData.submission_no || reportData.id}
+🔬 <b>บริการ:</b> ${reportData.service_name}
+🏢 <b>หน่วยงาน:</b> ${reportData.department}
+📍 <b>สถานที่:</b> ${reportData.ward_room || reportData.department}
+📅 <b>วันที่ออกผล:</b> ${reportData.reported_date || new Date().toLocaleDateString('th-TH')}
+📊 <b>ผลสรุป:</b> ${resultEmoji}
+👨‍🔬 <b>ผู้รายงานผล:</b> ${reportData.reporter_name || 'ทนพ.มานพ นันตาบุตร'}
+📝 <b>ข้อคิดเห็น:</b> ${reportData.remarks || 'ผลการตรวจวิเคราะห์อยู่ในเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ'}
+━━━━━━━━━━━━━━━━━━━━━
+📄 <b>เปิดดูใบรายงานผลทางการ (PDF):</b>
+${reportData.report_pdf_url || reportLink}`;
+
+    return await this.broadcastMessage(text);
   }
 };
 

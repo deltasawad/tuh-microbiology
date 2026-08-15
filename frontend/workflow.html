@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบส่งตรวจและรายงานผลสิ่งแวดล้อม - TUH Microbiology</title>
+  
+  <link rel="icon" type="image/png" href="images/tuh-logo.png">
+  
+  <!-- Google Fonts: Sarabun & Kanit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'sans-serif'],
+            heading: ['Kanit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { height: 6px; width: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col antialiased">
+
+  <!-- 1. Top Global Navigation Header -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-emerald-900/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Organization Title -->
+        <a href="index.html" class="flex items-center gap-3 group">
+          <div class="w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
+            <img src="images/tuh-logo.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+          </div>
+          <div>
+            <div class="font-heading font-bold text-sm tracking-wide text-white group-hover:text-emerald-400 transition flex items-center gap-2">
+              <span>TUH MICROBIOLOGY</span>
+              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/40">E-Service</span>
+            </div>
+            <div class="text-[11px] text-slate-400 leading-none">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</div>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-1 text-xs font-semibold">
+          <a href="index.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
+            <i class="fas fa-list-check mr-1.5"></i> บริการส่งตรวจ (8)
+          </a>
+          <a href="workflow.html" class="bg-emerald-700 text-white px-3.5 py-2 rounded-lg transition border border-emerald-500/40">
+            <i class="fas fa-calendar-days mr-1.5"></i> จองวัน & ส่งตรวจ & รายงานผล
+          </a>
+          <a href="dashboard.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
+            <i class="fas fa-chart-pie mr-1.5"></i> Specimen Dashboard
+          </a>
+        </nav>
+
+        <!-- Right Side Auth Widget -->
+        <div id="navbar-auth-container" class="hidden md:flex items-center">
+          <a href="login.html" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold py-1.5 px-3.5 rounded-lg transition shadow-sm">
+            <i class="fas fa-user-shield"></i>
+            <span>เข้าสู่ระบบเจ้าหน้าที่</span>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Toggle Button -->
+        <div class="flex items-center gap-2 md:hidden">
+          <button type="button" onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-hidden" aria-label="Toggle navigation">
+            <i id="mobile-menu-icon" class="fas fa-bars text-lg"></i>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-3 space-y-2 backdrop-blur-md">
+      <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-list-check w-4"></i> บริการส่งตรวจ (8 รายการ)
+      </a>
+      <a href="workflow.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700 text-white">
+        <i class="fas fa-calendar-days w-4"></i> จองวัน & ส่งตรวจ & รายงานผล
+      </a>
+      <a href="dashboard.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-chart-pie w-4"></i> Specimen Dashboard (สถิติ)
+      </a>
+      <a href="login.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
+        <i class="fas fa-user-shield w-4"></i> เข้าสู่ระบบเจ้าหน้าที่
+      </a>
+    </div>
+  </header>
+
+  <!-- 2. Main Container -->
+  <main id="workflow-main-container" class="flex-grow max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+
+    <!-- Top Role Banner / Welcome Header -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900">
+          ระบบส่งตรวจและรายงานผลสิ่งแวดล้อม
+        </h1>
+        <p class="text-xs text-slate-500 mt-0.5">
+          จองวันส่งตรวจ ➔ กรอกแบบฟอร์มส่งตัวอย่าง ➔ ตรวจสอบรายงานผลการวิเคราะห์
+        </p>
+      </div>
+
+      <div id="workflow-user-banner"></div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- FLOATING PILL TABS (1. ปฏิทินจองวัน -> 2. แบบฟอร์มส่งตรวจ -> 3. รายงานผลตรวจ -> 4. ลงผลตรวจ ADMIN) -->
+    <!-- ============================================================================== -->
+    <div class="flex justify-center">
+      <div class="inline-flex flex-wrap items-center justify-center gap-1.5 bg-white p-1.5 rounded-full border border-slate-200 shadow-sm">
+        
+        <!-- Tab 1: ปฏิทินจองวัน -->
+        <button type="button" id="tab-pill-calendar" onclick="switchWorkflowTab('calendar')" class="step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-700 text-white font-bold shadow-md transition text-xs border border-emerald-600">
+          <i class="fas fa-calendar-days text-emerald-200"></i>
+          <span>1. ปฏิทินจองวัน</span>
+        </button>
+
+        <!-- Tab 2: แบบฟอร์มส่งตรวจ -->
+        <button type="button" id="tab-pill-submission" onclick="switchWorkflowTab('submission')" class="step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 font-semibold transition text-xs border border-slate-200">
+          <i class="fas fa-file-pen text-emerald-600"></i>
+          <span>2. แบบฟอร์มส่งตรวจ</span>
+        </button>
+
+        <!-- Tab 3: รายงานผลตรวจ (ล่าสุดอยู่บนสุด) -->
+        <button type="button" id="tab-pill-reports" onclick="switchWorkflowTab('reports')" class="step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 font-semibold transition text-xs border border-slate-200">
+          <i class="fas fa-file-lines text-emerald-600"></i>
+          <span>3. รายงานผลตรวจ</span>
+        </button>
+
+        <!-- Tab 4: ลงผลตรวจ Data Grid (🔒 เฉพาะ ADMIN เท่านั้น) -->
+        <button type="button" id="tab-pill-result-grid" onclick="switchWorkflowTab('result-grid')" class="hidden step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 font-semibold transition text-xs border border-slate-200">
+          <i class="fas fa-table-cells text-purple-600"></i>
+          <span>4. ลงผลตรวจ Data Grid</span>
+          <span class="text-[10px] bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded-full">ADMIN</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- TAB 1 PANEL: ปฏิทินจองวันส่งตรวจ (BOOKING CALENDAR) -->
+    <!-- ============================================================================== -->
+    <div id="panel-calendar" class="space-y-5">
+      
+      <!-- Rule Notification Banner -->
+      <div class="bg-gradient-to-r from-emerald-900 to-slate-900 text-white rounded-3xl p-5 shadow-sm flex items-start gap-4 border border-emerald-700/50">
+        <div class="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shrink-0 text-xl">
+          <i class="fas fa-calendar-check"></i>
+        </div>
+        <div class="text-xs space-y-1">
+          <div class="font-bold text-sm text-emerald-300 font-heading">
+            รอบและเงื่อนไขการจองวันส่งตรวจสิ่งแวดล้อม:
+          </div>
+          <p class="text-slate-200 leading-relaxed">
+            • เปิดรับส่งตัวอย่างเฉพาะ <strong class="text-emerald-300">วันจันทร์, วันอังคาร และวันพุธ</strong> เวลา 08.30 - 15.00 น. (เพื่อระยะเวลาบ่มเพาะเชื้อ 24-48 ชม. ก่อนวันหยุด)<br>
+            • <strong class="text-emerald-300">ไม่จำกัดจำนวนคิวต่อวัน:</strong> หากวันจันทร์-พุธ มีคิวอื่นจองแล้ว ท่านยังสามารถจองส่งตรวจในวันเดียวกันได้<br>
+            • คลิกที่ช่อง <strong class="text-emerald-300">วันจันทร์ - พุธ</strong> บนปฏิทินด้านล่างเพื่อเปิดแบบฟอร์มจองวัน
+          </p>
+        </div>
+      </div>
+
+      <!-- Calendar Frame -->
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        
+        <!-- Controls Bar -->
+        <div class="bg-slate-900 text-white p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <button id="prev-month-btn" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition border border-slate-700">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <h2 id="calendar-month-title" class="text-base sm:text-xl font-bold font-heading tracking-wide min-w-[180px] text-center">
+              กำลังโหลด...
+            </h2>
+            <button id="next-month-btn" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white flex items-center justify-center transition border border-slate-700">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="today-btn" class="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition border border-slate-700">
+              <i class="fas fa-clock mr-1"></i> วันนี้
+            </button>
+            <button id="refresh-calendar-btn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-xs flex items-center gap-1.5">
+              <i class="fas fa-rotate"></i>
+              <span>รีเฟรชข้อมูล</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Days Header -->
+        <div class="grid grid-cols-7 border-b border-slate-200 text-center text-xs font-bold py-2.5">
+          <div class="text-slate-400 bg-slate-100/60 py-1">อาทิตย์ (ปิด)</div>
+          <div class="text-emerald-800 bg-emerald-50/80 py-1 border-x border-emerald-100">จันทร์ (เปิด)</div>
+          <div class="text-emerald-800 bg-emerald-50/80 py-1 border-r border-emerald-100">อังคาร (เปิด)</div>
+          <div class="text-emerald-800 bg-emerald-50/80 py-1 border-r border-emerald-100">พุธ (เปิด)</div>
+          <div class="text-slate-500 bg-slate-100/60 py-1">พฤหัสบดี (งด)</div>
+          <div class="text-slate-500 bg-slate-100/60 py-1">ศุกร์ (งด)</div>
+          <div class="text-slate-400 bg-slate-100/60 py-1">เสาร์ (ปิด)</div>
+        </div>
+
+        <!-- Calendar Days Grid -->
+        <div id="calendar-days-grid" class="grid grid-cols-7 gap-1.5 p-2 sm:p-3 bg-slate-100/60">
+          <!-- Rendered via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- TAB 2 PANEL: แบบฟอร์มส่งตรวจ (SAMPLE SUBMISSION FORM) -->
+    <!-- ============================================================================== -->
+    <div id="panel-submission" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold font-heading text-slate-900 flex items-center gap-2">
+              <i class="fas fa-clipboard-list text-emerald-600"></i>
+              <span>แบบฟอร์มส่งตรวจสิ่งแวดล้อม (Environmental Sample Submission)</span>
+            </h2>
+            <p class="text-xs text-slate-500">กรอกรายละเอียดสิ่งส่งตรวจและจุดวางตัวอย่าง (ช่องผลตรวจจะถูกล็อคไว้ให้ห้องแล็บลงผล)</p>
+          </div>
+          <input type="hidden" id="sub-submission-no">
+        </div>
+
+        <!-- Submission Form (Emerald Theme) -->
+        <form onsubmit="handleSubmissionFormSubmit(event)" class="space-y-5 text-xs">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <!-- วันที่ส่งตรวจ -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1" for="sub-sampling-date">วันที่ส่งตรวจ <span class="text-rose-500">*</span></label>
+              <input type="date" id="sub-sampling-date" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium" required>
+            </div>
+
+            <!-- หน่วยงานส่งตรวจ (ชื่อหน่วยงานที่เข้าไปวางเพลต) -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1" for="sub-department">หน่วยงานส่งตรวจ (ชื่อหน่วยงานที่เข้าไปวางเพลต) <span class="text-rose-500">*</span></label>
+              <input list="sub-wards-list" id="sub-department" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium" placeholder="พิมพ์หรือเลือกหน่วยงาน" required>
+              <datalist id="sub-wards-list">
+                <option value="งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร">
+                <option value="งานควบคุมโรคติดเชื้อ">
+                <option value="งานธนาคารเลือด">
+                <option value="งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)">
+                <option value="งานโภชนาการ">
+                <option value="งานผลิตยา">
+                <option value="ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)">
+                <option value="ห้องผ่าตัด">
+                <option value="หน่วยเวชศาสตร์การเจริญพันธุ์ (ผู้มีบุตรยาก)">
+                <option value="OPD MED 3">
+                <option value="หน่วยตรวจศัลยกรรมกระดูกและข้อ">
+                <option value="ศูนย์ต้อกระจก">
+                <option value="เคมีบำบัด">
+              </datalist>
+            </div>
+
+            <!-- ประเภทสิ่งส่งตรวจ -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1" for="sub-service-select">ประเภทสิ่งส่งตรวจ (8 บริการ) <span class="text-rose-500">*</span></label>
+              <select id="sub-service-select" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium" required>
+                <option value="AIR_01">ตรวจอากาศในอาคาร (Air Sampling - Settle Plate)</option>
+                <option value="STR_02">ตรวจความปราศจากเชื้อ (Sterility Test)</option>
+                <option value="WTS_03">ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)</option>
+                <option value="WTO_04">ตรวจน้ำห้องผ่าตัด (Water for Surgery OR)</option>
+                <option value="WTM_05">ตรวจน้ำศูนย์การแพทย์ (Water THAMC)</option>
+                <option value="FOD_06">ตรวจสุขาภิบาลอาหารและภาชนะ (Food Sanitation)</option>
+                <option value="DRG_07">ตรวจยาปราศจากเชื้อ (Drug Compounding Sterility)</option>
+                <option value="DRG_08">ตรวจการปนเปื้อนเชื้อในยา (Drug Bioburden)</option>
+              </select>
+            </div>
+
+            <!-- Email ผู้ส่งตรวจ (สำหรับแจ้งเตือนผล) -->
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1" for="sub-sender-email">Email ผู้ส่งตรวจ (สำหรับรับการแจ้งเตือนผลตรวจ)</label>
+              <input type="email" id="sub-sender-email" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium" placeholder="เช่น staff@hospital.tu.ac.th">
+            </div>
+
+          </div>
+
+          <!-- จำนวนตัวอย่าง (รายการ) -->
+          <div class="w-full sm:w-1/2">
+            <label class="block font-semibold text-slate-700 mb-1" for="sub-sample-count">จำนวนตัวอย่าง (รายการ)</label>
+            <input type="number" id="sub-sample-count" min="1" max="50" value="10" class="w-full px-3.5 py-2.5 bg-emerald-50/40 border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" required>
+          </div>
+
+          <!-- Dynamic Sample Items Matrix -->
+          <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-2xs scrollbar-thin">
+            <table class="w-full text-left text-xs min-w-[700px]">
+              <thead class="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                <tr>
+                  <th class="p-3 text-center w-12 bg-slate-100/70">ลำดับ</th>
+                  <th class="p-3 w-48">หน่วยงาน</th>
+                  <th class="p-3">ตำแหน่งที่เก็บ</th>
+                  <th class="p-3 text-center w-40">Number of colonies (Bacteria)</th>
+                  <th class="p-3 text-center w-40">Number of colonies (Fungus)</th>
+                  <th class="p-3 w-48">หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="sub-items-tbody">
+                <!-- Dynamically populated 10 rows -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+            <div class="text-[11px] text-slate-400 flex items-center gap-1">
+              <i class="fas fa-lock text-emerald-600"></i>
+              <span>ช่อง CFU ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>
+            </div>
+
+            <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-950/20 flex items-center gap-2">
+              <i class="fas fa-paper-plane"></i>
+              <span>บันทึกส่งรายการตรวจ (Submit Samples)</span>
+            </button>
+          </div>
+
+        </form>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- TAB 3 PANEL: รายงานผลตรวจทั้งหมด (ALL REPORTS ARCHIVE - BALANCED & SCOPED) -->
+    <!-- ============================================================================== -->
+    <div id="panel-reports" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        
+        <!-- Header & Scope Scope Banner -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold font-heading text-slate-900 flex items-center gap-2">
+              <i class="fas fa-file-waveform text-emerald-600"></i>
+              <span>รายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม (Reports Archive)</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+              แสดงประวัติและผลการตรวจวิเคราะห์สิ่งแวดล้อมทางการ (รายการล่าสุดอยู่บนสุด)
+            </p>
+          </div>
+
+          <div id="reports-scope-badge" class="shrink-0">
+            <!-- Dynamic Scope Badge (Admin / Department Isolated) -->
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls Bar (Balanced & Proportionate) -->
+        <div class="bg-slate-50 border border-slate-200/90 rounded-2xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 shadow-2xs">
+          
+          <!-- Left: Refresh Button & Status Badges -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" onclick="loadReportsArchiveTable()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-2xs flex items-center gap-1.5 shrink-0">
+              <i class="fas fa-rotate"></i>
+              <span>เรียกดูข้อมูลล่าสุด</span>
+            </button>
+            <div id="reports-count-badge" class="text-xs text-slate-500 font-medium px-2 py-1 bg-white border border-slate-200 rounded-lg">
+              กำลังนับข้อมูล...
+            </div>
+          </div>
+
+          <!-- Right: Search Input & Department Filter (if Admin) -->
+          <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+            <div id="admin-dept-filter-container" class="hidden w-full sm:w-56">
+              <select id="admin-dept-filter-select" onchange="handleAdminDeptFilterChange(this.value)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden">
+                <option value="">-- ทุกหน่วยงาน (All) --</option>
+                <option value="งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร">งานอาชีวอนามัยฯ</option>
+                <option value="งานผลิตยา">งานผลิตยา</option>
+                <option value="งานควบคุมโรคติดเชื้อ">งานควบคุมโรคติดเชื้อ (IC)</option>
+                <option value="งานธนาคารเลือด">งานธนาคารเลือด</option>
+                <option value="งานโภชนาการ">งานโภชนาการ</option>
+                <option value="ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)">ศูนย์การแพทย์ (THAMC)</option>
+                <option value="ห้องผ่าตัด">ห้องผ่าตัด (OR)</option>
+              </select>
+            </div>
+
+            <div class="relative w-full sm:w-64">
+              <input type="text" id="rep-search-input" placeholder="ค้นหาเลขที่, วอร์ด, จุดตรวจ..." class="w-full pl-9 pr-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden">
+              <i class="fas fa-search absolute left-3 top-2.5 text-slate-400 text-xs pointer-events-none"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Balanced Reports Archive Table -->
+        <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-2xs scrollbar-thin">
+          <table class="w-full text-left text-xs min-w-[760px]">
+            <thead class="bg-slate-900 text-white font-bold border-b border-slate-800">
+              <tr>
+                <th class="p-3.5 text-center w-28 bg-slate-950">วันที่ส่งตรวจ</th>
+                <th class="p-3.5 w-36">เลขที่เอกสาร</th>
+                <th class="p-3.5">หน่วยงานส่งตรวจ (ชื่อหน่วยงานที่เข้าไปวางเพลต / จุดเก็บตัวอย่าง)</th>
+                <th class="p-3.5 text-center w-24">จำนวน</th>
+                <th class="p-3.5 text-center w-32">สถานะ</th>
+                <th class="p-3.5 text-center w-28">รายงานผล</th>
+              </tr>
+            </thead>
+            <tbody id="rep-archive-tbody">
+              <!-- Populated dynamically with Newest on Top and strict Department isolation -->
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ============================================================================== -->
+    <!-- TAB 4 PANEL: ลงผลตรวจ DATA GRID (🔒 เฉพาะ ADMIN เท่านั้น) -->
+    <!-- ============================================================================== -->
+    <div id="panel-result-grid" class="hidden space-y-6">
+      
+      <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-[11px] font-bold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-full mb-1">
+              <i class="fas fa-user-shield"></i> ADMIN MASTER ONLY
+            </div>
+            <h2 class="text-base sm:text-lg font-bold font-heading text-slate-900">
+              ลงผลการตรวจวิเคราะห์ (Spreadsheet Data Grid Bulk Editor)
+            </h2>
+            <p class="text-xs text-slate-500">สำหรับผู้ดูแลระบบและนักเทคนิคการแพทย์ กรอกผล CFU แบคทีเรีย/เชื้อรา และส่งอีเมลแจ้งผล</p>
+          </div>
+
+          <button type="button" onclick="loadWaitingQueueIntoGrid()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition flex items-center gap-1">
+            <i class="fas fa-rotate"></i> รีเฟรชคิว
+          </button>
+        </div>
+
+        <!-- Pending Queue Selector -->
+        <div class="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200 space-y-2">
+          <label class="block font-bold text-emerald-950 text-xs" for="grid-queue-select">
+            <i class="fas fa-inbox mr-1 text-emerald-700"></i> เลือกใบส่งตรวจที่ต้องการลงผล:
+          </label>
+          <select id="grid-queue-select" class="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <!-- Active Report Metadata Header -->
+        <div id="grid-active-meta"></div>
+
+        <!-- Spreadsheet Data Grid Table -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fas fa-keyboard text-emerald-700"></i>
+              <span>Spreadsheet Grid (กด Tab เพื่อเลื่อนช่องถัดไปอย่างรวดเร็ว)</span>
+            </h3>
+
+            <button type="button" onclick="fastPassAllGridRows()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-3 py-1.5 rounded-xl transition text-xs flex items-center gap-1">
+              <i class="fas fa-wand-magic-sparkles text-emerald-600"></i>
+              <span>ตั้งค่าผ่านเกณฑ์ทุกรายการ (Pass All)</span>
+            </button>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-200 rounded-2xl bg-white shadow-2xs scrollbar-thin">
+            <table class="w-full text-left text-xs min-w-[700px]">
+              <thead class="bg-slate-900 text-white font-bold border-b border-slate-800">
+                <tr>
+                  <th class="p-2.5 text-center w-12 bg-slate-950">#</th>
+                  <th class="p-2.5">จุดตรวจ / รายละเอียด</th>
+                  <th class="p-2.5 text-center w-28 bg-emerald-950 text-emerald-300">แบคทีเรีย (CFU)</th>
+                  <th class="p-2.5 text-center w-28 bg-emerald-950 text-emerald-300">เชื้อรา (CFU)</th>
+                  <th class="p-2.5 text-center w-36">ผลการประเมิน</th>
+                  <th class="p-2.5">หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="admin-grid-tbody">
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Remarks & Signature -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ผู้ตรวจและรายงานผล</label>
+            <input type="text" id="grid-reporter-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-semibold" value="ทนพ.มานพ นันตาบุตร" required>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ผู้อนุมัติผลตรวจ</label>
+            <input type="text" id="grid-approver-name" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-semibold" value="ทนพญ.นริศรา มังกรแก้ว" required>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">ข้อคิดเห็นทางเทคนิค</label>
+            <input type="text" id="grid-remarks" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg" placeholder="เช่น คุณภาพอากาศอยู่ในเกณฑ์มาตรฐานความปลอดภัย">
+          </div>
+        </div>
+
+        <!-- Submit & Trigger Email -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+          <div class="text-[11px] text-slate-400">
+            <i class="fas fa-envelope-circle-check text-emerald-600 mr-1"></i> ระบบจะยิงอีเมลแจ้งเตือนผลตรวจไปยังผู้ส่งตรวจโดยอัตโนมัติ
+          </div>
+
+          <button type="button" onclick="handleAdminSaveResults()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-6 py-2.5 rounded-xl transition shadow-md shadow-emerald-950/20 flex items-center gap-2">
+            <i class="fas fa-floppy-disk"></i>
+            <span>บันทึกผลตรวจ & ส่งอีเมล (Save & Notify)</span>
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- 3. Global Footer with Live Supabase Status Dot Indicator -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-6 border-t border-slate-800 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
+      
+      <div class="flex items-center gap-3">
+        <img src="images/tuh-logo.png" alt="TUH" class="h-6 w-auto object-contain opacity-80">
+        <div>
+          <span class="text-slate-200 font-semibold">งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</span>
+          <span class="text-[11px] text-slate-500 block">ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา | โทร. 0-2926-9460</span>
+        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-4 text-slate-400">
+        <a href="index.html" class="hover:text-white transition">หน้าแรก</a>
+        <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-emerald-300 font-semibold transition flex items-center gap-1">
+          <i class="fas fa-calendar-days"></i> จองวัน & ส่งตรวจ & รายงานผล
+        </a>
+        <a href="dashboard.html" class="hover:text-white transition">Specimen Dashboard</a>
+        <a href="login.html" class="hover:text-white transition">สำหรับเจ้าหน้าที่</a>
+
+        <div class="flex items-center gap-2 bg-slate-950 px-3 py-1 rounded-full border border-slate-800">
+          <span id="footer-supabase-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="footer-supabase-status" class="text-[11px] font-mono text-slate-300 font-semibold">
+            Supabase Online
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/notify.js"></script>
+  <script src="js/workflow.js"></script>
+  <script>
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-nav-menu');
+      const icon = document.getElementById('mobile-menu-icon');
+      if (!menu) return;
+      menu.classList.toggle('hidden');
+      if (icon) {
+        icon.classList.toggle('fa-bars');
+        icon.classList.toggle('fa-xmark');
+      }
+    }
+    window.toggleMobileMenu = toggleMobileMenu;
+  </script>
+</body>
+</html>

@@ -41,8 +41,12 @@ function initServicesGrid() {
           ${srv.category}
         </p>
 
-        <div class="bg-slate-50 rounded-xl p-3 mb-5 border border-slate-100 text-xs">
-          <div class="flex justify-between items-center text-slate-600 mb-1">
+        <div class="bg-slate-50 rounded-xl p-3 mb-5 border border-slate-100 text-xs space-y-1.5">
+          <div class="flex justify-between items-center text-slate-600">
+            <span class="font-semibold text-slate-700"><i class="fas fa-clock text-teal-600 mr-1"></i> ระยะเวลา (TAT):</span>
+            <span class="font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded text-[11px]">3-5 วันทำการ</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-600">
             <span class="font-semibold text-slate-700"><i class="fas fa-ruler-combined text-emerald-600 mr-1"></i> หน่วยวัด:</span>
             <span class="font-mono text-emerald-800 bg-emerald-50/80 px-1.5 py-0.5 rounded text-[11px]">${srv.unit}</span>
           </div>
@@ -53,8 +57,9 @@ function initServicesGrid() {
       </div>
 
       <div class="pt-2 border-t border-slate-100 flex items-center gap-2">
-        <a href="booking.html?service=${srv.code}" class="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm transition">
-          <i class="fas fa-calendar-plus mr-1"></i> จองคิวส่งตรวจ
+        <a href="workflow.html?service=${srv.code}&tab=calendar" class="flex-1 text-center bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center gap-1">
+          <i class="fas fa-calendar-plus"></i>
+          <span>จองวันส่งตรวจ</span>
         </a>
         <button onclick="filterReportByService('${srv.code}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-2.5 rounded-lg transition" title="ดูรายงานผลล่าสุดของบริการนี้">
           <i class="fas fa-search"></i>
@@ -128,7 +133,7 @@ function renderSearchResults(results, term) {
         <p class="text-xs text-amber-700 mb-4">
           อาจอยู่ระหว่างการเพาะเชื้อและตรวจวิเคราะห์ หรือโปรดตรวจสอบเลขที่ใบส่งตรวจอีกครั้ง
         </p>
-        <a href="booking.html" class="inline-flex items-center gap-1.5 bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition">
+        <a href="workflow.html?tab=calendar" class="inline-flex items-center gap-1.5 bg-amber-600 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-amber-700 transition">
           <i class="fas fa-calendar-check"></i> ตรวจสอบสถานะในปฏิทินส่งตรวจ
         </a>
       </div>
@@ -304,14 +309,38 @@ async function loadStats() {
     const elProgress = document.getElementById('kpi-progress-num');
     const elBookings = document.getElementById('kpi-bookings-num');
 
-    if (elTotal) elTotal.textContent = stats.totalReports;
-    if (elReported) elReported.textContent = stats.completedReports;
-    if (elProgress) elProgress.textContent = stats.inProgressReports;
-    if (elBookings) elBookings.textContent = stats.totalBookings;
+    if (elTotal) elTotal.textContent = Number(stats.totalSpecimens).toLocaleString();
+    if (elReported) elReported.textContent = Number(stats.completedSpecimens).toLocaleString();
+    if (elProgress) elProgress.textContent = Number(stats.inProgressSpecimens).toLocaleString();
+    if (elBookings) elBookings.textContent = Number(stats.totalBookings).toLocaleString();
   } catch (e) {
     console.warn('Error updating KPI stats:', e);
   }
 }
+
+/**
+ * จัดการเปิด/ปิด เมนูนำทางบนมือถือ (Mobile Navigation Drawer)
+ */
+function toggleMobileMenu() {
+  const menu = document.getElementById('mobile-nav-menu');
+  const icon = document.getElementById('mobile-menu-icon');
+  if (!menu) return;
+  const isHidden = menu.classList.contains('hidden');
+  if (isHidden) {
+    menu.classList.remove('hidden');
+    if (icon) {
+      icon.classList.remove('fa-bars');
+      icon.classList.add('fa-xmark');
+    }
+  } else {
+    menu.classList.add('hidden');
+    if (icon) {
+      icon.classList.remove('fa-xmark');
+      icon.classList.add('fa-bars');
+    }
+  }
+}
+window.toggleMobileMenu = toggleMobileMenu;
 
 window.filterReportByService = filterReportByService;
 window.previewReportModal = previewReportModal;

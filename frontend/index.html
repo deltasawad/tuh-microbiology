@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ระบบปฏิทินจองคิวและรายงานผลการตรวจสิ่งแวดล้อม - รพ.ธรรมศาสตร์เฉลิมพระเกียรติ (ISO 15189)</title>
+  <title>ระบบปฏิทินจองคิวและรายงานผลการตรวจสิ่งแวดล้อม - โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</title>
+  
+  <link rel="icon" type="image/png" href="images/tuh-logo.png">
   
   <!-- Google Fonts: Sarabun & Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -49,12 +51,11 @@
         <!-- Hospital Brand Logo -->
         <a href="index.html" class="flex items-center gap-3 group">
           <div class="w-10 h-10 rounded-xl bg-white/10 p-1 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
-            <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+            <img src="images/tuh-logo.png" alt="TUH Logo" class="h-8 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
           </div>
           <div>
             <div class="font-heading font-bold text-sm tracking-wide text-white group-hover:text-emerald-400 transition flex items-center gap-2">
               <span>TUH MICROBIOLOGY</span>
-              <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded border border-emerald-500/40">ISO 15189</span>
             </div>
             <div class="text-[11px] text-slate-400 leading-none">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</div>
           </div>
@@ -65,23 +66,49 @@
           <a href="index.html" class="bg-emerald-700/80 text-white px-3.5 py-2 rounded-lg transition border border-emerald-500/40">
             <i class="fas fa-list-check mr-1.5"></i> บริการส่งตรวจ (8)
           </a>
-          <a href="#search-section" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
-            <i class="fas fa-file-waveform mr-1.5"></i> ติดตามผลตรวจ (E-Report)
+          <a href="workflow.html" class="text-emerald-400 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition border border-emerald-500/30">
+            <i class="fas fa-calendar-days mr-1.5"></i> จองวัน & ส่งตรวจ & รายงานผล
           </a>
-          <a href="booking.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
-            <i class="fas fa-calendar-days mr-1.5"></i> ปฏิทินจองวัน
+          <a href="dashboard.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
+            <i class="fas fa-chart-pie mr-1.5"></i> Specimen Dashboard
           </a>
         </nav>
 
-        <!-- Right Side Auth Widget -->
-        <div id="navbar-auth-container" class="flex items-center">
+        <!-- Right Side Auth Widget (Desktop) -->
+        <div id="navbar-auth-container" class="hidden md:flex items-center">
           <a href="login.html" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold py-1.5 px-3.5 rounded-lg transition shadow-sm">
             <i class="fas fa-user-shield"></i>
             <span>เข้าสู่ระบบเจ้าหน้าที่</span>
           </a>
         </div>
 
+        <!-- Mobile Menu Toggle Button -->
+        <div class="flex items-center gap-2 md:hidden">
+          <a href="login.html" class="bg-amber-500 text-slate-950 text-xs font-bold py-1.5 px-2.5 rounded-lg flex items-center gap-1">
+            <i class="fas fa-user-shield"></i>
+          </a>
+          <button type="button" onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-hidden" aria-label="Toggle navigation">
+            <i id="mobile-menu-icon" class="fas fa-bars text-lg"></i>
+          </button>
+        </div>
+
       </div>
+    </div>
+
+    <!-- Mobile Collapsible Menu -->
+    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-3 space-y-2 backdrop-blur-md">
+      <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 text-white">
+        <i class="fas fa-list-check w-4"></i> บริการส่งตรวจ (8 รายการ)
+      </a>
+      <a href="workflow.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-emerald-400 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-calendar-days w-4"></i> จองวัน & ส่งตรวจ & รายงานผล
+      </a>
+      <a href="dashboard.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
+        <i class="fas fa-chart-pie w-4"></i> Specimen Dashboard (สถิติ)
+      </a>
+      <a href="login.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
+        <i class="fas fa-user-shield w-4"></i> เข้าสู่ระบบเจ้าหน้าที่
+      </a>
     </div>
   </header>
 
@@ -95,9 +122,9 @@
       <div class="max-w-7xl mx-auto relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
         
         <div class="lg:col-span-8 space-y-4">
-          <div class="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold px-3 py-1 rounded-full">
-            <i class="fas fa-certificate text-emerald-400"></i>
-            <span>มาตรฐานระดับสากล ISO 15189 Accredited Laboratory</span>
+          <div class="inline-flex items-center gap-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold px-3.5 py-1.5 rounded-full">
+            <i class="fas fa-microscope text-emerald-400"></i>
+            <span>ห้องปฏิบัติการจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</span>
           </div>
 
           <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight text-white leading-tight">
@@ -112,9 +139,9 @@
           </p>
 
           <div class="pt-2 flex flex-wrap gap-3">
-            <a href="booking.html" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition transform hover:-translate-y-0.5">
+            <a href="workflow.html?tab=calendar" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-lg shadow-emerald-900/30 transition transform hover:-translate-y-0.5">
               <i class="fas fa-calendar-plus text-base"></i>
-              <span>จองคิวส่งตรวจล่วงหน้า (Booking)</span>
+              <span>จองวันส่งตรวจ & ส่งตัวอย่าง (Booking)</span>
             </a>
             <a href="#search-section" class="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-5 py-3 rounded-xl border border-white/20 transition">
               <i class="fas fa-search text-base"></i>
@@ -210,19 +237,21 @@
       <div class="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-3xl p-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
         <div class="space-y-2 text-center md:text-left">
           <div class="inline-flex items-center gap-2 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold text-emerald-200">
-            <i class="fas fa-clock"></i> ระยะเวลาออกผลตรวจ (Turnaround Time)
+            <i class="fas fa-clock"></i> ระยะเวลาออกผลตรวจ (Turnaround Time: 3 - 5 วันทำการทุกรายการ)
           </div>
           <h3 class="text-xl font-bold font-heading">ต้องการส่งตรวจด่วนหรือติดต่อสอบถาม?</h3>
           <p class="text-xs text-emerald-100 max-w-xl">
-            งานจุลชีววิทยา ชั้น 3 อาคารคุณากร โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ โทร. 0-2926-9650 หรือติดต่อสายภายใน 9650
+            ระยะเวลาตรวจวิเคราะห์และออกผลทางการ 3-5 วันทำการ | งานจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ โทร. 0-2926-9460
           </p>
         </div>
         <div class="flex gap-3 shrink-0">
-          <a href="booking.html" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-5 py-3 rounded-xl transition shadow-md">
-            <i class="fas fa-calendar-check mr-1"></i> จองวันส่งตรวจ
+          <a href="workflow.html?tab=calendar" class="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-5 py-3 rounded-xl transition shadow-md flex items-center gap-1.5">
+            <i class="fas fa-calendar-check"></i>
+            <span>จองวันส่งตรวจ</span>
           </a>
-          <a href="login.html" class="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-4 py-3 rounded-xl border border-white/20 transition">
-            <i class="fas fa-lock mr-1"></i> เจ้าหน้าที่เข้าสู่ระบบ
+          <a href="login.html" class="bg-white/10 hover:bg-white/20 text-white text-xs font-semibold px-4 py-3 rounded-xl border border-white/20 transition flex items-center gap-1.5">
+            <i class="fas fa-lock"></i>
+            <span>เจ้าหน้าที่เข้าสู่ระบบ</span>
           </a>
         </div>
       </div>
@@ -235,12 +264,22 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div>
         <p class="font-bold text-slate-200">งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</p>
-        <p class="text-[11px] text-slate-500">Environmental Microbiology Reporting System (ISO 15189:2022)</p>
+        <p class="text-[11px] text-slate-500">ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา | โทร. 0-2926-9460</p>
       </div>
-      <div class="flex items-center gap-4 text-slate-400">
+
+      <div class="flex flex-wrap items-center gap-4 text-slate-400">
         <a href="index.html" class="hover:text-white transition">หน้าแรก</a>
-        <a href="booking.html" class="hover:text-white transition">ปฏิทินจองวัน</a>
+        <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-emerald-300 font-semibold transition flex items-center gap-1">
+          <i class="fas fa-calendar-days"></i> จองวัน & ส่งตรวจ & รายงานผล
+        </a>
+        <a href="dashboard.html" class="hover:text-white transition">Specimen Dashboard</a>
         <a href="login.html" class="hover:text-white transition">สำหรับเจ้าหน้าที่</a>
+        
+        <!-- Live Supabase Status Dot -->
+        <div class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1 rounded-full border border-slate-800 text-[11px] font-mono text-emerald-400">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Supabase Online</span>
+        </div>
       </div>
     </div>
   </footer>
