@@ -13,13 +13,8 @@
 // 1. SUPABASE CREDENTIALS (ใส่ค่าจาก Supabase Project ของท่านที่นี่)
 // ==============================================================================
 const SUPABASE_CONFIG = {
-  // ตัวอย่าง: 'https://xyzcompany.supabase.co'
-  url: 'https://YOUR_SUPABASE_PROJECT_ID.supabase.co',
-  
-  // ตัวอย่าง: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' (anon public key)
-  anonKey: 'YOUR_SUPABASE_ANON_PUBLIC_KEY',
-
-  // ชื่อ Storage Bucket สำหรับจัดเก็บไฟล์เอกสารและรูปภาพ
+  url: 'https://tgctyouhzsyizlosrmqh.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRnY3R5b3VoenN5aXpsb3NybXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY2NjYyNzAsImV4cCI6MjEwMjI0MjI3MH0.mlba06N1LhjT9vwNBhVrhMlxvjvO7QsRjArI6ue7Pv0',
   storageBucket: 'microbiology-files'
 };
 
