@@ -3,7 +3,7 @@ from typing import List, Optional
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
-SUPABASE_POOLER_URL = "postgresql://postgres.tgctyouhzsyizlosrmqh:euKpcT2ScEMIaHMW@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
+SUPABASE_POOLER_URL = "postgresql://postgres.tgctyouhzsyizlosrmqh:REMOVED__USE_ENV_DATABASE_URL@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "TUH Microbiology Environmental Reporting System"

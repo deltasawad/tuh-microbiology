@@ -9,11 +9,11 @@ class Booking(Base, TimestampMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     booking_date = Column(Date, index=True, nullable=False)
-    test_type = Column(String(50), nullable=False) # น้ำ, อาหาร, อากาศ, ยา, เลือด, Stool checkup
+    test_type = Column(String(255), nullable=False) # e.g. อากาศ, น้ำ, อาหาร
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    department_name = Column(String(200), nullable=True)
-    full_name = Column(String(150), nullable=False)
-    contact_number = Column(String(50), nullable=False)
+    department_name = Column(String(255), nullable=True)
+    full_name = Column(String(255), nullable=False)
+    contact_number = Column(String(100), nullable=True)
     sample_count = Column(Integer, default=1, nullable=False)
     status = Column(String(30), default="PENDING", nullable=False) # PENDING, CONFIRMED, CANCELLED
     remarks = Column(Text, nullable=True)

@@ -1,140 +1,142 @@
-# ระบบรายงานผลตรวจสิ่งแวดล้อม งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
-## Microbiology Environmental Reporting System (TUH) — ISO 15189 Compliant Web Application
+# ระบบปฏิทินจองคิวและรายงานผลการตรวจสิ่งแวดล้อม งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ
+### (Environmental Microbiology Booking & Reporting System - ISO 15189)
+
+ระบบเว็บแอปพลิเคชันสำหรับบริหารจัดการการจองคิวส่งตรวจ และการบันทึก/ค้นหา/พิมพ์ใบรายงานผลการตรวจสิ่งแวดล้อมทั้ง 8 บริการ งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ พัฒนาขึ้นเพื่อทดแทนระบบเดิม (Google Sheets + Apps Script) เพื่อแก้ปัญหาพื้นที่ Google Drive เต็ม โดยเปลี่ยนมาใช้สถาปัตยกรรมคลาวด์มาตรฐานระดับองค์กรบนโควต้าฟรี (100% Free Tier Platforms)
 
 ---
 
-## 📌 บทนำและเป้าหมาย (Overview)
-ระบบเว็บแอพพลิเคชันสำหรับงานตรวจวิเคราะห์ทางจุลชีววิทยาสิ่งแวดล้อม (Environmental Microbiology) โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ ซึ่งได้รับการปรับปรุงและย้ายระบบ (Migration) จากเดิมที่ทำงานแยกส่วนบน **Google Sites + Google Apps Script + Google Sheets** มาสู่ **Modern Unified Web Application** แบบรวมศูนย์
+## 🚀 สถาปัตยกรรมระบบและ Tech Stack
 
-### 🎯 ปัญหาที่ได้รับการแก้ไข:
-1. **แก้ปัญหา Google Drive เต็ม 100%**: จัดเก็บข้อมูลโครงสร้างทั้งหมดบนฐานข้อมูล **PostgreSQL** เชิงสัมพันธ์ และบันทึกไฟล์รายงาน PDF ลงบน Server Storage โดยตรง ไม่พึ่งพา Google Drive Quota อีกต่อไป
-2. **ปิดช่องโหว่ความปลอดภัยระดับวิกฤต (P0)**:
-   - ปิดการเข้าถึง Apps Script แบบ Unauthenticated
-   - ยกเลิกการ Hardcode รหัสผ่านในหน้าเว็บ เปลี่ยนมาใช้ **JWT Authentication** + **Password Hashing (Argon2 / PBKDF2)**
-   - แยก Telegram Bot Token เก็บฝั่ง Backend Server เท่านั้น
-3. **รองรับข้อกำหนดมาตรฐาน ISO 15189**:
-   - **Immutable Audit Trail**: บันทึกทุกการเปลี่ยนแปลงข้อมูล (ใคร, เมื่อไหร่, ค่าก่อนแก้, ค่าหลังแก้, เหตุผล)
-   - **Electronic Signature Enforcement**: บังคับให้ผู้ตรวจ/รายงานผล (Reporter) และผู้อนุมัติผล (Reviewer) ต้องเป็นคนละท่านกัน
-   - **Amended Report & Versioning**: การแก้ไขผลตรวจที่ออกรายงานแล้วจะสร้างเวอร์ชันใหม่และติดป้าย "AMENDED" พร้อมบันทึก Hash ป้องกันการปลอมแปลง
-   - **Accurate TAT Monitoring**: คำนวณระยะเวลาตรวจวิเคราะห์ (Turnaround Time) จากการเปลี่ยนสถานะจริง
-
----
-
-## 🏥 บริการทั้ง 8 ที่รองรับในระบบ
-
-| รหัส | ชื่อบริการ | หน่วยงานหลักที่ส่งตรวจ | เป้าหมาย TAT | สถานะในระบบ |
-|---|---|---|---|---|
-| **AIR-01** | Air Sampling (ตรวจคุณภาพอากาศ) | งานอาชีวอนามัยและความปลอดภัย | 24 ชม. | **Pilot สมบูรณ์ 100%** |
-| **STR-02** | Sterility (ตรวจความปลอดเชื้อถุงเลือด) | งานธนาคารเลือด | 48 ชม. | Ready on Unified Schema |
-| **WTS-03** | Water or Surface (ตรวจน้ำ/พื้นผิว) | งานควบคุมโรคติดเชื้อ | 24 ชม. | Ready on Unified Schema |
-| **WTO-04** | Water (สำหรับห้องผ่าตัด OR) | ห้องผ่าตัด OR | 24 ชม. | Ready on Unified Schema |
-| **WTM-05** | Water (ศูนย์การแพทย์ธรรมศาสตร์ THAMC) | ศูนย์การแพทย์ธรรมศาสตร์ | 48 ชม. | Ready on Unified Schema |
-| **FOD-06** | Food (ตรวจการปนเปื้อนในอาหาร) | งานโภชนาการ | 72 ชม. | Ready on Unified Schema |
-| **DRG-07** | Drug 1 (ตรวจความปลอดเชื้อยาเตรียม) | งานผลิตยา 1 | 5 วัน | Ready on Unified Schema |
-| **DRG-08** | Drug 2 (วิเคราะห์การปนเปื้อนเชื้อในยาเตรียม) | งานผลิตยา 2 | 5 วัน | Ready on Unified Schema |
-| **QUEUE** | ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม | ทุกหน่วยงาน | — | **สมบูรณ์ 100% (พร้อมวันหยุด 21 วัน)** |
-
----
-
-## 🏗️ สถาปัตยกรรมระบบ (Architecture)
-
-```
-Nginx (Reverse Proxy + Port 80/443)
-  ├── Frontend: Modern HTML5 + Responsive CSS + Alpine.js / Pure JS
-  │     ├── index.html     (ศูนย์รวม Dashboard & Submissions List)
-  │     ├── air.html       (AIR-01 Pilot ฟอร์มส่งตรวจ + กรอกผล + PDF)
-  │     ├── booking.html   (ปฏิทินจองคิวส่งตรวจล่วงหน้า)
-  │     ├── audit.html     (ISO 15189 Audit Trail Explorer)
-  │     └── login.html     (Single Sign-On Authentication)
-  │
-  └── Backend: Python 3.11+ / FastAPI / SQLAlchemy 2.0 / Uvicorn (Port 8000)
-        ├── PostgreSQL 16  (ฐานข้อมูลหลัก จัดเก็บข้อมูล 8 บริการใน Schema เดียว)
-        └── Server Storage (/storage/reports - จัดเก็บรายงาน PDF และ Hash)
-```
-
----
-
-## 🚀 วิธีการติดตั้งและรันระบบ (Setup & Running)
-
-### ทางเลือกที่ 1: ติดตั้งผ่าน Docker Compose (แนะนำสำหรับเซิร์ฟเวอร์ภายนอก/Cloud)
-
-1. คัดลอกและตั้งค่า Environment Variables:
-   ```bash
-   cp .env.example .env
-   ```
-2. รันระบบทั้งหมดด้วยคำสั่งเดียว:
-   ```bash
-   docker compose up -d --build
-   ```
-3. เข้าใช้งานผ่าน Web Browser:
-   - **Frontend Web Portal**: `http://<SERVER_IP>/`
-   - **FastAPI Interactive Swagger Docs**: `http://<SERVER_IP>/docs`
-   - **API Health Check**: `http://<SERVER_IP>/api/health`
-
----
-
-### ทางเลือกที่ 2: รันแบบ Standalone บนเครื่อง Local PC (ไม่ต้องใช้ Docker)
-
-1. ติดตั้ง Dependencies:
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   ```
-2. รัน FastAPI Backend Server:
-   ```bash
-   python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-3. เปิดไฟล์ `frontend/index.html` หรือเปิดผ่าน Static Web Server เพื่อใช้งาน
-
----
-
-## 👥 บัญชีผู้ใช้งานเริ่มต้นสำหรับการทดสอบ (Default Seed Accounts)
-
-| บทบาท (Role) | Username | Password | ชื่อ-สกุล / สิทธิ์การใช้งาน |
+| ส่วนประกอบ (Component) | เทคโนโลยีที่ใช้ (Tech Stack) | แพลตฟอร์มที่โฮสต์ (Hosting/Provider) | โควต้าและการใช้งาน (Free Tier) |
 |---|---|---|---|
-| **Admin** | `admin` | `AdminTUH@2026!` | ผู้ดูแลระบบสูงสุด (จัดการ Master data และดู Audit log ทั้งหมด) |
-| **Technician** | `tech_manop` | `Tech@1234` | ทนพ.มานพ นันตาบุตร (รับตัวอย่าง, บันทึกผลตรวจ, ผู้รายงานผล) |
-| **Approver** | `approver_narisara` | `Approver@1234` | ทนพญ.นริศรา มังกรแก้ว (หัวหน้าแล็บ / ผู้ตรวจสอบและอนุมัติผล) |
-| **Requester** | `occhealth` | `Occ@1234` | เจ้าหน้าที่งานอาชีวอนามัย (สร้างใบส่งตรวจ, ติดตามสถานะ) |
+| **Frontend UI/UX** | HTML5, Vanilla JavaScript, Tailwind CSS, SweetAlert2 | **Cloudflare Pages** | ฟรีตลอดชีพ ไม่จำกัด Bandwidth / Requests |
+| **Database** | PostgreSQL 16 (พร้อม Row Level Security - RLS) | **Supabase** | ฟรี 500 MB DB + Database Webhooks |
+| **File Storage** | Supabase Storage (`microbiology-files`) | **Supabase Storage** | ฟรี 1 GB Storage สำหรับไฟล์ PDF และรูปถ่าย |
+| **Authentication** | Supabase Auth (Email/Password) | **Supabase Auth** | ฟรี 50,000 Active Users/เดือน |
+| **Notification** | LINE Notify API / Discord Webhook / Telegram Bot | Direct API / Cloudflare Worker | ฟรี 100% แจ้งเตือนทันทีเมื่อออกผล |
 
 ---
 
-## 🧪 การทดสอบระบบอัตโนมัติ (Automated Tests)
+## 📋 8 บริการตรวจสิ่งแวดล้อมที่ระบบรองรับ (ISO 15189)
 
-รันชุดทดสอบความถูกต้องของ API และการปฏิบัติตามมาตรฐาน ISO 15189:
-```bash
-cd backend
-python tests/test_api_endpoints.py
-python tests/test_air_workflow.py
+1. **`AIR-01` Air Sampling (สำหรับงานอาชีวอนามัย)**: ตรวจคุณภาพอากาศในหอผู้ป่วย, ICU, ห้องแยกโรค, ห้องผ่าตัด (วัด CFU/m³ แบคทีเรียและเชื้อรา)
+2. **`STR-02` Sterility (สำหรับงานธนาคารเลือด)**: ทดสอบความปลอดเชื้อของเครื่อง Autoclave และน้ำยาธนาคารเลือดด้วย Biological Indicator (G. stearothermophilus)
+3. **`WTS-03` Water or Surface (สำหรับงานควบคุมโรคติดเชื้อ IC)**: สว็อบพื้นผิว อุปกรณ์ และสิ่งแวดล้อมในโรงพยาบาล (Colony Count & Organisms identification)
+4. **`WTO-04` Water (สำหรับห้องผ่าตัด OR)**: ตรวจคุณภาพน้ำและระดับ Endotoxin ในห้องผ่าตัด (Total Viable Count < 10 CFU/100mL, Endotoxin < 0.25 EU/mL)
+5. **`WTM-05` Water (สำหรับศูนย์การแพทย์ธรรมศาสตร์ THAMC)**: ตรวจวิเคราะห์น้ำบริสุทธิ์และน้ำไตเทียมตามมาตรฐาน ISO 23500
+6. **`FOD-06` Food (สำหรับงานโภชนาการ)**: ตรวจการปนเปื้อนจุลินทรีย์ในอาหารผู้ป่วย (Total Plate Count, E. coli, Salmonella, S. aureus)
+7. **`DRG-07` Drug 1 (สำหรับงานผลิตยา - ปลอดเชื้อ)**: ตรวจสอบความปราศจากเชื้อของผลิตภัณฑ์ยา (Sterility Test USP <71> บ่มเชื้อ 14 วัน)
+8. **`DRG-08` Drug 2 (สำหรับงานผลิตยา - วิเคราะห์การปนเปื้อน)**: รายงานปริมาณเชื้อและการปนเปื้อนในยาไม่ปราศจากเชื้อ (USP <61> TAMC/TYMC และ USP <62>)
+
+---
+
+## 📁 โครงสร้างไฟล์ในโปรเจกต์ (File Organization)
+
+```
+├── supabase_schema.sql          # SQL Script สร้างตาราง, RLS Policies, Storage Bucket และ Master Data
+├── README.md                    # คู่มือการติดตั้งและใช้งานระบบ
+└── frontend/                    # โฟลเดอร์สำหรับ Deploy ขึ้น Cloudflare Pages
+    ├── index.html               # พอร์ทัลหลัก: รวม 8 บริการ + ระบบค้นหาผลตรวจ (E-Report Tracking)
+    ├── booking.html             # ปฏิทินจองวันส่งตรวจออนไลน์ (Interactive Thai Calendar)
+    ├── admin.html               # แดชบอร์ดเจ้าหน้าที่: ฟอร์มบันทึกผล 8 บริการ + อัปโหลดไฟล์ + จัดการคิว
+    ├── login.html               # หน้าเข้าสู่ระบบสำหรับเจ้าหน้าที่ (Staff Login)
+    ├── report_view.html         # หน้าพิมพ์ใบรายงานผลตรวจทางการตามมาตรฐาน ISO 15189 (Print / PDF)
+    └── js/                      # โมดูลจาวาสคริปต์แยกเป็นสัดส่วน
+        ├── supabase-config.js   # จุดใส่ Supabase URL, Anon Key และ Token แจ้งเตือน (LINE/Discord)
+        ├── auth.js              # ระบบตรวจสอบสิทธิ์ Session และ Route Guards
+        ├── db.js                # ฟังก์ชัน CRUD ฐานข้อมูล (Bookings, Reports, Master Data)
+        ├── storage.js           # ระบบอัปโหลดและลบไฟล์ใน Supabase Storage
+        ├── notify.js            # ระบบยิงแจ้งเตือน LINE / Discord / Telegram
+        ├── app.js               # ตรรกะหน้าแรก (ค้นหาผล, พรีวิวรายงาน)
+        ├── booking-app.js       # ตรรกะปฏิทินจองคิว
+        └── admin.js             # ตรรกะระบบจัดการของเจ้าหน้าที่
 ```
 
 ---
 
-## 📂 โครงสร้างโฟลเดอร์ในโปรเจกต์
+## 🛠️ ขั้นตอนการติดตั้งและเปิดใช้งาน (Setup Guide)
+
+### ขั้นตอนที่ 1: ติดตั้งฐานข้อมูลบน Supabase
+1. สมัครสมาชิกและสร้าง Project ใหม่ที่ [https://supabase.com](https://supabase.com)
+2. ไปที่เมนู **SQL Editor** ทางแถบซ้าย
+3. คัดลอกโค้ดทั้งหมดจากไฟล์ `supabase_schema.sql` มาวางใน SQL Editor แล้วกด **Run**
+4. ระบบจะทำการสร้าง:
+   - ตาราง `bookings`, `reports`, `report_items`, `report_attachments`, `master_holidays`
+   - Storage Bucket `microbiology-files` (ขนาดสูงสุด 15 MB ต่อไฟล์)
+   - นโยบายความปลอดภัย **Row Level Security (RLS)** ให้เรียบร้อยทันที
+
+---
+
+### ขั้นตอนที่ 2: สร้างผู้ใช้งานเจ้าหน้าที่ (Staff Auth)
+1. ใน Supabase Dashboard ไปที่เมนู **Authentication** -> **Users**
+2. คลิกปุ่ม **Add user** -> **Create user**
+3. ใส่อีเมลและรหัสผ่าน เช่น `admin@tuh.lab` หรือ `staff@tuh.lab` พร้อมติ๊กเลือก **Auto Confirm User?** เพื่อให้เข้าใช้งานได้ทันที
+
+---
+
+### ขั้นตอนที่ 3: ใส่ API Keys ในโค้ด Frontend
+เปิดไฟล์ `frontend/js/supabase-config.js` แล้วแก้ไขค่าดังนี้:
+
+```javascript
+// frontend/js/supabase-config.js
+
+const SUPABASE_CONFIG = {
+  // นำมาจาก Supabase Dashboard: Project Settings -> API -> Project URL
+  url: 'https://xxxxxxxxxxxx.supabase.co',
+  
+  // นำมาจาก Supabase Dashboard: Project Settings -> API -> Project API Keys (anon public)
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+
+  storageBucket: 'microbiology-files'
+};
+
+const NOTIFY_CONFIG = {
+  enabled: true,
+
+  // ใส่ Discord Webhook URL (แนะนำ ฟรี 100% ไม่ติด CORS) หรือ LINE Notify Token
+  discordWebhookUrl: 'https://discord.com/api/webhooks/xxxx/xxxx',
+  
+  // หรือใช้ LINE Notify Token ผ่าน Proxy
+  lineNotifyToken: 'YOUR_LINE_NOTIFY_TOKEN',
+  lineProxyUrl: 'https://your-line-proxy.workers.dev/notify'
+};
 ```
-web app/
-├── backend/                  # FastAPI Application Core
-│   ├── app/
-│   │   ├── api/              # API Routers (auth, master, submissions, bookings, reports, audit, dashboard)
-│   │   ├── core/             # Configuration, Database session, Security (JWT/Hash), Auth Provider
-│   │   ├── models/           # SQLAlchemy Models (Unified ISO 15189 Schema)
-│   │   ├── schemas/          # Pydantic Request/Response Models
-│   │   ├── services/         # Submission, PDF generation, TAT calculation, Audit logging
-│   │   └── seeds/            # Master Data Seeder (78 wards, 79 departments, 6 staff, etc.)
-│   ├── tests/                # Automated Workflow & End-to-end API Tests
-│   ├── requirements.txt
-│   └── Dockerfile
-├── frontend/                 # Responsive Frontend Web Application
-│   ├── css/style.css         # Modern CSS Design System
-│   ├── js/api.js             # Unified API Client
-│   ├── index.html            # Dashboard & Submissions Overview
-│   ├── air.html              # AIR-01 Pilot Form & Results Entry
-│   ├── booking.html          # Specimen Queue Calendar
-│   ├── audit.html            # ISO 15189 Audit Trail Viewer
-│   └── login.html            # SSO Login Portal
-├── recovered/                # ซอร์สโค้ดและ Master Data ดั้งเดิมที่กู้คืนมาแล้ว
-├── docker-compose.yml        # Multi-container orchestration (Nginx + Backend + Postgres)
-├── nginx/nginx.conf          # Nginx Reverse Proxy configuration
-├── .env.example              # Template configuration
-└── README.md
-```
+
+---
+
+### ขั้นตอนที่ 4: Deploy ขึ้น Cloudflare Pages (ฟรี 100%)
+
+#### วิธีที่ 1: Deploy ผ่าน GitHub (แนะนำ)
+1. Push โปรเจกต์นี้ขึ้น GitHub Repository
+2. เข้าสู่ระบบ [Cloudflare Dashboard](https://dash.cloudflare.com/) -> ไปที่ **Workers & Pages** -> **Create application** -> **Pages** -> **Connect to Git**
+3. เลือก Repository ของคุณ
+4. ตั้งค่า Build settings:
+   - **Framework preset**: `None`
+   - **Build command**: (เว้นว่างไว้)
+   - **Build output directory**: `frontend`
+5. กด **Save and Deploy** — เว็บไซต์จะออนไลน์ทันทีพร้อม HTTPS และ Custom Domain!
+
+#### วิธีที่ 2: Deploy แบบ Drag & Drop
+1. เข้า Cloudflare Pages -> เลือกแท็บ **Direct Upload**
+2. ลากโฟลเดอร์ `frontend/` ไปวาง แล้วกด **Deploy** ใช้งานได้ทันที
+
+---
+
+## 🔒 ความปลอดภัยและการปฏิบัติตามมาตรฐาน ISO 15189
+
+1. **Row Level Security (RLS)**:
+   - บุคคลทั่วไปสามารถ **ดูปฏิทิน** และ **จองคิวส่งตรวจ** ได้
+   - บุคคลทั่วไปสามารถ **ค้นหาเฉพาะรายงานที่สถานะ completed** เท่านั้น
+   - **เฉพาะเจ้าหน้าที่ที่ล็อกอินผ่าน Supabase Auth เท่านั้น** ที่สามารถเพิ่ม/แก้ไข/ลบ รายงานผลตรวจ และอัปโหลดไฟล์ PDF/รูปภาพได้
+2. **Traceability & Audit Trail**:
+   - บันทึกชื่อผู้ส่งตรวจ, ผู้ตรวจวิเคราะห์ (Reporter), ผู้อนุมัติผล (Approver), วันที่เก็บ และวันที่รายงานผลไว้อย่างชัดเจน
+   - มี Timestamp การสร้างและแก้ไขข้อมูลแบบอัตโนมัติ
+3. **No Hardcoded Passwords**:
+   - รหัสผ่านและ Access Token ทั้งหมดได้รับการเข้ารหัสและจัดการผ่าน Supabase Auth ปลอดภัยจากการดึงข้อมูลฝั่ง Client
+
+---
+
+## 📞 ติดต่อและข้อมูลงาน
+- **งานจุลชีววิทยา ภาควิชาพยาธิวิทยาและนิติเวชศาสตร์**
+- ชั้น 3 อาคารคุณากร โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
+- โทร. 0-2926-9650

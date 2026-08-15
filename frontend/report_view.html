@@ -3,405 +3,278 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>แบบรายงานผลการตรวจวิเคราะห์ทางจุลชีววิทยา - รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</title>
+  <title>ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม - TUH Microbiology (ISO 15189)</title>
+  
+  <!-- Google Fonts: Sarabun & Kanit -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Sarabun', 'sans-serif'],
+            heading: ['Kanit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-    body {
-      background: #e2e8f0;
-      color: #0f172a;
-      padding: 2rem 1rem;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .action-toolbar {
-      width: 100%;
-      max-width: 800px;
-      margin-bottom: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.55rem 1.2rem;
-      border-radius: 9999px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      text-decoration: none;
-      border: none;
-      transition: all 0.2s;
-    }
-    .btn-gold {
-      background: #c99a45;
-      color: #fff;
-      box-shadow: 0 2px 6px rgba(201, 154, 69, 0.3);
-    }
-    .btn-gold:hover { background: #b58632; }
-    .btn-secondary {
-      background: #ffffff;
-      color: #1e293b;
-      border: 1px solid #cbd5e1;
-    }
-    .btn-secondary:hover { background: #f8fafc; }
+    body { font-family: 'Sarabun', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
 
-    /* A4 Printable Paper Container */
-    .paper-sheet {
-      width: 100%;
-      max-width: 800px;
-      min-height: 1050px;
-      background: #ffffff;
-      padding: 2.5rem 2.5rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      border-radius: 4px;
-      position: relative;
-    }
-
-    /* Hospital Header */
-    .hospital-header {
-      text-align: center;
-      border-bottom: 2px solid #22372b;
-      padding-bottom: 1rem;
-      margin-bottom: 1.25rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .tuh-official-logo {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      margin-bottom: 0.4rem;
-    }
-    .hosp-name-th {
-      font-size: 1.35rem;
-      font-weight: 800;
-      color: #22372b;
-      line-height: 1.2;
-    }
-    .hosp-name-en {
-      font-size: 0.85rem;
-      color: #475569;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-    }
-    .report-title-box {
-      margin-top: 0.75rem;
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #22372b;
-      background: #f1f5f3;
-      padding: 0.35rem 0.75rem;
-      border-radius: 6px;
-      display: inline-block;
-    }
-
-    /* Meta Info Grid */
-    .meta-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem 1.5rem;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1rem 1.25rem;
-      font-size: 0.9rem;
-      margin-bottom: 1.5rem;
-    }
-    .meta-item {
-      display: flex;
-      gap: 0.5rem;
-    }
-    .meta-label {
-      font-weight: 700;
-      color: #475569;
-      min-width: 120px;
-    }
-    .meta-val {
-      font-weight: 600;
-      color: #0f172a;
-    }
-
-    /* Results Table */
-    .report-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-      margin-bottom: 2rem;
-    }
-    .report-table th {
-      background: #22372b;
-      color: #ffffff;
-      font-weight: 700;
-      padding: 0.65rem 0.75rem;
-      text-align: left;
-      border: 1px solid #22372b;
-    }
-    .report-table td {
-      padding: 0.6rem 0.75rem;
-      border: 1px solid #cbd5e1;
-      vertical-align: middle;
-    }
-    .report-table tr:nth-child(even) {
-      background: #f8fafc;
-    }
-    .text-center { text-align: center; }
-    .text-right { text-align: right; }
-    .flag-normal { color: #15803d; font-weight: 700; }
-    .flag-abnormal { color: #dc2626; font-weight: 700; }
-
-    /* Signatures Section */
-    .signatures-box {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-top: 2rem;
-      padding-top: 1rem;
-      border-top: 1px solid #cbd5e1;
-    }
-    .sig-col {
-      text-align: center;
-    }
-    .sig-line {
-      width: 180px;
-      margin: 2.5rem auto 0.5rem auto;
-      border-bottom: 1px dashed #475569;
-    }
-    .sig-name {
-      font-weight: 700;
-      font-size: 0.95rem;
-      color: #0f172a;
-    }
-    .sig-role {
-      font-size: 0.82rem;
-      color: #64748b;
-      margin-top: 0.2rem;
-    }
-
-    /* Footer ISO note */
-    .iso-footer {
-      margin-top: 2.5rem;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 0.75rem;
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.75rem;
-      color: #64748b;
-    }
-
-    /* Print Styles */
     @media print {
-      body {
-        background: #ffffff;
-        padding: 0;
-      }
-      .action-toolbar {
-        display: none !important;
-      }
-      .paper-sheet {
-        box-shadow: none;
-        padding: 0;
-        max-width: 100%;
-      }
+      body { background: #fff !important; padding: 0 !important; color: #000 !important; }
+      .no-print { display: none !important; }
+      .print-shadow-none { box-shadow: none !important; border: none !important; }
+      .page-container { max-width: 100% !important; margin: 0 !important; padding: 0 !important; }
+      @page { size: A4 portrait; margin: 12mm 15mm; }
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-900 min-h-screen py-8 px-4 sm:px-6">
 
-  <!-- Action Bar -->
-  <div class="action-toolbar">
-    <a href="dashboard.html" class="btn btn-secondary">◀ กลับหน้าหลัก Dashboard</a>
-    <button onclick="window.print()" class="btn btn-gold">🖨️ พิมพ์รายงาน / บันทึกเป็น PDF</button>
+  <!-- Top Action Bar (Hide in Print) -->
+  <div class="max-w-4xl mx-auto mb-6 flex items-center justify-between no-print">
+    <a href="index.html" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-600 hover:text-emerald-700 transition">
+      <i class="fas fa-arrow-left"></i> กลับสู่หน้าหลัก
+    </a>
+
+    <div class="flex items-center gap-3">
+      <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-md transition flex items-center gap-2">
+        <i class="fas fa-print"></i>
+        <span>พิมพ์ใบรายงานผล (Print / PDF)</span>
+      </button>
+      <a id="download-attached-pdf-btn" href="#" target="_blank" class="hidden bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-4 py-2 rounded-xl transition flex items-center gap-2">
+        <i class="fas fa-file-pdf text-rose-400"></i>
+        <span>ไฟล์แนบต้นฉบับ</span>
+      </a>
+    </div>
   </div>
 
-  <!-- A4 Printable Sheet -->
-  <div class="paper-sheet" id="report-sheet">
+  <!-- Official ISO 15189 Report Document Container -->
+  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-8 sm:p-12 print-shadow-none page-container">
     
-    <!-- Hospital Header with Official Logo -->
-    <div class="hospital-header">
-      <img src="assets/tuh_logo.png" alt="Thammasat University Hospital Logo" class="tuh-official-logo">
-      <h1 class="hosp-name-th">โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</h1>
-      <p class="hosp-name-en">THAMMASAT UNIVERSITY HOSPITAL — DEPARTMENT OF PATHOLOGY</p>
-      <p style="font-size: 0.85rem; color: #475569; margin-top: 0.2rem;">ห้องปฏิบัติการจุลชีววิทยา (Microbiology Laboratory - ISO 15189 Accredited)</p>
-      
-      <div class="report-title-box" id="report-service-title">
-        ใบรายงานผลการตรวจวิเคราะห์คุณภาพอากาศ (Air Sampling Microbiological Report)
+    <!-- Document Header -->
+    <div class="flex items-start justify-between border-b-2 border-slate-800 pb-5 mb-6">
+      <div class="flex items-center gap-4">
+        <img src="https://img1.pic.in.th/images/core-value-2024.png" alt="TUH Logo" class="h-16 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+        <div>
+          <h2 class="font-heading font-bold text-base sm:text-lg text-slate-900 leading-snug">
+            โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
+          </h2>
+          <div class="text-xs text-slate-600">
+            งานจุลชีววิทยา ภาควิชาพยาธิวิทยาและนิติเวชศาสตร์ คณะแพทยศาสตร์ มหาวิทยาลัยธรรมศาสตร์
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">
+            โทร. 0-2926-9650 | เลขที่ 95 หมู่ 8 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120
+          </div>
+        </div>
+      </div>
+
+      <div class="text-right">
+        <span class="inline-block bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded tracking-wider uppercase">
+          ISO 15189 ACCREDITED
+        </span>
+        <div class="text-[10px] text-slate-500 mt-1">Laboratory Code: TUH-MIC-ENV</div>
       </div>
     </div>
 
-    <!-- Metadata Grid -->
-    <div class="meta-grid">
-      <div class="meta-item">
-        <span class="meta-label">เลขที่ส่งตรวจ:</span>
-        <span class="meta-val" id="meta-sub-no">-</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">วันที่ส่งตรวจ:</span>
-        <span class="meta-val" id="meta-sub-date">-</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">หน่วยงานที่ส่ง:</span>
-        <span class="meta-val" id="meta-dept">-</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">ประเภทสิ่งส่งตรวจ:</span>
-        <span class="meta-val" id="meta-sample-type">อากาศ (Air)</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">ผู้ส่งตรวจ:</span>
-        <span class="meta-val" id="meta-sender">-</span>
-      </div>
-      <div class="meta-item">
-        <span class="meta-label">สถานะผลตรวจ:</span>
-        <span class="meta-val" id="meta-status" style="color: #15803d; font-weight: 700;">ออกผลตรวจสมบูรณ์ (Reported)</span>
+    <!-- Report Title Banner -->
+    <div class="text-center mb-6">
+      <h1 class="text-lg sm:text-xl font-bold font-heading text-slate-900 uppercase tracking-wide">
+        ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อมทางจุลชีววิทยา
+      </h1>
+      <div class="text-xs text-emerald-800 font-semibold mt-0.5 font-heading" id="view-service-name">
+        กำลังโหลด...
       </div>
     </div>
 
-    <!-- Results Table -->
-    <table class="report-table">
-      <thead>
-        <tr>
-          <th class="text-center" style="width: 45px;">ลำดับ</th>
-          <th>หอผู้ป่วย / หน่วยงาน (Ward)</th>
-          <th>ตำแหน่งที่เก็บตัวอย่าง (Location)</th>
-          <th class="text-center" style="width: 110px;">Bacteria (CFU)</th>
-          <th class="text-center" style="width: 110px;">Fungus (CFU)</th>
-          <th class="text-center" style="width: 90px;">ประเมินผล</th>
-          <th>หมายเหตุ</th>
-        </tr>
-      </thead>
-      <tbody id="report-tbody">
-        <tr>
-          <td colspan="7" class="text-center" style="padding: 2rem; color: #64748b;">
-            กำลังโหลดข้อมูลผลตรวจจริง...
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Reference Range Notes -->
-    <div style="font-size: 0.8rem; color: #475569; background: #f8fafc; padding: 0.6rem 0.8rem; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 1.5rem;">
-      <strong>เกณฑ์มาตรฐานอ้างอิง:</strong> หอผู้ป่วยทั่วไป แบคทีเรีย ≤ 50 CFU/plate, เชื้อรา 0 CFU/plate | ห้องผ่าตัด (OR) แบคทีเรีย ≤ 10 CFU/plate | หอผู้ป่วยวิกฤต (ICU) แบคทีเรีย ≤ 25 CFU/plate
-    </div>
-
-    <!-- Signatures -->
-    <div class="signatures-box">
-      <div class="sig-col">
-        <div class="sig-line"></div>
-        <div class="sig-name" id="sig-reporter-name">ทนพ.มานพ นันตาบุตร (ทน.17500)</div>
-        <div class="sig-role">นักเทคนิคการแพทย์ (ผู้รายงานผล)</div>
-        <div style="font-size: 0.75rem; color: #94a39a; margin-top: 0.2rem;" id="sig-reporter-date">วันที่ออกผล: -</div>
+    <!-- Header Metadata Box -->
+    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div>
+        <span class="text-slate-500 block">เลขที่ใบส่งตรวจ (Submission No):</span>
+        <strong id="view-submission-no" class="font-mono text-emerald-800 text-sm">-</strong>
       </div>
-
-      <div class="sig-col">
-        <div class="sig-line"></div>
-        <div class="sig-name" id="sig-reviewer-name">ทนพญ.นริศรา มังกรแก้ว (ทน.5596)</div>
-        <div class="sig-role">นักเทคนิคการแพทย์ชำนาญการ (ผู้ตรวจสอบ/อนุมัติผล)</div>
-        <div style="font-size: 0.75rem; color: #94a39a; margin-top: 0.2rem;" id="sig-reviewer-date">วันที่อนุมัติ: -</div>
+      <div>
+        <span class="text-slate-500 block">หน่วยงาน / ภาควิชา:</span>
+        <strong id="view-department">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">หอผู้ป่วย / ห้องตรวจ:</span>
+        <strong id="view-ward-room">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">ผู้ส่งตัวอย่าง:</span>
+        <strong id="view-sampler-name">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">วันที่เก็บตัวอย่าง:</span>
+        <strong id="view-sampling-date">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">วันที่รับสิ่งส่งตรวจ:</span>
+        <strong id="view-received-date">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">วันที่รายงานผล (Report Date):</span>
+        <strong id="view-reported-date">-</strong>
+      </div>
+      <div>
+        <span class="text-slate-500 block">ผลการประเมินภาพรวม:</span>
+        <span id="view-overall-result" class="font-bold px-2 py-0.5 rounded text-[11px] inline-block mt-0.5">-</span>
       </div>
     </div>
 
-    <!-- ISO Footer -->
-    <div class="iso-footer">
-      <span>มาตรฐานห้องปฏิบัติการทางการแพทย์ ISO 15189 Accredited Laboratory</span>
-      <span id="doc-hash-text">Doc Ref: TUH-MIC-REP-01 | SHA256 Verified</span>
+    <!-- Test Items Result Table -->
+    <div class="mb-6">
+      <h3 class="font-heading font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">
+        รายการตรวจวิเคราะห์ทางห้องปฏิบัติการ (Laboratory Analysis Results)
+      </h3>
+      <table class="w-full text-left text-xs border-collapse border border-slate-300">
+        <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+          <tr>
+            <th class="border border-slate-300 p-2 text-center w-10">ลำดับ</th>
+            <th class="border border-slate-300 p-2">จุดตรวจ / รายละเอียดสิ่งส่งตรวจ</th>
+            <th class="border border-slate-300 p-2 text-center">แบคทีเรีย (Bacteria)</th>
+            <th class="border border-slate-300 p-2 text-center">เชื้อรา (Fungi)</th>
+            <th class="border border-slate-300 p-2 text-center">เกณฑ์มาตรฐาน</th>
+            <th class="border border-slate-300 p-2 text-center">ผลการตรวจ</th>
+            <th class="border border-slate-300 p-2">หมายเหตุ</th>
+          </tr>
+        </thead>
+        <tbody id="view-items-tbody">
+          <!-- Dynamically populated -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Technical Remarks & Interpretation -->
+    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs mb-8">
+      <div class="font-bold text-slate-800 mb-1 flex items-center gap-1.5">
+        <i class="fas fa-microscope text-emerald-700"></i>
+        <span>เกณฑ์มาตรฐานและข้อคิดเห็นทางเทคนิค (Technical Interpretation):</span>
+      </div>
+      <p id="view-remarks" class="text-slate-700 leading-relaxed pl-5">
+        -
+      </p>
+    </div>
+
+    <!-- Signatures & Accreditation Footer Block -->
+    <div class="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-xs">
+      <div class="text-center space-y-8">
+        <div>
+          <div class="text-slate-500 mb-1">ผู้ตรวจและรายงานผล (Reported by)</div>
+          <div class="h-10"></div>
+          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[200px]" id="view-reporter-name">
+            ทนพ. .......................................................
+          </div>
+          <div class="text-[11px] text-slate-500">นักเทคนิคการแพทย์ งานจุลชีววิทยา</div>
+        </div>
+      </div>
+
+      <div class="text-center space-y-8">
+        <div>
+          <div class="text-slate-500 mb-1">ผู้ตรวจสอบและอนุมัติผล (Approved by)</div>
+          <div class="h-10"></div>
+          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[200px]" id="view-approver-name">
+            ทนพญ.กรรณิการ์ สิทธิโชค
+          </div>
+          <div class="text-[11px] text-slate-500">หัวหน้างานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ISO Accreditation Disclaimer Footer -->
+    <div class="mt-8 pt-4 border-t border-slate-100 text-[10px] text-slate-400 text-center flex items-center justify-between">
+      <span>เอกสารนี้เป็นรายงานผลทางการของห้องปฏิบัติการรับรองมาตรฐาน ISO 15189</span>
+      <span>Printed Date: <script>document.write(new Date().toLocaleDateString('th-TH'))</script></span>
     </div>
 
   </div>
 
-  <script src="js/api.js"></script>
+  <!-- JS Dependencies -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/db.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const subId = urlParams.get('id');
+      const reportId = urlParams.get('id');
 
-      if (!subId) {
-        alert('ไม่พบรหัสใบส่งตรวจ');
-        window.location.href = 'dashboard.html';
+      if (!reportId) {
+        document.body.innerHTML = `<div class="p-12 text-center text-slate-500">ไม่พบรหัสเอกสารรายงานผลตรวจ</div>`;
         return;
       }
 
-      await loadReportData(subId);
-    });
+      const { data: rep, error } = await window.ReportDB.getReportById(reportId);
 
-    async function loadReportData(id) {
-      try {
-        const sub = await Api.getSubmission(id);
-        
-        document.getElementById('meta-sub-no').innerText = sub.submission_no;
-        
-        const thYear = new Date(sub.submission_date).getFullYear() + 543;
-        const thDate = new Date(sub.submission_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-        document.getElementById('meta-sub-date').innerText = thDate;
-        
-        document.getElementById('meta-dept').innerText = sub.department_name;
-        document.getElementById('meta-sender').innerText = sub.sender_name || 'เจ้าหน้าที่งานอาชีวอนามัย';
-        document.getElementById('meta-sample-type').innerText = sub.sample_type || 'อากาศ (Air)';
-        document.getElementById('meta-status').innerText = sub.status === 'REPORTED' ? 'ออกผลตรวจสมบูรณ์ (Reported)' : sub.status;
-
-        // Staff Signatures
-        if (sub.reporter_name) {
-          document.getElementById('sig-reporter-name').innerText = sub.reporter_name;
-        }
-        if (sub.reviewer_name) {
-          document.getElementById('sig-reviewer-name').innerText = sub.reviewer_name;
-        }
-        document.getElementById('sig-reporter-date').innerText = `วันที่ออกผล: ${thDate}`;
-        document.getElementById('sig-reviewer-date').innerText = `วันที่อนุมัติ: ${thDate}`;
-
-        // Populate Samples Table
-        const tbody = document.getElementById('report-tbody');
-        if (!sub.samples || sub.samples.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" class="text-center" style="padding: 2rem;">ไม่พบข้อมูลจุดเก็บตัวอย่าง</td></tr>';
-          return;
-        }
-
-        tbody.innerHTML = sub.samples.map(s => {
-          const bacObj = s.results.find(r => r.analyte_code === 'bacteria_colonies');
-          const funObj = s.results.find(r => r.analyte_code === 'fungus_colonies');
-
-          const bacVal = bacObj && bacObj.result_value !== null ? bacObj.result_value : '-';
-          const funVal = funObj && funObj.result_value !== null ? funObj.result_value : '-';
-          
-          let flag = 'ปกติ (Normal)';
-          let flagClass = 'flag-normal';
-
-          if ((bacObj && bacObj.result_flag === 'ABNORMAL') || (funObj && funObj.result_flag === 'ABNORMAL')) {
-            flag = 'ผิดปกติ (Abnormal)';
-            flagClass = 'flag-abnormal';
-          }
-
-          const remarks = (bacObj && bacObj.remarks) || (funObj && funObj.remarks) || '-';
-
-          return `
-            <tr>
-              <td class="text-center" style="font-weight: 700;">${s.sample_no}</td>
-              <td style="font-weight: 600;">${s.ward_name || '-'}</td>
-              <td>${s.label || '-'}</td>
-              <td class="text-center" style="font-weight: 700;">${bacVal}</td>
-              <td class="text-center" style="font-weight: 700;">${funVal}</td>
-              <td class="text-center"><span class="${flagClass}">${flag}</span></td>
-              <td style="font-size: 0.8rem; color: #475569;">${remarks}</td>
-            </tr>
-          `;
-        }).join('');
-
-      } catch (err) {
-        alert('เกิดข้อผิดพลาดในการโหลดผลตรวจ: ' + err.message);
+      if (error || !rep) {
+        document.body.innerHTML = `<div class="p-12 text-center text-rose-500">ไม่พบข้อมูลรายงานตรวจ: ${reportId}</div>`;
+        return;
       }
-    }
+
+      // Populate Metadata
+      document.getElementById('view-service-name').textContent = rep.service_name || '-';
+      document.getElementById('view-submission-no').textContent = rep.submission_no || '-';
+      document.getElementById('view-department').textContent = rep.department || '-';
+      document.getElementById('view-ward-room').textContent = rep.ward_room || '-';
+      document.getElementById('view-sampler-name').textContent = rep.sampler_name || '-';
+      document.getElementById('view-sampling-date').textContent = rep.sampling_date || '-';
+      document.getElementById('view-received-date').textContent = rep.received_date || rep.sampling_date || '-';
+      document.getElementById('view-reported-date').textContent = rep.reported_date || '-';
+      document.getElementById('view-reporter-name').textContent = rep.reporter_name || 'ทนพ.มานพ นันตาบุตร';
+      document.getElementById('view-approver-name').textContent = rep.approver_name || 'ทนพญ.กรรณิการ์ สิทธิโชค';
+      document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจวิเคราะห์เป็นไปตามเกณฑ์มาตรฐานทางห้องปฏิบัติการ';
+
+      const isPass = ['pass', 'normal', 'no_growth'].includes(rep.overall_result?.toLowerCase());
+      const resultEl = document.getElementById('view-overall-result');
+      resultEl.textContent = isPass ? '✅ ผ่านเกณฑ์มาตรฐาน (Pass)' : '⚠️ ไม่ผ่านเกณฑ์ / พบเชื้อปนเปื้อน (Fail)';
+      resultEl.className = isPass ? 'font-bold px-2 py-0.5 rounded text-[11px] bg-emerald-100 text-emerald-800' : 'font-bold px-2 py-0.5 rounded text-[11px] bg-rose-100 text-rose-800';
+
+      // Attached PDF
+      if (rep.report_pdf_url) {
+        const downloadBtn = document.getElementById('download-attached-pdf-btn');
+        downloadBtn.href = rep.report_pdf_url;
+        downloadBtn.classList.remove('hidden');
+      }
+
+      // Items Table
+      const tbody = document.getElementById('view-items-tbody');
+      const items = rep.report_items || rep.items || [];
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400 border border-slate-300">ไม่มีรายการย่อย</td></tr>`;
+      } else {
+        tbody.innerHTML = items.map((it, idx) => `
+          <tr class="border border-slate-300">
+            <td class="border border-slate-300 p-2 text-center text-slate-600">${idx + 1}</td>
+            <td class="border border-slate-300 p-2 font-medium">${it.location_name || it.sample_description || '-'}</td>
+            <td class="border border-slate-300 p-2 text-center font-mono">${it.bacteria_count ?? '-'}</td>
+            <td class="border border-slate-300 p-2 text-center font-mono">${it.fungus_count ?? '-'}</td>
+            <td class="border border-slate-300 p-2 text-center text-slate-500 text-[11px]">${it.standard_limit || '-'}</td>
+            <td class="border border-slate-300 p-2 text-center">
+              <span class="font-bold ${['pass','normal','no_growth'].includes(it.item_result?.toLowerCase()) ? 'text-emerald-700' : 'text-rose-700'}">
+                ${it.item_result || 'Pass'}
+              </span>
+            </td>
+            <td class="border border-slate-300 p-2 text-slate-500 text-[11px]">${it.remarks || '-'}</td>
+          </tr>
+        `).join('');
+      }
+    });
   </script>
 </body>
 </html>
