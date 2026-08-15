@@ -9,11 +9,21 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ==============================================================================
--- 2. CREATE TABLES
+-- 2. DROP EXISTING CONFLICTING TABLES (CLEAN SLATE RESET)
+-- เพื่อป้องกัน Error 42703 ในกรณีที่มีตาราง bookings/reports เดิมที่คอลัมน์ไม่ตรงกัน
+-- ==============================================================================
+DROP TABLE IF EXISTS public.report_attachments CASCADE;
+DROP TABLE IF EXISTS public.report_items CASCADE;
+DROP TABLE IF EXISTS public.reports CASCADE;
+DROP TABLE IF EXISTS public.bookings CASCADE;
+DROP TABLE IF EXISTS public.master_holidays CASCADE;
+
+-- ==============================================================================
+-- 3. CREATE NEW TABLES
 -- ==============================================================================
 
--- 2.1 Table: bookings (ปฏิทินจองวันส่งตรวจ)
-CREATE TABLE IF NOT EXISTS public.bookings (
+-- 3.1 Table: bookings (ปฏิทินจองวันส่งตรวจ)
+CREATE TABLE public.bookings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     booking_date DATE NOT NULL,
     sender_name TEXT NOT NULL,
@@ -29,8 +39,8 @@ CREATE TABLE IF NOT EXISTS public.bookings (
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- 2.2 Table: reports (รายงานผลตรวจสิ่งแวดล้อม - Master Header)
-CREATE TABLE IF NOT EXISTS public.reports (
+-- 3.2 Table: reports (รายงานผลตรวจสิ่งแวดล้อม - Master Header)
+CREATE TABLE public.reports (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     submission_no TEXT UNIQUE NOT NULL, -- เช่น AIR-202608-001, STR-202608-001
     service_code TEXT NOT NULL,         -- 'AIR_01', 'STR_02', 'WTS_03', 'WTO_04', 'WTM_05', 'FOD_06', 'DRG_07', 'DRG_08'
@@ -53,8 +63,8 @@ CREATE TABLE IF NOT EXISTS public.reports (
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- 2.3 Table: report_items (รายการตัวอย่างย่อยในใบส่งตรวจ)
-CREATE TABLE IF NOT EXISTS public.report_items (
+-- 3.3 Table: report_items (รายการตัวอย่างย่อยในใบส่งตรวจ)
+CREATE TABLE public.report_items (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_id UUID NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
     item_no INTEGER NOT NULL DEFAULT 1,
@@ -70,8 +80,8 @@ CREATE TABLE IF NOT EXISTS public.report_items (
     created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
--- 2.4 Table: report_attachments (ไฟล์แนบเพิ่มเติม รูปถ่าย หรือไฟล์ดิบ)
-CREATE TABLE IF NOT EXISTS public.report_attachments (
+-- 3.4 Table: report_attachments (ไฟล์แนบเพิ่มเติม รูปถ่าย หรือไฟล์ดิบ)
+CREATE TABLE public.report_attachments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     report_id UUID NOT NULL REFERENCES public.reports(id) ON DELETE CASCADE,
     file_name TEXT NOT NULL,
@@ -83,33 +93,32 @@ CREATE TABLE IF NOT EXISTS public.report_attachments (
     uploaded_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
 
--- 2.5 Table: master_holidays (วันหยุดราชการ/นักขัตฤกษ์ สำหรับปฏิทิน)
-CREATE TABLE IF NOT EXISTS public.master_holidays (
+-- 3.5 Table: master_holidays (วันหยุดราชการ/นักขัตฤกษ์ สำหรับปฏิทิน)
+CREATE TABLE public.master_holidays (
     id SERIAL PRIMARY KEY,
     holiday_date DATE UNIQUE NOT NULL,
     holiday_name TEXT NOT NULL
 );
 
 -- ==============================================================================
--- 3. INDEXES FOR PERFORMANCE & FAST SEARCH
+-- 4. INDEXES FOR FAST PERFORMANCE
 -- ==============================================================================
-CREATE INDEX IF NOT EXISTS idx_bookings_date ON public.bookings(booking_date);
-CREATE INDEX IF NOT EXISTS idx_bookings_service ON public.bookings(service_code);
-CREATE INDEX IF NOT EXISTS idx_bookings_dept ON public.bookings(department);
+CREATE INDEX idx_bookings_date ON public.bookings(booking_date);
+CREATE INDEX idx_bookings_service ON public.bookings(service_code);
+CREATE INDEX idx_bookings_dept ON public.bookings(department);
 
-CREATE INDEX IF NOT EXISTS idx_reports_submission_no ON public.reports(submission_no);
-CREATE INDEX IF NOT EXISTS idx_reports_service ON public.reports(service_code);
-CREATE INDEX IF NOT EXISTS idx_reports_department ON public.reports(department);
-CREATE INDEX IF NOT EXISTS idx_reports_reported_date ON public.reports(reported_date);
-CREATE INDEX IF NOT EXISTS idx_reports_status ON public.reports(status);
+CREATE INDEX idx_reports_submission_no ON public.reports(submission_no);
+CREATE INDEX idx_reports_service ON public.reports(service_code);
+CREATE INDEX idx_reports_department ON public.reports(department);
+CREATE INDEX idx_reports_reported_date ON public.reports(reported_date);
+CREATE INDEX idx_reports_status ON public.reports(status);
 
-CREATE INDEX IF NOT EXISTS idx_report_items_report_id ON public.report_items(report_id);
-CREATE INDEX IF NOT EXISTS idx_report_attachments_report_id ON public.report_attachments(report_id);
+CREATE INDEX idx_report_items_report_id ON public.report_items(report_id);
+CREATE INDEX idx_report_attachments_report_id ON public.report_attachments(report_id);
 
 -- ==============================================================================
--- 4. SUPABASE STORAGE BUCKET CONFIGURATION
+-- 5. SUPABASE STORAGE BUCKET CONFIGURATION
 -- ==============================================================================
--- สร้าง Storage Bucket 'microbiology-files' สำหรับเก็บไฟล์ PDF และรูปถ่าย
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
     'microbiology-files',
@@ -130,71 +139,72 @@ ON CONFLICT (id) DO UPDATE SET
     file_size_limit = 15728640;
 
 -- ==============================================================================
--- 5. ROW LEVEL SECURITY (RLS) POLICIES
+-- 6. ROW LEVEL SECURITY (RLS) POLICIES
 -- ==============================================================================
 
--- 5.1 Enable RLS on all tables
+-- 6.1 Enable RLS on all tables
 ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.reports ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.report_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.report_attachments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.master_holidays ENABLE ROW LEVEL SECURITY;
 
--- 5.2 Policies for `bookings`
--- (a) Public & Anonymous: สามารถดูการจองเพื่อเช็ควันว่างได้
+-- 6.2 Policies for `bookings`
+DROP POLICY IF EXISTS "Public can view bookings" ON public.bookings;
 CREATE POLICY "Public can view bookings" 
 ON public.bookings FOR SELECT 
 TO anon, authenticated 
 USING (true);
 
--- (b) Public & Anonymous: สามารถกดจองคิวใหม่ได้
+DROP POLICY IF EXISTS "Public can create booking" ON public.bookings;
 CREATE POLICY "Public can create booking" 
 ON public.bookings FOR INSERT 
 TO anon, authenticated 
 WITH CHECK (true);
 
--- (c) Authenticated Staff Only: สามารถแก้ไขหรือลบการจองได้
+DROP POLICY IF EXISTS "Staff can update bookings" ON public.bookings;
 CREATE POLICY "Staff can update bookings" 
 ON public.bookings FOR UPDATE 
 TO authenticated 
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Staff can delete bookings" ON public.bookings;
 CREATE POLICY "Staff can delete bookings" 
 ON public.bookings FOR DELETE 
 TO authenticated 
 USING (true);
 
 
--- 5.3 Policies for `reports`
--- (a) Public & Anonymous: สามารถค้นหาและดูรายงานที่ออกผลแล้ว (status = 'completed')
+-- 6.3 Policies for `reports`
+DROP POLICY IF EXISTS "Public can view completed reports" ON public.reports;
 CREATE POLICY "Public can view completed reports" 
 ON public.reports FOR SELECT 
 TO anon, authenticated 
 USING (status = 'completed' OR auth.role() = 'authenticated');
 
--- (b) Authenticated Staff Only: สามารถเพิ่มรายงานผลตรวจใหม่ได้
+DROP POLICY IF EXISTS "Staff can insert reports" ON public.reports;
 CREATE POLICY "Staff can insert reports" 
 ON public.reports FOR INSERT 
 TO authenticated 
 WITH CHECK (true);
 
--- (c) Authenticated Staff Only: สามารถแก้ไขรายงานผลตรวจได้
+DROP POLICY IF EXISTS "Staff can update reports" ON public.reports;
 CREATE POLICY "Staff can update reports" 
 ON public.reports FOR UPDATE 
 TO authenticated 
 USING (true)
 WITH CHECK (true);
 
--- (d) Authenticated Staff Only: สามารถลบรายงานผลตรวจได้
+DROP POLICY IF EXISTS "Staff can delete reports" ON public.reports;
 CREATE POLICY "Staff can delete reports" 
 ON public.reports FOR DELETE 
 TO authenticated 
 USING (true);
 
 
--- 5.4 Policies for `report_items`
--- (a) Public & Anonymous: สามารถดูรายการผลตรวจได้
+-- 6.4 Policies for `report_items`
+DROP POLICY IF EXISTS "Public can view report items" ON public.report_items;
 CREATE POLICY "Public can view report items" 
 ON public.report_items FOR SELECT 
 TO anon, authenticated 
@@ -206,26 +216,28 @@ USING (
     )
 );
 
--- (b) Authenticated Staff Only: CRUD รายการผลตรวจย่อย
+DROP POLICY IF EXISTS "Staff can insert report items" ON public.report_items;
 CREATE POLICY "Staff can insert report items" 
 ON public.report_items FOR INSERT 
 TO authenticated 
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Staff can update report items" ON public.report_items;
 CREATE POLICY "Staff can update report items" 
 ON public.report_items FOR UPDATE 
 TO authenticated 
 USING (true)
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Staff can delete report items" ON public.report_items;
 CREATE POLICY "Staff can delete report items" 
 ON public.report_items FOR DELETE 
 TO authenticated 
 USING (true);
 
 
--- 5.5 Policies for `report_attachments`
--- (a) Public: สามารถดูไฟล์แนบของรายงานที่ออกผลแล้ว
+-- 6.5 Policies for `report_attachments`
+DROP POLICY IF EXISTS "Public can view attachments" ON public.report_attachments;
 CREATE POLICY "Public can view attachments" 
 ON public.report_attachments FOR SELECT 
 TO anon, authenticated 
@@ -237,7 +249,7 @@ USING (
     )
 );
 
--- (b) Authenticated Staff Only: จัดการไฟล์แนบ
+DROP POLICY IF EXISTS "Staff can manage attachments" ON public.report_attachments;
 CREATE POLICY "Staff can manage attachments" 
 ON public.report_attachments FOR ALL 
 TO authenticated 
@@ -245,12 +257,14 @@ USING (true)
 WITH CHECK (true);
 
 
--- 5.6 Policies for `master_holidays`
+-- 6.6 Policies for `master_holidays`
+DROP POLICY IF EXISTS "Public can view holidays" ON public.master_holidays;
 CREATE POLICY "Public can view holidays" 
 ON public.master_holidays FOR SELECT 
 TO anon, authenticated 
 USING (true);
 
+DROP POLICY IF EXISTS "Staff can manage holidays" ON public.master_holidays;
 CREATE POLICY "Staff can manage holidays" 
 ON public.master_holidays FOR ALL 
 TO authenticated 
@@ -258,27 +272,27 @@ USING (true)
 WITH CHECK (true);
 
 
--- 5.7 Policies for Supabase Storage (`storage.objects`)
--- (a) Public: สามารถเปิดดูหรือดาวน์โหลดไฟล์ใน bucket 'microbiology-files' ได้
+-- 6.7 Policies for Supabase Storage (`storage.objects`)
+DROP POLICY IF EXISTS "Public read storage" ON storage.objects;
 CREATE POLICY "Public read storage" 
 ON storage.objects FOR SELECT 
 TO anon, authenticated 
 USING (bucket_id = 'microbiology-files');
 
--- (b) Authenticated Staff: อัปโหลดไฟล์ใหม่ได้
+DROP POLICY IF EXISTS "Staff upload storage" ON storage.objects;
 CREATE POLICY "Staff upload storage" 
 ON storage.objects FOR INSERT 
 TO authenticated 
 WITH CHECK (bucket_id = 'microbiology-files');
 
--- (c) Authenticated Staff: แก้ไขหรือแทนที่ไฟล์ได้
+DROP POLICY IF EXISTS "Staff update storage" ON storage.objects;
 CREATE POLICY "Staff update storage" 
 ON storage.objects FOR UPDATE 
 TO authenticated 
 USING (bucket_id = 'microbiology-files')
 WITH CHECK (bucket_id = 'microbiology-files');
 
--- (d) Authenticated Staff: ลบไฟล์ได้
+DROP POLICY IF EXISTS "Staff delete storage" ON storage.objects;
 CREATE POLICY "Staff delete storage" 
 ON storage.objects FOR DELETE 
 TO authenticated 
@@ -286,10 +300,10 @@ USING (bucket_id = 'microbiology-files');
 
 
 -- ==============================================================================
--- 6. INITIAL SEED DATA (วันหยุดนักขัตฤกษ์ & ตัวอย่างข้อมูล)
+-- 7. INITIAL SEED DATA (วันหยุดนักขัตฤกษ์ & ตัวอย่างข้อมูลเริ่มต้น)
 -- ==============================================================================
 
--- 6.1 วันหยุดนักขัตฤกษ์ (Official Holidays)
+-- 7.1 วันหยุดนักขัตฤกษ์
 INSERT INTO public.master_holidays (holiday_date, holiday_name) VALUES
 ('2026-01-01', 'วันขึ้นปีใหม่'),
 ('2026-02-12', 'วันมาฆบูชา'),
@@ -312,14 +326,13 @@ INSERT INTO public.master_holidays (holiday_date, holiday_name) VALUES
 ('2026-12-31', 'วันสิ้นปี')
 ON CONFLICT (holiday_date) DO NOTHING;
 
--- 6.2 ตัวอย่างข้อมูลการจองเริ่มต้น (Demo Seed Bookings)
+-- 7.2 ตัวอย่างข้อมูลการจองเริ่มต้น (Seed Bookings)
 INSERT INTO public.bookings (booking_date, sender_name, department, contact_number, service_code, service_name, sample_count, notes, status) VALUES
 (CURRENT_DATE + INTERVAL '2 days', 'พว.สุดาพร นามสมมุติ', 'ICU CVT', '081-234-5678', 'AIR_01', 'Air Sampling (งานอาชีวอนามัย)', 6, 'ตรวจคุณภาพอากาศประจำเดือน', 'confirmed'),
 (CURRENT_DATE + INTERVAL '3 days', 'นายสมเกียรติ มั่นคง', 'ธนาคารเลือด', '089-876-5432', 'STR_02', 'Sterility (ธนาคารเลือด)', 4, 'ทดสอบหม้อนึ่ง Autoclave รอบสัปดาห์', 'confirmed'),
-(CURRENT_DATE + INTERVAL '5 days', 'พว.วิไลลักษณ์ ศรีสุข', 'งานควบคุมโรคติดเชื้อ (IC)', '086-555-1234', 'WTS_03', 'Water & Surface (งาน IC)', 10, 'Swab พื้นผิวห้องแยกโรคความดันลบ', 'confirmed')
-ON CONFLICT DO NOTHING;
+(CURRENT_DATE + INTERVAL '5 days', 'พว.วิไลลักษณ์ ศรีสุข', 'งานควบคุมโรคติดเชื้อ (IC)', '086-555-1234', 'WTS_03', 'Water & Surface (งาน IC)', 10, 'Swab พื้นผิวห้องแยกโรคความดันลบ', 'confirmed');
 
--- 6.3 ฟังก์ชันอัตโนมัติอัปเดต updated_at timestamp
+-- 7.3 ฟังก์ชันอัตโนมัติอัปเดต updated_at timestamp
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -328,12 +341,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trigger_reports_updated_at
+DROP TRIGGER IF EXISTS trigger_reports_updated_at ON public.reports;
+CREATE TRIGGER trigger_reports_updated_at
 BEFORE UPDATE ON public.reports
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_updated_at();
 
-CREATE OR REPLACE TRIGGER trigger_bookings_updated_at
+DROP TRIGGER IF EXISTS trigger_bookings_updated_at ON public.bookings;
+CREATE TRIGGER trigger_bookings_updated_at
 BEFORE UPDATE ON public.bookings
 FOR EACH ROW
 EXECUTE FUNCTION public.handle_updated_at();
