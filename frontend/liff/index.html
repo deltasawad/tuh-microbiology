@@ -14,7 +14,7 @@
        ถ้าไม่ใส่ meta ชุดนี้ ผู้ใช้จะยังเห็นโค้ดเวอร์ชันเก่าแม้ deploy ใหม่แล้ว
 
        เวลาแก้โค้ด ให้ "เพิ่มเลข ?v=" ท้าย <script> ทุกไฟล์ด้านล่างด้วย
-       (เช่น ?v=20260819j -> ?v=20260819j) แล้วเลขเวอร์ชันจะโชว์ที่ท้ายจอ
+       (เช่น ?v=20260819p -> ?v=20260819p) แล้วเลขเวอร์ชันจะโชว์ที่ท้ายจอ
        ใช้ตรวจได้ทันทีว่า LINE โหลดเวอร์ชันใหม่แล้วหรือยัง
        ========================================================================== -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -201,6 +201,21 @@
           <i class="far fa-calendar-check mr-1.5"></i> ยืนยันการจองคิว
         </button>
       </form>
+
+      <!-- คิวที่จองไว้ด้วย LINE บัญชีนี้ — แก้ไขหรือยกเลิกเองได้ -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="font-bold text-sm">
+            <i class="fas fa-list-check text-[#6c5070] mr-1.5"></i>คิวที่ฉันจองไว้
+            <span id="badge-bookings" class="ml-1 text-[11px] bg-[#f2edf4] text-[#6c5070] px-2 py-0.5 rounded-full">0</span>
+          </div>
+          <button type="button" onclick="loadMyBookings()"
+                  class="text-[11px] text-[#6c5070] font-bold px-3 py-2 active:bg-white rounded-xl">
+            <i class="fas fa-rotate mr-1"></i>รีเฟรช
+          </button>
+        </div>
+        <div id="list-bookings" class="space-y-2.5"></div>
+      </div>
     </section>
 
     <!-- ══════════════════════════════════════════════════════════════════
@@ -390,11 +405,11 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <!-- 🔑 Supabase URL + anon key อยู่ในไฟล์นี้ (ใช้ร่วมกับเว็บหลัก) -->
-<script src="/js/supabase-config.js?v=20260819j"></script>
+<script src="/js/supabase-config.js?v=20260819p"></script>
 
 <!-- 🔑 LIFF ID อยู่ในไฟล์นี้ -->
-<script src="/liff/js/liff-config.js?v=20260819j"></script>
-<script src="/liff/js/liff-flex.js?v=20260819j"></script>
-<script src="/liff/js/liff-app.js?v=20260819j"></script>
+<script src="/liff/js/liff-config.js?v=20260819p"></script>
+<script src="/liff/js/liff-flex.js?v=20260819p"></script>
+<script src="/liff/js/liff-app.js?v=20260819p"></script>
 </body>
 </html>

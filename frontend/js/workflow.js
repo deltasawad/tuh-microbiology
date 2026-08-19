@@ -419,7 +419,7 @@ async function renderCalendar(year, month) {
     // เปิดรับตรวจวันจันทร์ - ศุกร์ ที่ไม่ใช่วันหยุดราชการ (เสาร์-อาทิตย์ ปิดทำการ)
     // เปิดรับส่งตรวจเฉพาะ จันทร์ - พุธ
     const isOpenDay = (dayOfWeek >= 1 && dayOfWeek <= 3) && !isHoliday;
-    const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr);
+    const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr && b.status !== 'cancelled');
     const bookingCount = dayBookings.length;
 
     if (isPast) {
@@ -645,7 +645,7 @@ async function handleDayClick(dateStr, thaiDateStr) {
     }
   }
 
-  const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr);
+  const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr && b.status !== 'cancelled');
   const count = dayBookings.length;
 
   let existingBookingsHtml = '';
@@ -658,12 +658,21 @@ async function handleDayClick(dateStr, thaiDateStr) {
         </div>
         <div class="max-h-36 overflow-y-auto space-y-1.5 text-[11px] pr-1">
           ${dayBookings.map((b, idx) => `
-            <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
-              <div>
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between gap-2">
+              <div class="min-w-0">
                 <span class="font-bold text-[#6c5070]">${idx + 1}. ${b.department}</span>
                 <span class="text-[#78687e] block text-[10px]">${b.service_name || b.service_code} (${b.sample_count || 1} ตัวอย่าง)</span>
               </div>
-              <span class="text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">${b.contact_number || '-'}</span>
+              <div class="flex items-center gap-1 shrink-0">
+                <span class="text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">${b.contact_number || '-'}</span>
+                ${canManageBooking(b) ? `
+                  <button type="button" onclick="webEditBooking('${b.id}')" title="แก้ไขคิวนี้"
+                          class="w-6 h-6 rounded-lg border border-slate-300 text-slate-500 hover:text-[#6c5070] hover:border-[#6c5070]/50 transition">
+                    <i class="fas fa-pen text-[9px]"></i></button>
+                  <button type="button" onclick="webCancelBooking('${b.id}')" title="ยกเลิกคิวนี้"
+                          class="w-6 h-6 rounded-lg border border-slate-300 text-slate-500 hover:text-rose-600 hover:border-rose-300 transition">
+                    <i class="fas fa-xmark text-[9px]"></i></button>` : ''}
+              </div>
             </div>
           `).join('')}
         </div>
@@ -2327,6 +2336,15 @@ function renderReportsArchiveTable(reports) {
                       class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
                 <i class="fas fa-trash-can"></i>
               </button>` : ''}
+            ${(!isAdminUser() && canManageReport(r)) ? `
+              <button type="button" onclick="deptEditSubmission('${r.id || subNo}')" title="แก้ไขใบส่งตรวจของหน่วยงาน (ยังไม่ออกผล)"
+                      class="bg-white border border-[#6c5070]/40 hover:bg-[#f7f2f8] text-[#6c5070] text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
+                <i class="fas fa-pen-to-square"></i>
+              </button>
+              <button type="button" onclick="deptCancelSubmission('${r.id || subNo}')" title="ยกเลิกใบส่งตรวจของหน่วยงาน"
+                      class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
+                <i class="fas fa-xmark"></i>
+              </button>` : ''}
           </div>
         </td>
       </tr>
@@ -3046,3 +3064,235 @@ async function checkSupabaseHealth() {
   }
 }
 window.checkSupabaseHealth = checkSupabaseHealth;
+
+
+// ==============================================================================
+// สิทธิ์หน่วยงาน: แก้ไข / ยกเลิก ใบส่งตรวจของหน่วยงานตนเอง (เฉพาะที่ยังไม่ออกผล)
+// ------------------------------------------------------------------------------
+// กติกา:
+//   หน่วยงานผู้ส่งตรวจ  -> แก้ไข/ยกเลิก "ใบที่ยังไม่ออกผล" ของหน่วยงานตนเอง
+//   ใบที่ห้องแล็บลงผลแล้ว -> แตะไม่ได้ ต้องให้ admin จัดการ
+//   admin              -> ทำได้ทุกอย่างผ่าน adminEditReport / adminDeleteReport
+//
+// "ยกเลิก" ตั้ง status = 'cancelled' ไม่ลบแถว เพราะใบส่งตรวจเป็นเอกสารคุณภาพ
+// ตาม ISO 15189 การลบทำให้ตรวจสอบย้อนกลับไม่ได้
+// ==============================================================================
+
+const OPEN_STATUSES = ['draft', 'pending', 'waiting_for_testing', 'in_progress', 'received', 'submitted'];
+const isOpenReport = (r) => OPEN_STATUSES.includes(String(r && r.status || '').toLowerCase());
+
+/** หน่วยงานนี้จัดการใบนี้ได้ไหม */
+function canManageReport(r) {
+  if (!currentLoggedUser || !r) return false;
+  if (currentLoggedUser.role === 'admin') return true;
+  return isOpenReport(r)
+      && !!currentLoggedUser.department
+      && r.department === currentLoggedUser.department;
+}
+
+const escD = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+async function findReportRow(id) {
+  const pool = (typeof allReports !== 'undefined' && allReports) ? allReports : [];
+  let r = pool.find(x => String(x.id) === String(id) || String(x.submission_no) === String(id));
+  if (r) return r;
+  const res = await window.supabaseClient.from('reports').select('*').eq('id', id).maybeSingle();
+  return res.data || null;
+}
+
+async function deptEditSubmission(id) {
+  const r = await findReportRow(id);
+  if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
+
+  if (!isOpenReport(r)) {
+    return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
+      text: 'ใบนี้ออกผลตรวจแล้ว การแก้ไขต้องให้ผู้ดูแลระบบดำเนินการ', confirmButtonColor: '#6c5070' });
+  }
+  if (!canManageReport(r)) {
+    return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
+      text: 'แก้ไขได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
+  }
+
+  const F = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden';
+  const row = (label, inner) =>
+    '<label class="block text-left mb-2.5"><span class="block text-[11px] font-bold text-slate-600 mb-1">'
+    + label + '</span>' + inner + '</label>';
+
+  const res = await Swal.fire({
+    title: 'แก้ไขใบส่งตรวจ',
+    width: '520px',
+    html:
+      '<div class="text-left mb-3 font-mono font-bold text-[#6c5070] text-sm">' + escD(r.submission_no) + '</div>' +
+      row('หน่วยงานผู้ส่งตรวจ', '<input id="ds-dept" value="' + escD(r.department) + '" class="' + F + '">') +
+      row('สถานที่ / จุดเก็บตัวอย่าง', '<input id="ds-ward" value="' + escD(r.ward_room) + '" class="' + F + '">') +
+      row('วันที่เก็บตัวอย่าง', '<input id="ds-date" type="date" value="' + escD(String(r.sampling_date || '').slice(0, 10)) + '" class="' + F + '">') +
+      row('ผู้ส่งตรวจ', '<input id="ds-sampler" value="' + escD(r.sampler_name) + '" class="' + F + '">') +
+      row('หมายเหตุถึงห้องปฏิบัติการ', '<input id="ds-remarks" value="' + escD(r.remarks) + '" class="' + F + '">'),
+    showCancelButton: true, confirmButtonText: 'บันทึกการแก้ไข', cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#059669', cancelButtonColor: '#64748b',
+    preConfirm: () => {
+      const v = (i) => document.getElementById(i).value.trim();
+      if (!v('ds-ward')) return Swal.showValidationMessage('กรุณาระบุสถานที่เก็บตัวอย่าง');
+      return { department: v('ds-dept'), ward_room: v('ds-ward'),
+               sampling_date: v('ds-date') || r.sampling_date,
+               sampler_name: v('ds-sampler'), remarks: v('ds-remarks') };
+    }
+  });
+  if (!res.isConfirmed) return;
+
+  // RLS ปฏิเสธ UPDATE โดยไม่คืน error — แก้ 0 แถวแล้วเงียบ จึงต้องนับแถวเอง
+  const upd = await window.supabaseClient.from('reports')
+    .update({ ...res.value, updated_at: new Date().toISOString() }).eq('id', r.id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return Swal.fire({ icon: 'error', title: 'แก้ไขไม่สำเร็จ',
+      text: (upd.error && upd.error.message) || 'ใบนี้อาจเพิ่งถูกลงผล จึงแก้ไม่ได้แล้ว',
+      confirmButtonColor: '#6c5070' });
+  }
+
+  await Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', timer: 1300, showConfirmButton: false });
+  if (typeof loadReportsArchiveTable === 'function') await loadReportsArchiveTable();
+}
+
+async function deptCancelSubmission(id) {
+  const r = await findReportRow(id);
+  if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
+
+  if (!isOpenReport(r)) {
+    return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
+      text: 'ใบนี้ออกผลตรวจแล้ว การยกเลิกต้องให้ผู้ดูแลระบบดำเนินการ', confirmButtonColor: '#6c5070' });
+  }
+  if (!canManageReport(r)) {
+    return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
+      text: 'ยกเลิกได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
+  }
+
+  const ok = await Swal.fire({
+    icon: 'warning', title: 'ยกเลิกใบส่งตรวจนี้?',
+    html: '<div class="text-sm text-slate-600 leading-relaxed">'
+        + '<div class="font-mono font-bold text-rose-600">' + escD(r.submission_no) + '</div>'
+        + '<div class="mt-1 text-xs">ใบจะถูกทำเครื่องหมายว่ายกเลิกและหลุดจากคิวรอตรวจ<br>'
+        + 'ข้อมูลยังเก็บไว้เพื่อการตรวจสอบย้อนกลับ ไม่ได้ลบทิ้ง</div></div>',
+    showCancelButton: true, confirmButtonText: 'ยกเลิกใบนี้', cancelButtonText: 'ไม่ใช่ตอนนี้',
+    confirmButtonColor: '#e11d48', cancelButtonColor: '#64748b'
+  });
+  if (!ok.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('reports')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', r.id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return Swal.fire({ icon: 'error', title: 'ยกเลิกไม่สำเร็จ',
+      text: (upd.error && upd.error.message) || 'ใบนี้อาจเพิ่งถูกลงผล จึงยกเลิกไม่ได้แล้ว',
+      confirmButtonColor: '#6c5070' });
+  }
+
+  await Swal.fire({ icon: 'success', title: 'ยกเลิกใบส่งตรวจแล้ว', timer: 1400, showConfirmButton: false });
+  if (typeof loadReportsArchiveTable === 'function') await loadReportsArchiveTable();
+}
+
+Object.assign(window, { deptEditSubmission, deptCancelSubmission, canManageReport, isOpenReport });
+
+// ==============================================================================
+// สิทธิ์หน่วยงาน: แก้ไข / ยกเลิก คิวจองของหน่วยงานตนเอง
+// ------------------------------------------------------------------------------
+//   หน่วยงานผู้ส่งตรวจ -> จัดการคิวของหน่วยงานตนเองได้
+//   admin              -> จัดการได้ทุกหน่วยงาน
+// "ยกเลิก" ตั้ง status = 'cancelled' ไม่ลบแถว ปฏิทินกรองค่านี้ออกแล้ว
+// ==============================================================================
+
+function canManageBooking(b) {
+  if (!currentLoggedUser || !b) return false;
+  if (currentLoggedUser.role === 'admin') return true;
+  return !!currentLoggedUser.department && b.department === currentLoggedUser.department;
+}
+
+const escBk = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+const BK_FIELD = 'w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden';
+const bkRow = (label, inner) =>
+  '<label class="block text-left mb-2.5"><span class="block font-bold text-[#342838] mb-1 text-[11px]">'
+  + label + '</span>' + inner + '</label>';
+
+async function webEditBooking(id) {
+  if (window.Swal) Swal.close();
+  const b = (cachedBookings || []).find(x => String(x.id) === String(id));
+  if (!b) return;
+  if (!canManageBooking(b)) {
+    return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
+      text: 'แก้ไขได้เฉพาะคิวของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
+  }
+
+  const res = await Swal.fire({
+    title: 'แก้ไขคิวที่จอง',
+    width: '520px',
+    html:
+      bkRow('วันที่ส่งตรวจ', '<input id="wb-date" type="date" value="' + escBk(String(b.booking_date).slice(0, 10)) + '" class="' + BK_FIELD + '">') +
+      bkRow('หน่วยงานส่งตรวจ', '<input id="wb-dept" value="' + escBk(b.department) + '" class="' + BK_FIELD + '">') +
+      bkRow('ชื่อ-สกุล ผู้ส่งตรวจ', '<input id="wb-sender" value="' + escBk(b.sender_name) + '" class="' + BK_FIELD + '">') +
+      bkRow('เบอร์โทรศัพท์ติดต่อ', '<input id="wb-contact" value="' + escBk(b.contact_number) + '" class="' + BK_FIELD + '">') +
+      bkRow('จำนวนตัวอย่าง', '<input id="wb-count" type="number" min="1" max="60" value="' + (b.sample_count || 1) + '" class="' + BK_FIELD + '">') +
+      bkRow('หมายเหตุ', '<input id="wb-notes" value="' + escBk(b.notes) + '" class="' + BK_FIELD + '">'),
+    showCancelButton: true, confirmButtonText: 'บันทึกการแก้ไข', cancelButtonText: 'ปิด',
+    confirmButtonColor: '#6c5070', cancelButtonColor: '#94a3b8',
+    customClass: { popup: 'k-swal' },
+    preConfirm: () => {
+      const v = (i) => document.getElementById(i).value.trim();
+      const n = parseInt(v('wb-count'), 10);
+      if (!v('wb-date')) return Swal.showValidationMessage('กรุณาเลือกวันที่');
+      if (!v('wb-sender')) return Swal.showValidationMessage('กรุณาระบุชื่อผู้ส่งตรวจ');
+      if (!(n >= 1 && n <= 60)) return Swal.showValidationMessage('จำนวนตัวอย่างต้องอยู่ระหว่าง 1-60');
+      return { booking_date: v('wb-date'), department: v('wb-dept'), sender_name: v('wb-sender'),
+               contact_number: v('wb-contact'), sample_count: n, notes: v('wb-notes') };
+    }
+  });
+  if (!res.isConfirmed) return;
+
+  // RLS ปฏิเสธ UPDATE โดยไม่คืน error — แก้ 0 แถวแล้วเงียบ จึงต้องนับแถวเอง
+  const upd = await window.supabaseClient.from('bookings')
+    .update({ ...res.value, updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return Swal.fire({ icon: 'error', title: 'แก้ไขไม่สำเร็จ',
+      text: (upd.error && upd.error.message) || 'ไม่มีแถวใดถูกแก้ไข', confirmButtonColor: '#6c5070' });
+  }
+
+  await Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', timer: 1300, showConfirmButton: false });
+  await renderCalendar(calYear, calMonth);
+}
+
+async function webCancelBooking(id) {
+  if (window.Swal) Swal.close();
+  const b = (cachedBookings || []).find(x => String(x.id) === String(id));
+  if (!b) return;
+  if (!canManageBooking(b)) {
+    return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
+      text: 'ยกเลิกได้เฉพาะคิวของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
+  }
+
+  const ok = await Swal.fire({
+    icon: 'warning', title: 'ยกเลิกคิวนี้?',
+    html: '<div class="text-sm text-slate-600">' + escBk(b.department) + '<br>'
+        + '<span class="text-xs">' + escBk(b.service_name || b.service_code) + '</span><br>'
+        + '<span class="text-xs text-slate-400">ข้อมูลยังเก็บไว้ ไม่ได้ลบทิ้ง</span></div>',
+    showCancelButton: true, confirmButtonText: 'ยกเลิกคิว', cancelButtonText: 'ไม่ใช่ตอนนี้',
+    confirmButtonColor: '#e11d48', cancelButtonColor: '#94a3b8',
+    customClass: { popup: 'k-swal' }
+  });
+  if (!ok.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('bookings')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return Swal.fire({ icon: 'error', title: 'ยกเลิกไม่สำเร็จ',
+      text: (upd.error && upd.error.message) || 'ไม่มีแถวใดถูกแก้ไข', confirmButtonColor: '#6c5070' });
+  }
+
+  await Swal.fire({ icon: 'success', title: 'ยกเลิกคิวแล้ว', timer: 1300, showConfirmButton: false });
+  await renderCalendar(calYear, calMonth);
+}
+
+Object.assign(window, { webEditBooking, webCancelBooking, canManageBooking });

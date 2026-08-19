@@ -29,6 +29,7 @@ const App = {
   myReports: [],
   histMode: 'dept',     // 'mine' = เฉพาะที่ส่งด้วย LINE นี้ | 'dept' = ทั้งหน่วยงาน
   histService: null,
+  myBookings: [],       // คิวจองของฉัน (หน้า 1)
   queueMode: 'mine',    // โหมดของหน้า 3 'รอผล'
   queueService: null
 };
@@ -326,6 +327,7 @@ function goStep(n) {
   });
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (n === 1) loadMyBookings();
   if (n === 3) loadMyReports();
   if (n === 4) loadHistory();
 }
@@ -470,6 +472,7 @@ async function submitBooking(ev) {
   $('sb-sampling-date').value = App.selectedDate;
   onServiceChange();
   setItemCount(payload.sample_count);
+  loadMyBookings();
   goStep(2);
 }
 
@@ -864,6 +867,15 @@ function card(r, waiting) {
       ${r._localOnly ? '<span class="text-[10px] text-slate-400"><i class="fas fa-mobile-screen mr-1"></i>บันทึกแล้ว</span>' : ''}
       ${!waiting ? '<span class="ml-auto text-[#6c5070] font-bold">ดูผล <i class="fas fa-chevron-right text-[9px]"></i></span>' : ''}
     </div>
+    ${(waiting && !r._localOnly && isMine(r)) ? `
+    <div class="flex gap-2 mt-3 pt-3 border-t border-slate-100" onclick="event.stopPropagation()">
+      <button type="button" onclick="editSubmission('${r.id}')"
+              class="flex-1 text-xs font-bold py-2.5 rounded-xl bg-[#f2edf4] text-[#6c5070] active:bg-[#e9e0ed]">
+        <i class="fas fa-pen mr-1"></i>แก้ไข</button>
+      <button type="button" onclick="cancelSubmission('${r.id}')"
+              class="flex-1 text-xs font-bold py-2.5 rounded-xl bg-rose-50 text-rose-600 active:bg-rose-100">
+        <i class="fas fa-xmark mr-1"></i>ยกเลิก</button>
+    </div>` : ''}
   </div>`;
 }
 
@@ -942,10 +954,232 @@ async function boot() {
 document.addEventListener('DOMContentLoaded', boot);
 
 // เปิดให้ inline handler ใน HTML เรียกใช้ได้
+
+/* ============================================================================
+ * ส่วนที่ 8 : จัดการของตัวเอง — แก้ไข / ยกเลิก คิวจอง และใบส่งตรวจ
+ * --------------------------------------------------------------------------
+ * กติกา: หน่วยงานผู้ส่งตรวจแก้ไขและยกเลิก "ของตัวเอง" ได้ ตราบใดที่ยังไม่ออกผล
+ *        ใบที่ห้องแล็บลงผลแล้วแตะไม่ได้เลย — บังคับด้วย RLS ที่ฐานข้อมูลอีกชั้น
+ *        (นโยบาย liff_anon_can_edit_open_report จำกัดเฉพาะสถานะที่ยังไม่ออกผล)
+ *
+ * "ยกเลิก" = ตั้ง status เป็น 'cancelled' ไม่ลบแถวทิ้ง
+ * ใบส่งตรวจเป็นเอกสารคุณภาพตาม ISO 15189 การลบทำให้ตรวจสอบย้อนกลับไม่ได้
+ *
+ * ⚠️ RLS ปฏิเสธ UPDATE โดยไม่คืน error — มันแก้ 0 แถวแล้วเงียบ
+ *    ทุกคำสั่งจึงต่อท้ายด้วย .select() แล้วนับแถวที่เปลี่ยนจริง
+ * ========================================================================== */
+
+const SWIN = 'w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#6c5070]/30';
+const sfield = (label, inner) =>
+  '<label class="block text-left mb-3"><span class="block text-[11px] font-bold text-slate-600 mb-1">'
+  + label + '</span>' + inner + '</label>';
+const esc2 = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+/** ของฉันหรือไม่ — ใช้ LINE userId เป็นตัวชี้ */
+const isMine = (row) => !!App.profile.userId && row.line_user_id === App.profile.userId;
+
+/* ------------------------------------------------------------ คิวจองของฉัน */
+async function loadMyBookings() {
+  const box = $('list-bookings');
+  if (!box) return;
+  box.innerHTML = `<div class="py-8 text-center text-slate-400 text-sm">
+    <i class="fas fa-spinner fa-spin mr-2"></i>กำลังโหลด...</div>`;
+
+  let rows = [];
+  try {
+    const res = await window.supabaseClient
+      .from('bookings').select('*')
+      .eq('line_user_id', App.profile.userId)
+      .neq('status', 'cancelled')
+      .order('booking_date', { ascending: false }).limit(50);
+    rows = res.data || [];
+  } catch (e) {
+    console.warn('loadMyBookings:', e);
+  }
+
+  App.myBookings = rows;
+  $('badge-bookings').textContent = rows.length;
+
+  if (!rows.length) {
+    box.innerHTML = empty('📅', 'ยังไม่มีคิวที่จองไว้',
+      'คิวที่จองด้วย LINE บัญชีนี้จะมาแสดงที่นี่<br>แก้ไขหรือยกเลิกได้จากตรงนี้');
+    return;
+  }
+
+  const today = toISO(new Date());
+  box.innerHTML = rows.map(b => {
+    const svc = window.LIFF_SERVICES[b.service_code] || {};
+    const past = String(b.booking_date) < today;
+    return `<div class="bg-white border border-slate-200 rounded-2xl p-3.5">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <div class="font-bold text-sm text-[#342838]">${fmtThai(b.booking_date, true)}</div>
+          <div class="text-[11px] text-slate-500 mt-0.5 truncate">${svc.icon || '🔬'} ${svc.short || b.service_code} · ${esc2(b.department)}</div>
+        </div>
+        ${past
+          ? '<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 shrink-0">ผ่านไปแล้ว</span>'
+          : '<span class="text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 shrink-0">จองแล้ว</span>'}
+      </div>
+      <div class="flex items-center gap-4 mt-2.5 text-[11px] text-slate-500">
+        <span><i class="fas fa-vial mr-1"></i>${b.sample_count || 1} ตัวอย่าง</span>
+        <span class="truncate"><i class="fas fa-user mr-1"></i>${esc2(b.sender_name)}</span>
+      </div>
+      ${past ? '' : `<div class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+        <button type="button" onclick="editBooking('${b.id}')"
+                class="flex-1 text-xs font-bold py-2.5 rounded-xl bg-[#f2edf4] text-[#6c5070] active:bg-[#e9e0ed]">
+          <i class="fas fa-pen mr-1"></i>แก้ไข</button>
+        <button type="button" onclick="cancelBooking('${b.id}')"
+                class="flex-1 text-xs font-bold py-2.5 rounded-xl bg-rose-50 text-rose-600 active:bg-rose-100">
+          <i class="fas fa-xmark mr-1"></i>ยกเลิก</button>
+      </div>`}
+    </div>`;
+  }).join('');
+}
+
+async function editBooking(id) {
+  const b = (App.myBookings || []).find(x => String(x.id) === String(id));
+  if (!b) return;
+
+  const res = await Swal.fire({
+    title: 'แก้ไขคิวที่จอง',
+    html:
+      sfield('วันที่ส่งตรวจ', '<input id="eb-date" type="date" value="' + esc2(String(b.booking_date).slice(0, 10)) + '" class="' + SWIN + '">') +
+      sfield('หน่วยงาน', '<input id="eb-dept" value="' + esc2(b.department) + '" class="' + SWIN + '">') +
+      sfield('ผู้ส่งตรวจ', '<input id="eb-sender" value="' + esc2(b.sender_name) + '" class="' + SWIN + '">') +
+      sfield('เบอร์ติดต่อกลับ', '<input id="eb-contact" value="' + esc2(b.contact_number) + '" class="' + SWIN + '">') +
+      sfield('จำนวนตัวอย่าง', '<input id="eb-count" type="number" min="1" max="60" value="' + (b.sample_count || 1) + '" class="' + SWIN + '">') +
+      sfield('หมายเหตุ', '<input id="eb-notes" value="' + esc2(b.notes) + '" class="' + SWIN + '">'),
+    showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ปิด',
+    confirmButtonColor: '#6c5070', cancelButtonColor: '#94a3b8',
+    preConfirm: () => {
+      const v = (i) => document.getElementById(i).value.trim();
+      const n = parseInt(v('eb-count'), 10);
+      if (!v('eb-date')) return Swal.showValidationMessage('กรุณาเลือกวันที่');
+      if (!v('eb-sender')) return Swal.showValidationMessage('กรุณาระบุชื่อผู้ส่งตรวจ');
+      if (!(n >= 1 && n <= 60)) return Swal.showValidationMessage('จำนวนตัวอย่างต้องอยู่ระหว่าง 1–60');
+      return { booking_date: v('eb-date'), department: v('eb-dept'), sender_name: v('eb-sender'),
+               contact_number: v('eb-contact'), sample_count: n, notes: v('eb-notes') };
+    }
+  });
+  if (!res.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('bookings')
+    .update({ ...res.value, updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return toast('error', 'แก้ไขไม่สำเร็จ',
+      (upd.error && upd.error.message) || 'ไม่มีแถวใดถูกแก้ไข');
+  }
+  toast('success', 'บันทึกแล้ว', 'แก้ไขคิวจองเรียบร้อย');
+  await loadMyBookings();
+  await renderCalendar();
+}
+
+async function cancelBooking(id) {
+  const b = (App.myBookings || []).find(x => String(x.id) === String(id));
+  if (!b) return;
+
+  const ok = await Swal.fire({
+    icon: 'warning', title: 'ยกเลิกคิวนี้?',
+    html: `<div class="text-sm text-slate-600">${fmtThai(b.booking_date, true)}<br>
+           <span class="text-xs text-slate-400">ห้องแล็บจะเห็นว่าคิวนี้ถูกยกเลิก</span></div>`,
+    showCancelButton: true, confirmButtonText: 'ยกเลิกคิว', cancelButtonText: 'ไม่ใช่ตอนนี้',
+    confirmButtonColor: '#e11d48', cancelButtonColor: '#94a3b8'
+  });
+  if (!ok.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('bookings')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return toast('error', 'ยกเลิกไม่สำเร็จ',
+      (upd.error && upd.error.message) || 'ไม่มีแถวใดถูกแก้ไข');
+  }
+  toast('success', 'ยกเลิกแล้ว', 'คิวถูกยกเลิกเรียบร้อย');
+  await loadMyBookings();
+  await renderCalendar();
+}
+
+/* -------------------------------------------------- ใบส่งตรวจที่ยังไม่ออกผล */
+async function editSubmission(id) {
+  const r = (App.myReports || []).find(x => String(x.id) === String(id));
+  if (!r) return;
+  if (!isWaiting(r)) return toast('info', 'แก้ไขไม่ได้', 'ใบนี้ออกผลแล้ว');
+
+  const res = await Swal.fire({
+    title: 'แก้ไขใบส่งตรวจ',
+    html:
+      '<div class="text-left mb-3 font-mono font-bold text-[#6c5070] text-sm">' + esc2(r.submission_no) + '</div>' +
+      sfield('หน่วยงาน', '<input id="es-dept" value="' + esc2(r.department) + '" class="' + SWIN + '">') +
+      sfield('สถานที่ / จุดเก็บตัวอย่าง', '<input id="es-ward" value="' + esc2(r.ward_room) + '" class="' + SWIN + '">') +
+      sfield('วันที่เก็บตัวอย่าง', '<input id="es-date" type="date" value="' + esc2(String(r.sampling_date || '').slice(0, 10)) + '" class="' + SWIN + '">') +
+      sfield('ผู้ส่งตรวจ', '<input id="es-sampler" value="' + esc2(r.sampler_name) + '" class="' + SWIN + '">') +
+      sfield('หมายเหตุถึงห้องแล็บ', '<input id="es-remarks" value="' + esc2(r.remarks) + '" class="' + SWIN + '">') +
+      '<div class="text-left text-[11px] text-slate-400">แก้รายการตัวอย่างรายจุดต้องแจ้งห้องแล็บ</div>',
+    showCancelButton: true, confirmButtonText: 'บันทึก', cancelButtonText: 'ปิด',
+    confirmButtonColor: '#6c5070', cancelButtonColor: '#94a3b8',
+    preConfirm: () => {
+      const v = (i) => document.getElementById(i).value.trim();
+      if (!v('es-ward')) return Swal.showValidationMessage('กรุณาระบุสถานที่เก็บตัวอย่าง');
+      return { department: v('es-dept'), ward_room: v('es-ward'),
+               sampling_date: v('es-date') || r.sampling_date,
+               sampler_name: v('es-sampler'), remarks: v('es-remarks') };
+    }
+  });
+  if (!res.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('reports')
+    .update({ ...res.value, updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return toast('error', 'แก้ไขไม่สำเร็จ',
+      (upd.error && upd.error.message) || 'ใบนี้อาจเพิ่งถูกลงผล จึงแก้ไม่ได้แล้ว');
+  }
+  toast('success', 'บันทึกแล้ว', 'แก้ไขใบส่งตรวจเรียบร้อย');
+  await loadMyReports();
+}
+
+async function cancelSubmission(id) {
+  const r = (App.myReports || []).find(x => String(x.id) === String(id));
+  if (!r) return;
+  if (!isWaiting(r)) return toast('info', 'ยกเลิกไม่ได้', 'ใบนี้ออกผลแล้ว');
+
+  const ok = await Swal.fire({
+    icon: 'warning', title: 'ยกเลิกใบส่งตรวจนี้?',
+    html: `<div class="text-sm text-slate-600 leading-relaxed">
+             <div class="font-mono font-bold text-rose-600">${esc2(r.submission_no)}</div>
+             <div class="mt-1 text-xs">ใบจะถูกทำเครื่องหมายว่ายกเลิก และหลุดจากคิวรอตรวจ<br>
+             ข้อมูลยังเก็บไว้เพื่อการตรวจสอบย้อนกลับ ไม่ได้ลบทิ้ง</div>
+           </div>`,
+    showCancelButton: true, confirmButtonText: 'ยกเลิกใบนี้', cancelButtonText: 'ไม่ใช่ตอนนี้',
+    confirmButtonColor: '#e11d48', cancelButtonColor: '#94a3b8'
+  });
+  if (!ok.isConfirmed) return;
+
+  const upd = await window.supabaseClient.from('reports')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() }).eq('id', id).select();
+
+  if (upd.error || !(upd.data || []).length) {
+    return toast('error', 'ยกเลิกไม่สำเร็จ',
+      (upd.error && upd.error.message) || 'ใบนี้อาจเพิ่งถูกลงผล จึงยกเลิกไม่ได้แล้ว');
+  }
+
+  // ลบสำเนาในเครื่องด้วย ไม่งั้นใบที่ยกเลิกแล้วจะยังโผล่ในคิว
+  try {
+    const keep = readMySubs().filter(x => x.submission_no !== r.submission_no);
+    localStorage.setItem(MY_SUBS_KEY, JSON.stringify(keep));
+  } catch (e) { /* ไม่สำคัญพอที่จะทำให้ทั้งงานล้ม */ }
+
+  toast('success', 'ยกเลิกแล้ว', 'ใบส่งตรวจถูกยกเลิกเรียบร้อย');
+  await loadMyReports();
+}
+
 Object.assign(window, {
   getRequestedStep, readStepFrom,
   App, goStep, shiftMonth, pickDate, submitBooking, onServiceChange,
   setItemCount, addItem, removeItem, submitSamples, openReport, closeLiff, loadMyReports,
   loadHistory, setHistMode, setHistModeUI,
-  setQueueMode, setQueueModeUI
+  setQueueMode, setQueueModeUI,
+  loadMyBookings, editBooking, cancelBooking, editSubmission, cancelSubmission
 });
