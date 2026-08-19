@@ -1,0 +1,4 @@
+channel ใหม่ @569knxox (Environmental_report)
+richmenu-6690972049a3da77686be09e28ada79d
+
+ลบ: DELETE https://api.line.me/v2/bot/richmenu/richmenu-6690972049a3da77686be09e28ada79d
