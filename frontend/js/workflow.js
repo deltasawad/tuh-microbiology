@@ -15,21 +15,13 @@
 const WORKFLOW_CONFIG = {
   telegram: {
     enabled: true,
-    botToken: 'REMOVED__USE_ENV_TELEGRAM_BOT_TOKEN',
-    chatId: '-5294922475'
+    botToken: '',
+    chatId: ''
   },
   line: {
     enabled: true,
-    token: 'REMOVED__USE_ENV_LINE_CHANNEL_ACCESS_TOKEN',
-    groupId: 'C087508cdd6240cfd4c6358d8a88fcaaa'
-  },
-  email: {
-    enabled: true,
-    provider: 'emailjs',
-    emailjsServiceId: 'YOUR_EMAILJS_SERVICE_ID',
-    emailjsTemplateId: 'YOUR_EMAILJS_TEMPLATE_ID',
-    emailjsPublicKey: 'YOUR_EMAILJS_PUBLIC_KEY',
-    resendApiKey: 'YOUR_RESEND_API_KEY'
+    token: '',
+    groupId: ''
   },
   supabasePingIntervalMs: 30000
 };
@@ -45,8 +37,8 @@ const THAI_DAYS = [
 
 // State Variables
 let currentActiveTab = 'calendar'; // 'calendar', 'submission', 'reports', 'result-grid'
-let calYear = new Date().getFullYear();
-let calMonth = new Date().getMonth() + 1; // 1-12
+let calYear = 2026; // ปี พ.ศ. 2569
+let calMonth = 8;   // สิงหาคม (August 2569)
 let cachedBookings = [];
 let cachedHolidays = [];
 let activeSubmissionData = null;
@@ -55,273 +47,76 @@ let currentLoggedUser = null;
 let adminDeptFilter = ''; // Filter selected by Admin in Reports Archive
 
 // Mock Fallback Data (Categorized by Department & Sorted with Newest on Top)
-const MOCK_REPORTS_ARCHIVE = [
-  // 1. งานควบคุมโรคติดเชื้อ (icn)
-  { 
-    id: 'R-6908-401', 
-    submission_no: 'WTS-6908-401', 
-    sampling_date: '2569-08-12', 
-    formatted_date: '12/8/2569', 
-    department: 'งานควบคุมโรคติดเชื้อ', 
-    ward_room: 'หอผู้ป่วย ICU ศัลยกรรม ชั้น 3 อาคารกิตติวัฒนา',
-    service_code: 'WTS_03',
-    service_name: 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)', 
-    sample_count: 6, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6908-402', 
-    submission_no: 'WTS-6908-402', 
-    sampling_date: '2569-08-10', 
-    formatted_date: '10/8/2569', 
-    department: 'งานควบคุมโรคติดเชื้อ', 
-    ward_room: 'หอผู้ป่วยกุมารเวชกรรม 2 ชั้น 4',
-    service_code: 'WTS_03',
-    service_name: 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6907-403', 
-    submission_no: 'WTS-6907-403', 
-    sampling_date: '2569-07-28', 
-    formatted_date: '28/7/2569', 
-    department: 'งานควบคุมโรคติดเชื้อ', 
-    ward_room: 'หอผู้ป่วยอายุรกรรมหญิง 2',
-    service_code: 'WTS_03',
-    service_name: 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)', 
-    sample_count: 5, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6907-404', 
-    submission_no: 'WTS-6907-404', 
-    sampling_date: '2569-07-14', 
-    formatted_date: '14/7/2569', 
-    department: 'งานควบคุมโรคติดเชื้อ', 
-    ward_room: 'จุดบริการน้ำดื่มผู้ป่วยนอก อาคาร ม.ร.ว.สุวพรรณ',
-    service_code: 'WTS_03',
-    service_name: 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)', 
-    sample_count: 3, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6906-405', 
-    submission_no: 'WTS-6906-405', 
-    sampling_date: '2569-06-24', 
-    formatted_date: '24/6/2569', 
-    department: 'งานควบคุมโรคติดเชื้อ', 
-    ward_room: 'หอผู้ป่วยศัลยกรรมอุบัติเหตุ ชั้น 5',
-    service_code: 'WTS_03',
-    service_name: 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)', 
-    sample_count: 6, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
+// ==============================================================================
+// STATUS HELPER — ตัวตัดสินสถานะ "รอตรวจ" / "ตรวจแล้ว" ชุดเดียวทั้งระบบ
+// ==============================================================================
+const WAITING_STATUSES = ['pending', 'waiting_for_testing', 'in_progress', 'draft', 'received', 'submitted', 'รอตรวจ'];
+const TESTED_STATUSES = ['tested', 'completed', 'approved', 'reported', 'ตรวจแล้ว'];
 
-  // 2. งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร (occ)
-  { 
-    id: 'R-6908-201', 
-    submission_no: 'AIR-6908-201', 
-    sampling_date: '2569-08-11', 
-    formatted_date: '11/8/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'OPD MED 3 (คลินิกอายุรกรรม)',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 5, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6908-202', 
-    submission_no: 'AIR-6908-202', 
-    sampling_date: '2569-08-10', 
-    formatted_date: '10/8/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'หน่วยตรวจศัลยกรรมกระดูกและข้อ (Orthopedic OPD)',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6908-203', 
-    submission_no: 'AIR-6908-203', 
-    sampling_date: '2569-08-04', 
-    formatted_date: '4/8/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'ศูนย์ต้อกระจกและผ่าตัดตา',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 1, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6906-204', 
-    submission_no: 'AIR-6906-204', 
-    sampling_date: '2569-06-16', 
-    formatted_date: '16/6/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'หน่วยเคมีบำบัดผู้ป่วยนอก (Chemotherapy Unit)',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 8, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6905-205', 
-    submission_no: 'AIR-6905-205', 
-    sampling_date: '2569-05-27', 
-    formatted_date: '27/5/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'งานเวชสารสนเทศและห้อง Server อาคารบริหาร',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 8, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6905-206', 
-    submission_no: 'AIR-6905-206', 
-    sampling_date: '2569-05-26', 
-    formatted_date: '26/5/2569', 
-    department: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', 
-    ward_room: 'งานการพยาบาลเวชศาสตร์การเจริญพันธุ์ (ผู้มีบุตรยาก)',
-    service_code: 'AIR_01',
-    service_name: 'ตรวจอากาศในอาคาร (Air Sampling)', 
-    sample_count: 10, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
+function isWaitingReport(r) {
+  if (!r) return false;
+  const st = String(r.status || '').toLowerCase();
+  if (WAITING_STATUSES.includes(st)) return true;
+  if (TESTED_STATUSES.includes(st)) return false;
+  return String(r.overall_result || 'pending').toLowerCase() === 'pending';
+}
+window.isWaitingReport = isWaitingReport;
 
-  // 3. งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ) (compounding)
-  { 
-    id: 'R-6907-104', 
-    submission_no: 'DRG-6907-104', 
-    sampling_date: '2569-07-15', 
-    formatted_date: '15/7/2569', 
-    department: 'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)', 
-    ward_room: 'ห้องเตรียมยาปลอดเชื้อ ชั้น 2 (Cleanroom Class A)',
-    service_code: 'DRG_07',
-    service_name: 'ตรวจยาปราศจากเชื้อ (Drug Compounding Sterility)', 
-    sample_count: 3, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-  { 
-    id: 'R-6906-105', 
-    submission_no: 'DRG-6906-105', 
-    sampling_date: '2569-06-20', 
-    formatted_date: '20/6/2569', 
-    department: 'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)', 
-    ward_room: 'Laminar Air Flow Cleanroom ตู้เตรียมยา 1',
-    service_code: 'DRG_07',
-    service_name: 'ตรวจยาปราศจากเชื้อ (Drug Compounding Sterility)', 
-    sample_count: 5, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
+/**
+ * วันที่ที่แสดงในตารางรายงาน = "วันที่กดบันทึกแบบฟอร์มส่งตรวจ"
+ */
+function getSubmittedDateLabel(r) {
+  const raw = r.created_at || r.submitted_at || r.received_date || r.sampling_date || r.formatted_date;
+  const p = window.parseDateObj ? window.parseDateObj(raw) : null;
+  if (!p) return r.formatted_date || r.sampling_date || '-';
+  return `${p.day}/${p.month}/${p.year + 543}`;
+}
+window.getSubmittedDateLabel = getSubmittedDateLabel;
 
-  // 4. งานผลิตยา (pharma)
-  { 
-    id: 'R-6907-301', 
-    submission_no: 'DRG-6907-301', 
-    sampling_date: '2569-07-18', 
-    formatted_date: '18/7/2569', 
-    department: 'งานผลิตยา', 
-    ward_room: 'หน่วยผลิตยาน้ำและยาทาภายนอก',
-    service_code: 'DRG_08',
-    service_name: 'ตรวจการปนเปื้อนเชื้อในยา (Drug Bioburden)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-
-  // 5. งานธนาคารเลือด (bloodbank)
-  { 
-    id: 'R-6908-501', 
-    submission_no: 'STR-6908-501', 
-    sampling_date: '2569-08-08', 
-    formatted_date: '8/8/2569', 
-    department: 'งานธนาคารเลือด', 
-    ward_room: 'ห้องเตรียมส่วนประกอบโลหิต (Platelet Agitator Room)',
-    service_code: 'STR_02',
-    service_name: 'ตรวจความปราศจากเชื้อ (Sterility Test)', 
-    sample_count: 2, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-
-  // 6. งานโภชนาการ (nutrition)
-  { 
-    id: 'R-6906-107', 
-    submission_no: 'FOD-6906-107', 
-    sampling_date: '2569-06-09', 
-    formatted_date: '9/6/2569', 
-    department: 'งานโภชนาการ', 
-    ward_room: 'โรงครัวเตรียมอาหารผู้ป่วยและภาชนะบรรจุ',
-    service_code: 'FOD_06',
-    service_name: 'ตรวจสุขาภิบาลอาหารและภาชนะ (Food Sanitation)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-
-  // 7. ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)
-  { 
-    id: 'R-6907-701', 
-    submission_no: 'WTM-6907-701', 
-    sampling_date: '2569-07-22', 
-    formatted_date: '22/7/2569', 
-    department: 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)', 
-    ward_room: 'หน่วยไตเทียมและระบบน้ำ RO THAMC',
-    service_code: 'WTM_05',
-    service_name: 'ตรวจน้ำศูนย์การแพทย์ (Water THAMC)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  },
-
-  // 8. ห้องผ่าตัด (or)
-  { 
-    id: 'R-6905-110', 
-    submission_no: 'WTO-6905-110', 
-    sampling_date: '2569-05-26', 
-    formatted_date: '26/5/2569', 
-    department: 'ห้องผ่าตัด (OR)', 
-    ward_room: 'ห้องผ่าตัดใหญ่ OR-5 (ระบบน้ำล้างมือก่อนผ่าตัด)',
-    service_code: 'WTO_04',
-    service_name: 'ตรวจน้ำห้องผ่าตัด (Water for Surgery OR)', 
-    sample_count: 4, 
-    status: 'tested', 
-    overall_result: 'pass' 
-  }
-];
+// ข้อมูลตัวอย่างถูกตัดออก — แสดงเฉพาะข้อมูลจริงจาก Supabase
+const MOCK_REPORTS_ARCHIVE = [];
+window.MOCK_REPORTS_ARCHIVE = MOCK_REPORTS_ARCHIVE;
 
 // ==============================================================================
 // INITIALIZATION
 // ==============================================================================
-document.addEventListener('DOMContentLoaded', async () => {
-  await checkUserRoleAndInitTabs();
-  await initBookingCalendar();
-  initSubmissionForm();
-  initResultEntryGrid();
-  await initReportsArchive();
+async function bootWorkflow() {
+  try {
+    if (window.AuthManager) {
+      currentLoggedUser = await window.AuthManager.getCurrentUser();
+    }
+  } catch (e) {
+    console.warn('Auth init failed:', e);
+  }
+
+  // If on calendar container
+  if (document.getElementById('calendar-days-grid')) {
+    await initBookingCalendar();
+  }
+
+  // If on workflow container
+  if (document.getElementById('workflow-main-container')) {
+    await checkUserRoleAndInitTabs();
+    initSubmissionForm();
+    initResultEntryGrid();
+    await initReportsArchive();
+  }
 
   // Background Health Check
-  await checkSupabaseHealth();
-  healthCheckTimer = setInterval(checkSupabaseHealth, WORKFLOW_CONFIG.supabasePingIntervalMs);
-});
+  checkSupabaseHealth();
+  if (!healthCheckTimer) {
+    healthCheckTimer = setInterval(checkSupabaseHealth, WORKFLOW_CONFIG.supabasePingIntervalMs);
+  }
+}
 
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootWorkflow);
+} else {
+  bootWorkflow();
+}
+
+// ==============================================================================
+// ROLE CHECK & TAB NAVIGATION (เห็นแท็บลงผลเฉพาะ ADMIN)
 // ==============================================================================
 // ROLE CHECK & TAB NAVIGATION (เห็นแท็บลงผลเฉพาะ ADMIN)
 // ==============================================================================
@@ -330,7 +125,7 @@ async function checkUserRoleAndInitTabs() {
     currentLoggedUser = await window.AuthManager.getCurrentUser();
   }
 
-  const isAdmin = (currentLoggedUser && currentLoggedUser.role === 'admin');
+  const isAdmin = (currentLoggedUser && (currentLoggedUser.role === 'admin' || currentLoggedUser.username === 'admin'));
   const adminTabPill = document.getElementById('tab-pill-result-grid');
   const userBanner = document.getElementById('workflow-user-banner');
   const adminDeptFilterContainer = document.getElementById('admin-dept-filter-container');
@@ -340,9 +135,9 @@ async function checkUserRoleAndInitTabs() {
     if (adminDeptFilterContainer) adminDeptFilterContainer.classList.remove('hidden');
     if (userBanner) {
       userBanner.innerHTML = `
-        <div class="inline-flex items-center gap-2 bg-emerald-500/20 text-emerald-300 text-xs px-3.5 py-1.5 rounded-full border border-emerald-400/30">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>เข้าสู่ระบบ: <strong>ADMIN MASTER</strong> (สิทธิ์ดูทุกหน่วยงาน & ลงผล Data Grid)</span>
+        <div class="inline-flex items-center gap-2 bg-[#fefaf0] text-[#b8860b] text-xs px-3.5 py-1.5 rounded-full border border-[#fde8a8]">
+          <span class="w-2 h-2 rounded-full bg-[#f9d56e] animate-pulse"></span>
+          <span>เข้าสู่ระบบ: <strong>ADMIN MASTER</strong> (สิทธิ์ลงผลตรวจ Data Grid & ดูทุกหน่วยงาน)</span>
         </div>
       `;
     }
@@ -351,45 +146,97 @@ async function checkUserRoleAndInitTabs() {
     if (adminDeptFilterContainer) adminDeptFilterContainer.classList.add('hidden');
     if (userBanner && currentLoggedUser) {
       userBanner.innerHTML = `
-        <div class="inline-flex items-center gap-2 bg-slate-800 text-slate-300 text-xs px-3.5 py-1.5 rounded-full border border-slate-700">
-          <i class="fas fa-building text-emerald-400"></i>
+        <div class="inline-flex items-center gap-2 bg-[#f7f2f8] text-[#6c5070] text-xs px-3.5 py-1.5 rounded-full border border-[#6c5070]/20">
+          <i class="fas fa-building text-[#df6a6a]"></i>
           <span>เข้าสู่ระบบ: <strong>${currentLoggedUser.department || currentLoggedUser.displayName}</strong></span>
         </div>
       `;
     }
   }
 
-  // ตรวจสอบ URL Search Params (เช่น ?tab=calendar, ?tab=submission, ?service=AIR_01)
-  const urlParams = new URLSearchParams(window.location.search);
-  const targetTab = urlParams.get('tab') || 'calendar';
+  // ตรวจสอบ URL Search Params (เช่น ?tab=calendar, ?tab=submission, ?service=DRG-08, ?service=WTM-05)
+  const urlParams = (typeof window !== 'undefined' && window.location && typeof URLSearchParams !== 'undefined') 
+    ? new URLSearchParams(window.location.search) 
+    : { get: (k) => null };
   const targetService = urlParams.get('service');
+  let targetTab = urlParams.get('tab') || (targetService ? 'submission' : 'calendar');
+
+  // ถ้าไม่ใช่ Admin แต่ระบุแท็บ result-grid ให้บังคับกลับไปที่ calendar
+  if (targetTab === 'result-grid' && !isAdmin) {
+    targetTab = 'calendar';
+  }
 
   if (targetService) {
+    const srvMap = {
+      'str': 'STR_02',
+      'str-02': 'STR_02',
+      'str_02': 'STR_02',
+      'bloodbank': 'STR_02',
+      'blood': 'STR_02',
+      'air': 'AIR_01',
+      'air-01': 'AIR_01',
+      'air_01': 'AIR_01',
+      'occ': 'AIR_01',
+      'wts': 'WTS_03',
+      'wts-03': 'WTS_03',
+      'wts_03': 'WTS_03',
+      'water': 'WTS_03',
+      'surface': 'WTS_03',
+      'icn': 'WTS_03',
+      'or': 'WTO_04',
+      'wto': 'WTO_04',
+      'wto-04': 'WTO_04',
+      'wto_04': 'WTO_04',
+      'thamc': 'WTM_05',
+      'wtm': 'WTM_05',
+      'wtm-05': 'WTM_05',
+      'wtm_05': 'WTM_05',
+      'food': 'FOD_06',
+      'fod': 'FOD_06',
+      'fod-06': 'FOD_06',
+      'fod_06': 'FOD_06',
+      'nutrition': 'FOD_06',
+      'drg': 'DRG_07',
+      'drg-07': 'DRG_07',
+      'drg_07': 'DRG_07',
+      'drg-08': 'DRG_08',
+      'drg_08': 'DRG_08',
+      'drug': 'DRG_07',
+      'drug1': 'DRG_07',
+      'drug2': 'DRG_08',
+      'pharma': 'DRG_08',
+      'pharma1': 'DRG_07',
+      'pharma2': 'DRG_08',
+      'compounding': 'DRG_07',
+      'bioburden': 'DRG_08',
+      'ผลิตยา': 'DRG_07',
+      'ผลิตยา1': 'DRG_07',
+      'ผลิตยา2': 'DRG_08'
+    };
+    const mappedSrv = srvMap[targetService.toLowerCase()] || targetService.toUpperCase();
     const srvSelect = document.getElementById('sub-service-select');
     if (srvSelect) {
-      srvSelect.value = targetService;
-      generateSubmissionNo();
+      srvSelect.value = mappedSrv;
+      onServiceSelectionChange();
     }
   }
 
-  // สลับไปยังแท็บที่ระบุใน URL หรือเริ่มต้นที่ Calendar
   switchWorkflowTab(targetTab);
 }
 
-/**
- * สลับแท็บหน้าจอการทำงาน
- */
 function switchWorkflowTab(tabName) {
+  const isAdmin = (currentLoggedUser && (currentLoggedUser.role === 'admin' || currentLoggedUser.username === 'admin'));
+
   if (tabName === 'result-grid') {
-    const isAdmin = (currentLoggedUser && currentLoggedUser.role === 'admin');
     if (!isAdmin) {
       Swal.fire({
         icon: 'warning',
         title: 'เฉพาะผู้ดูแลระบบ (Admin Only)',
         text: 'หน้าลงผลการตรวจวิเคราะห์สงวนสิทธิ์เฉพาะผู้ดูแลระบบห้องปฏิบัติการเท่านั้น',
-        confirmButtonColor: '#047857'
+        confirmButtonColor: '#6c5070',
+        customClass: { popup: 'k-swal' }
       });
-      return;
+      tabName = 'calendar';
     }
   }
 
@@ -409,22 +256,32 @@ function switchWorkflowTab(tabName) {
     'result-grid': document.getElementById('panel-result-grid')
   };
 
-  // ปรับสไตล์ปุ่มแท็บ
   Object.keys(tabPills).forEach(key => {
     const pill = tabPills[key];
     if (pill) {
+      if (key === 'result-grid') {
+        if (!isAdmin) {
+          pill.className = 'hidden';
+          return;
+        }
+      }
+
       if (key === tabName) {
-        pill.className = 'step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-700 text-white font-bold shadow-md transition text-xs border border-emerald-600';
+        pill.className = 'step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#6c5070] text-white font-bold shadow-sm transition text-xs';
       } else {
-        pill.className = 'step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 font-semibold transition text-xs border border-slate-200';
+        pill.className = 'step-pill flex items-center gap-2 px-5 py-2.5 rounded-full bg-white hover:bg-[#f7f2f8] text-[#78687e] font-semibold transition text-xs border border-slate-200';
       }
     }
   });
 
-  // สลับการแสดงผล Panel
   Object.keys(panels).forEach(key => {
     const p = panels[key];
     if (p) {
+      if (key === 'result-grid' && !isAdmin) {
+        p.classList.add('hidden');
+        return;
+      }
+
       if (key === tabName) {
         p.classList.remove('hidden');
       } else {
@@ -433,20 +290,20 @@ function switchWorkflowTab(tabName) {
     }
   });
 
-  // โหลดข้อมูลตามแท็บที่เลือก
   if (tabName === 'calendar') {
     renderCalendar(calYear, calMonth);
+  } else if (tabName === 'submission') {
+    const countInput = document.getElementById('sub-sample-count');
+    const sampleCount = parseInt(countInput?.value || '10', 10);
+    buildSampleItemsMatrix(sampleCount);
   } else if (tabName === 'reports') {
     loadReportsArchiveTable();
-  } else if (tabName === 'result-grid') {
+  } else if (tabName === 'result-grid' && isAdmin) {
     loadWaitingQueueIntoGrid();
   }
 }
 window.switchWorkflowTab = switchWorkflowTab;
 
-// ==============================================================================
-// 1. ปฏิทินจองวัน (BOOKING CALENDAR - จันทร์-พุธ)
-// ==============================================================================
 async function initBookingCalendar() {
   try {
     cachedHolidays = await window.MasterDB.getHolidays();
@@ -502,11 +359,8 @@ function initCalendarControls() {
   }
 }
 
-/**
- * เรนเดอร์ปฏิทินประจำเดือน
- */
 async function renderCalendar(year, month) {
-  const titleEl = document.getElementById('calendar-month-title');
+  const titleEl = document.getElementById('calendar-month-title') || document.getElementById('calendar-month-year');
   const gridEl = document.getElementById('calendar-days-grid');
   if (!gridEl) return;
 
@@ -515,15 +369,28 @@ async function renderCalendar(year, month) {
     titleEl.textContent = `${THAI_MONTHS[month - 1]} ${thaiYear}`;
   }
 
-  gridEl.innerHTML = `<div class="col-span-7 p-10 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-2xl mb-2"></i><p>กำลังโหลดข้อมูลการจอง...</p></div>`;
+  gridEl.innerHTML = `
+    <div class="col-span-7 p-12 text-center text-[#78687e]">
+      <i class="fas fa-spinner fa-spin text-3xl mb-3 text-[#6c5070]"></i>
+      <p class="text-xs font-bold">กำลังโหลดข้อมูลปฏิทินส่งตรวจ...</p>
+    </div>
+  `;
 
   try {
-    cachedBookings = await window.BookingDB.getBookingsByMonth(year, month);
+    if (!cachedHolidays || cachedHolidays.length === 0) {
+      cachedHolidays = window.MasterDB ? await window.MasterDB.getHolidays() : [];
+    }
+  } catch (e) {
+    cachedHolidays = [];
+  }
+
+  try {
+    cachedBookings = window.BookingDB ? await window.BookingDB.getBookingsByMonth(year, month) : [];
   } catch (e) {
     cachedBookings = [];
   }
 
-  const firstDayIndex = new Date(year, month - 1, 1).getDay(); // 0 = Sun
+  const firstDayIndex = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysInPrevMonth = new Date(year, month - 1, 0).getDate();
   const todayStr = new Date().toISOString().split('T')[0];
@@ -531,125 +398,304 @@ async function renderCalendar(year, month) {
   let html = '';
 
   for (let i = firstDayIndex - 1; i >= 0; i--) {
-    const day = daysInPrevMonth - i;
+    const prevDay = daysInPrevMonth - i;
     html += `
-      <div class="min-h-[100px] p-2 bg-slate-100/40 border border-slate-100 rounded-xl opacity-30 cursor-not-allowed">
-        <span class="text-xs text-slate-400 font-medium">${day}</span>
+      <div class="min-h-[90px] sm:min-h-[110px] p-2.5 bg-slate-100/40 border border-slate-200/50 rounded-2xl sm:rounded-3xl opacity-35 cursor-not-allowed flex flex-col justify-between">
+        <span class="text-xs text-slate-400 font-semibold">${prevDay}</span>
+        <div class="text-[10px] text-slate-300 text-center">-</div>
       </div>
     `;
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const dayOfWeek = new Date(year, month - 1, d).getDay(); // 0:Sun, 1:Mon, 2:Tue, 3:Wed, 4:Thu, 5:Fri, 6:Sat
+    const dayOfWeek = new Date(year, month - 1, d).getDay();
     const isToday = dateStr === todayStr;
+    const isPast = dateStr < todayStr;
 
     const holiday = cachedHolidays.find(h => h.holiday_date === dateStr);
     const isHoliday = !!holiday;
 
-    const isOpenDay = (dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) && !isHoliday;
+    // เปิดรับตรวจวันจันทร์ - ศุกร์ ที่ไม่ใช่วันหยุดราชการ (เสาร์-อาทิตย์ ปิดทำการ)
+    // เปิดรับส่งตรวจเฉพาะ จันทร์ - พุธ
+    const isOpenDay = (dayOfWeek >= 1 && dayOfWeek <= 3) && !isHoliday;
     const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr);
     const bookingCount = dayBookings.length;
 
-    if (isOpenDay) {
+    if (isPast) {
       html += `
-        <div onclick="handleDayClick('${dateStr}', '${d} ${THAI_MONTHS[month - 1]} ${thaiYear}')" 
-             class="min-h-[105px] p-2 sm:p-2.5 bg-white border ${isToday ? 'border-emerald-500 ring-2 ring-emerald-400/40' : 'border-emerald-200'} rounded-xl shadow-2xs hover:shadow-md hover:border-emerald-500 hover:scale-[1.01] transition cursor-pointer flex flex-col justify-between group">
+        <div class="min-h-[95px] sm:min-h-[115px] p-2.5 sm:p-3 bg-[#f3f4f6]/85 border border-slate-200/90 rounded-2xl sm:rounded-3xl cursor-not-allowed flex flex-col justify-between opacity-60 select-none shadow-2xs" 
+             title="วันที่ ${d} ผ่านไปแล้ว (ระบบล็อคอัตโนมัติ - ไม่สามารถจองหรือแก้ไขได้)">
           
           <div class="flex items-center justify-between">
-            <span class="text-xs font-bold ${isToday ? 'w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center' : 'text-slate-800'}">
+            <span class="text-xs sm:text-sm font-bold text-slate-400">
               ${d}
             </span>
-            <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-md">
-              เปิดรับ
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-200/90 border border-slate-300/70 px-2 py-0.5 rounded-full">
+              <i class="fas fa-lock text-[8px] text-slate-400"></i>
+              <span>ผ่านแล้ว</span>
             </span>
           </div>
 
-          <div class="mt-1 space-y-1">
-            ${bookingCount > 0 ? `
-              <div class="text-[11px] font-semibold text-emerald-800 bg-emerald-50/90 rounded-md px-1.5 py-0.5 border border-emerald-200 flex items-center justify-between">
-                <span><i class="fas fa-list-check text-[10px] mr-0.5"></i> จองแล้ว</span>
-                <span class="font-bold font-mono">${bookingCount} คิว</span>
-              </div>
-            ` : `
-              <div class="text-[10px] text-slate-400 text-center py-1">ยังไม่มีคิว</div>
-            `}
+          <div class="my-1 text-center">
+            ${bookingCount > 0 
+              ? `<div class="text-[10px] text-slate-600 font-semibold bg-slate-200/70 rounded-xl px-2 py-0.5 border border-slate-300/50 truncate"><i class="fas fa-clipboard-check text-[9px] mr-1 text-slate-500"></i>จองแล้ว ${bookingCount} คิว</div>` 
+              : `<span class="text-[10px] text-slate-400 font-medium">ปิดรอบรับตรวจ</span>`}
           </div>
 
-          <div class="text-[10px] text-center font-bold text-emerald-600 group-hover:text-emerald-800 transition pt-1 border-t border-slate-100">
-            + คลิกเพื่อจอง
+          <div class="text-[10px] text-center font-medium text-slate-400 pt-1 border-t border-slate-200/80 flex items-center justify-center gap-1">
+            <i class="fas fa-lock text-[8px]"></i>
+            <span>ล็อควันในอดีต</span>
           </div>
         </div>
       `;
+    } else if (isOpenDay) {
+      if (bookingCount > 0) {
+        html += `
+          <div onclick="handleDayClick('${dateStr}', '${d} ${THAI_MONTHS[month - 1]} ${thaiYear}')" 
+               class="min-h-[95px] sm:min-h-[115px] p-2.5 sm:p-3 bg-[#fff8f8] hover:bg-[#ffefef] border border-[#f9d2d2] hover:border-[#df6a6a] rounded-2xl sm:rounded-3xl shadow-2xs hover:shadow-md hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between group ${isToday ? 'ring-2 ring-[#df6a6a]' : ''}" 
+               title="มีการจองแล้ว ${bookingCount} คิว (คลิกดูรายละเอียด / จองเพิ่ม)">
+            
+            <div class="flex items-center justify-between">
+              <span class="text-xs sm:text-sm font-black ${isToday ? 'w-6 h-6 rounded-full bg-[#df6a6a] text-white flex items-center justify-center text-xs' : 'text-[#7a272b]'}">
+                ${d}
+              </span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-[#df6a6a] bg-[#fdf0f0] border border-[#f9d2d2] px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#df6a6a] animate-pulse"></span>
+                <span>มีการจอง</span>
+              </span>
+            </div>
+
+            <div class="my-1">
+              <div class="text-[11px] font-bold text-[#7a272b] bg-[#fce8e8] border border-[#f8c4c4] rounded-xl px-2 py-0.5 text-center truncate">
+                <i class="fas fa-clipboard-check text-[10px] mr-1 text-[#df6a6a]"></i>จอง ${bookingCount} คิว
+              </div>
+            </div>
+
+            <div class="text-[10px] text-center font-bold text-[#df6a6a] group-hover:underline pt-1 border-t border-[#f9d2d2] flex items-center justify-center gap-1">
+              <span>จองเพิ่ม / ดูคิว</span>
+              <i class="fas fa-chevron-right text-[8px] transform group-hover:translate-x-0.5 transition"></i>
+            </div>
+          </div>
+        `;
+      } else {
+        html += `
+          <div onclick="handleDayClick('${dateStr}', '${d} ${THAI_MONTHS[month - 1]} ${thaiYear}')" 
+               class="min-h-[95px] sm:min-h-[115px] p-2.5 sm:p-3 bg-[#fbfdfb] hover:bg-[#f2f8f2] border border-[#c2dbc1] hover:border-[#527c51] rounded-2xl sm:rounded-3xl shadow-2xs hover:shadow-md hover:scale-[1.02] transition cursor-pointer flex flex-col justify-between group ${isToday ? 'ring-2 ring-emerald-500' : ''}" 
+               title="ว่าง (เปิดรับส่งตรวจ - คลิกเพื่อจองคิว)">
+            
+            <div class="flex items-center justify-between">
+              <span class="text-xs sm:text-sm font-black ${isToday ? 'w-6 h-6 rounded-full bg-[#527c51] text-white flex items-center justify-center text-xs' : 'text-[#285b2a]'}">
+                ${d}
+              </span>
+              <span class="inline-flex items-center gap-1 text-[10px] font-bold text-[#285b2a] bg-[#d4edda] border border-[#c3e6cb] px-2 py-0.5 rounded-full">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#285b2a]"></span>
+                <span>ว่าง</span>
+              </span>
+            </div>
+
+            <div class="my-1 text-center">
+              <span class="text-[11px] text-[#467345] font-semibold">
+                พร้อมรับส่งตรวจ
+              </span>
+            </div>
+
+            <div class="text-[10px] text-center font-bold text-[#3d5e3c] group-hover:text-[#285b2a] transition pt-1 border-t border-[#c2dbc1]/50 flex items-center justify-center gap-1">
+              <i class="fas fa-plus text-[9px]"></i>
+              <span>คลิกเพื่อจอง</span>
+            </div>
+          </div>
+        `;
+      }
     } else {
-      const reason = isHoliday ? (holiday.holiday_name || 'วันหยุดนักขัตฤกษ์') : (dayOfWeek === 4 || dayOfWeek === 5 ? 'งดรับ (พฤหัส-ศุกร์)' : 'วันหยุด (ส.-อา.)');
+      const holidayName = isHoliday ? (holiday.holiday_name || 'วันหยุดนักขัตฤกษ์') : 'วันหยุดประจำสัปดาห์ (ส.-อา.)';
+      const badgeText = isHoliday ? 'วันหยุด' : 'ปิดทำการ';
+
       html += `
-        <div class="min-h-[105px] p-2 bg-slate-50/70 border border-slate-200/60 rounded-xl opacity-60 flex flex-col justify-between cursor-not-allowed">
+        <div class="min-h-[95px] sm:min-h-[115px] p-2.5 sm:p-3 bg-[#f8f9fa] border border-[#eaedf0] rounded-2xl sm:rounded-3xl cursor-default flex flex-col justify-between text-[#6c757d]" 
+             title="${holidayName}">
+          
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-500">${d}</span>
-            <span class="text-[9px] font-medium text-slate-500 bg-slate-200 px-1 py-0.2 rounded">ปิด</span>
+            <span class="text-xs sm:text-sm font-bold text-[#94a3b8]">
+              ${d}
+            </span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold text-[#64748b] bg-[#eaedf0] border border-[#d6dadf] px-2 py-0.5 rounded-full">
+              <span>${badgeText}</span>
+            </span>
           </div>
-          <div class="text-[10px] text-slate-400 text-center line-clamp-2 px-1">
-            ${reason}
+
+          <div class="my-1 text-center">
+            <p class="text-[10px] sm:text-[11px] text-[#94a3b8] font-medium line-clamp-2 leading-tight">
+              ${holidayName}
+            </p>
           </div>
-          <div class="text-[9px] text-slate-400 text-center">งดส่งตรวจ</div>
+
+          <div class="text-[10px] text-center font-medium text-[#94a3b8] pt-1 border-t border-slate-200/60">
+            <i class="fas fa-lock text-[9px] mr-1"></i>ไม่เปิดรับตรวจ
+          </div>
         </div>
       `;
     }
   }
 
+  const trailingEmptyDays = (7 - ((firstDayIndex + daysInMonth) % 7)) % 7;
+  for (let nextD = 1; nextD <= trailingEmptyDays; nextD++) {
+    html += `
+      <div class="min-h-[90px] sm:min-h-[110px] p-2.5 bg-slate-100/40 border border-slate-200/50 rounded-2xl sm:rounded-3xl opacity-35 cursor-not-allowed flex flex-col justify-between">
+        <span class="text-xs text-slate-400 font-semibold">${nextD}</span>
+        <div class="text-[10px] text-slate-300 text-center">-</div>
+      </div>
+    `;
+  }
+
   gridEl.innerHTML = html;
 }
 
-/**
- * เมื่อคลิกเลือกวันบนปฏิทิน -> แสดง Modal จองคิว
- */
+window.prevMonth = () => {
+  calMonth--;
+  if (calMonth < 1) {
+    calMonth = 12;
+    calYear--;
+  }
+  renderCalendar(calYear, calMonth);
+};
+
+window.nextMonth = () => {
+  calMonth++;
+  if (calMonth > 12) {
+    calMonth = 1;
+    calYear++;
+  }
+  renderCalendar(calYear, calMonth);
+};
+
+window.goToToday = () => {
+  const now = new Date();
+  calYear = now.getFullYear();
+  calMonth = now.getMonth() + 1;
+  renderCalendar(calYear, calMonth);
+};
+
+window.refreshCalendar = () => {
+  renderCalendar(calYear, calMonth);
+};
+
 async function handleDayClick(dateStr, thaiDateStr) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (dateStr < todayStr) {
+    Swal.fire({
+      icon: 'info',
+      title: 'วันที่ผ่านไปแล้ว',
+      text: 'ไม่สามารถจองคิวหรือแก้ไขวันส่งตรวจในอดีตได้ เนื่องจากวันดังกล่าวได้ผ่านไปแล้ว',
+      confirmButtonColor: '#6c5070',
+      customClass: { popup: 'k-swal' }
+    });
+    return;
+  }
+
   const user = currentLoggedUser || (window.AuthManager ? await window.AuthManager.getCurrentUser() : null);
-  const defaultDept = user?.department || '';
-  const defaultSender = user?.displayName || '';
-  const defaultService = user?.serviceCode || 'AIR_01';
+  let defaultDept = user?.department || '';
+  let defaultSender = user?.displayName || user?.name || '';
+  let defaultService = 'AIR_01';
+  let defaultPhone = user?.contactNumber || user?.phone || '02-926-9460';
+
+  if (user) {
+    if (user.username === 'thamc') {
+      defaultService = 'WTM_05';
+      defaultDept = defaultDept || 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ศูนย์การแพทย์ (THAMC)';
+      defaultPhone = defaultPhone || '9510';
+    } else if (user.username === 'or') {
+      defaultService = 'WTO_04';
+      defaultDept = defaultDept || 'ห้องผ่าตัด (OR)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ห้องผ่าตัด';
+      defaultPhone = defaultPhone || '9420';
+    } else if (user.username === 'nutrition') {
+      defaultService = 'FOD_06';
+      defaultDept = defaultDept || 'งานโภชนาการ';
+      defaultSender = defaultSender || 'เจ้าหน้าที่โภชนาการ';
+      defaultPhone = defaultPhone || '8406';
+    } else if (user.username === 'compounding') {
+      defaultService = 'DRG_07';
+      defaultDept = defaultDept || 'งานผลิตยา (ปลอดเชื้อ)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 1';
+      defaultPhone = defaultPhone || '9907';
+    } else if (user.username === 'pharma') {
+      defaultService = 'DRG_08';
+      defaultDept = defaultDept || 'งานผลิตยา';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 2';
+      defaultPhone = defaultPhone || '9907';
+    } else if (user.username === 'bloodbank') {
+      defaultService = 'STR_02';
+      defaultDept = defaultDept || 'งานธนาคารเลือด';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ธนาคารเลือด';
+      defaultPhone = defaultPhone || '9863';
+    } else if (user.username === 'icn') {
+      defaultService = 'WTS_03';
+      defaultDept = defaultDept || 'งานควบคุมโรคติดเชื้อ (IC)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ควบคุมโรคติดเชื้อ';
+      defaultPhone = defaultPhone || '9341';
+    } else if (user.username === 'occ') {
+      defaultService = 'AIR_01';
+      defaultDept = defaultDept || 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
+      defaultSender = defaultSender || 'เจ้าหน้าที่อาชีวอนามัย';
+      defaultPhone = defaultPhone || '02-926-9460';
+    } else if (user.serviceCode) {
+      defaultService = user.serviceCode;
+    }
+  }
 
   const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr);
   const count = dayBookings.length;
 
+  let existingBookingsHtml = '';
+  if (count > 0) {
+    existingBookingsHtml = `
+      <div class="bg-[#faf7f5] border border-[#6c5070]/15 rounded-2xl p-3.5 space-y-2 mb-3">
+        <div class="flex items-center justify-between text-xs font-bold text-[#342838]">
+          <span><i class="fas fa-list-check text-[#df6a6a] mr-1"></i> รายการจองในวันนี้ (${count} คิว):</span>
+          <span class="text-[10px] bg-[#fad5d7] text-[#7a272b] px-2 py-0.5 rounded-full font-black">มีการจอง</span>
+        </div>
+        <div class="max-h-36 overflow-y-auto space-y-1.5 text-[11px] pr-1">
+          ${dayBookings.map((b, idx) => `
+            <div class="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
+              <div>
+                <span class="font-bold text-[#6c5070]">${idx + 1}. ${b.department}</span>
+                <span class="text-[#78687e] block text-[10px]">${b.service_name || b.service_code} (${b.sample_count || 1} ตัวอย่าง)</span>
+              </div>
+              <span class="text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md font-semibold">${b.contact_number || '-'}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   Swal.fire({
-    title: `<div class="text-left"><div class="text-xs text-emerald-600 font-semibold">แบบฟอร์มจองวันส่งตรวจสิ่งแวดล้อม</div><div class="text-base font-bold text-slate-900 mt-0.5">${thaiDateStr}</div></div>`,
+    title: `<div class="text-left"><div class="text-xs text-[#df6a6a] font-bold">ปฏิทินจองวันส่งตรวจสิ่งแวดล้อม</div><div class="text-base font-bold text-[#342838] mt-0.5">${thaiDateStr}</div></div>`,
     html: `
-      <form id="swal-booking-form" class="text-left text-xs font-sans space-y-3 pt-2">
-        
-        ${count >= 10 ? `
-          <div class="p-2.5 bg-amber-50 border border-amber-300 rounded-xl text-amber-900 text-[11px] flex items-start gap-2">
-            <i class="fas fa-triangle-exclamation text-amber-600 mt-0.5 shrink-0"></i>
-            <div><strong>มีคิวจองแล้ว ${count} คิว (หนาแน่น):</strong> ยังสามารถจองเพิ่มได้ตามปกติ</div>
-          </div>
-        ` : `
-          <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-emerald-800 text-[11px]">
-            <i class="fas fa-info-circle text-emerald-600 mr-1"></i>
-            <span>สามารถจองส่งตรวจได้หลายรายการในวันเดียวกัน (ไม่จำกัดจำนวนคิว)</span>
-          </div>
-        `}
-
+      ${existingBookingsHtml}
+      <form id="swal-booking-form" class="text-left text-xs font-sans space-y-3 pt-1">
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">ชื่อ-สกุล ผู้ส่งตรวจ <span class="text-rose-500">*</span></label>
-          <input type="text" id="bk-sender-name" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" placeholder="ระบุชื่อและตำแหน่ง" value="${defaultSender}" required>
+          <label class="block font-bold text-[#342838] mb-1">ชื่อ-สกุล ผู้ส่งตรวจ <span class="text-[#df6a6a]">*</span></label>
+          <input type="text" id="bk-sender-name" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="ระบุชื่อและตำแหน่ง" value="${defaultSender}" required>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">หน่วยงานส่งตรวจ <span class="text-rose-500">*</span></label>
-            <input type="text" id="bk-department" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" placeholder="ระบุหน่วยงาน" value="${defaultDept}" required>
+            <label class="block font-bold text-[#342838] mb-1">หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span></label>
+            <input type="text" id="bk-department" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="ระบุหน่วยงาน" value="${defaultDept}" required>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ <span class="text-rose-500">*</span></label>
-            <input type="tel" id="bk-contact" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" placeholder="เช่น 02-926-9460" required>
+            <label class="block font-bold text-[#342838] mb-1">เบอร์โทรศัพท์ติดต่อ</label>
+            <input type="tel" id="bk-contact" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="เช่น 02-926-9460 หรือเบอร์ภายใน" value="${defaultPhone}">
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">บริการส่งตรวจ <span class="text-rose-500">*</span></label>
-            <select id="bk-service" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" required>
+            <label class="block font-bold text-[#342838] mb-1">บริการส่งตรวจ <span class="text-[#df6a6a]">*</span></label>
+            <select id="bk-service" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-semibold text-[#342838] focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" required>
               <option value="AIR_01" ${defaultService === 'AIR_01' ? 'selected' : ''}>AIR-01 : Air Sampling</option>
               <option value="STR_02" ${defaultService === 'STR_02' ? 'selected' : ''}>STR-02 : Sterility Test</option>
               <option value="WTS_03" ${defaultService === 'WTS_03' ? 'selected' : ''}>WTS-03 : Water or Surface (IC)</option>
@@ -661,31 +707,32 @@ async function handleDayClick(dateStr, thaiDateStr) {
             </select>
           </div>
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">จำนวนสิ่งส่งตรวจ (ชิ้น)</label>
-            <input type="number" id="bk-sample-count" min="1" max="200" value="10" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" required>
+            <label class="block font-bold text-[#342838] mb-1">จำนวนสิ่งส่งตรวจ (ชิ้น)</label>
+            <input type="number" id="bk-sample-count" min="1" max="200" value="10" class="w-full px-3 py-2.5 bg-[#f7f2f8] border border-[#6c5070]/20 rounded-2xl text-xs font-bold text-[#6c5070] focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" required>
           </div>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-700 mb-1">หมายเหตุ / จุดที่เข้าไปวางเพลต</label>
-          <input type="text" id="bk-notes" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" placeholder="เช่น หอผู้ป่วย ICU, ตรวจประจำเดือน, Big Cleaning">
+          <label class="block font-bold text-[#342838] mb-1">หมายเหตุ / จุดที่เข้าไปวางเพลต</label>
+          <input type="text" id="bk-notes" class="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="เช่น หอผู้ป่วย ICU, ตรวจประจำเดือน, Big Cleaning">
         </div>
       </form>
     `,
     showCancelButton: true,
     confirmButtonText: '<i class="fas fa-check mr-1"></i> ยืนยันการจองวัน',
     cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#047857',
-    cancelButtonColor: '#64748b',
+    confirmButtonColor: '#6c5070',
+    cancelButtonColor: '#78687e',
+    customClass: { popup: 'k-swal' },
     preConfirm: () => {
       const sender = document.getElementById('bk-sender-name').value.trim();
       const dept = document.getElementById('bk-department').value.trim();
-      const phone = document.getElementById('bk-contact').value.trim();
+      const phone = document.getElementById('bk-contact').value.trim() || defaultPhone || '-';
       const service = document.getElementById('bk-service').value;
       const count = parseInt(document.getElementById('bk-sample-count').value, 10) || 1;
       const notes = document.getElementById('bk-notes').value.trim();
 
-      if (!sender || !dept || !phone || !service) {
+      if (!sender || !dept || !service) {
         Swal.showValidationMessage('กรุณากรอกข้อมูลที่จำเป็น (*) ให้ครบถ้วน');
         return false;
       }
@@ -706,47 +753,64 @@ async function handleDayClick(dateStr, thaiDateStr) {
     }
   }).then(async (result) => {
     if (result.isConfirmed && result.value) {
+      const bookingData = result.value;
+
       Swal.fire({
         title: 'กำลังบันทึกการจอง...',
+        html: '<div class="text-xs text-[#78687e] mt-1">กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลและส่งแจ้งเตือน</div>',
         allowOutsideClick: false,
+        customClass: { popup: 'k-swal' },
         didOpen: () => Swal.showLoading()
       });
 
-      await window.BookingDB.createBooking(result.value);
+      await window.BookingDB.createBooking(bookingData);
+      await renderCalendar(calYear, calMonth);
 
-      await sendWebhookNotification({
-        title: `📅 จองวันส่งตรวจใหม่ [${result.value.service_name}]`,
-        message: `หน่วยงาน: ${result.value.department}\nผู้ส่ง: ${result.value.sender_name} (${result.value.contact_number})\nวันที่นัดหมาย: ${dateStr}\nจำนวน: ${result.value.sample_count} ชิ้น`
-      });
+      // ส่งแจ้งเตือนทั้ง LINE และ Telegram
+      if (window.NotifyService) {
+        window.NotifyService.sendBookingNotification(bookingData).catch(e => console.warn(e));
+      } else {
+        sendWebhookNotification({
+          title: `📅 จองวันส่งตรวจใหม่ [${bookingData.service_name}]`,
+          message: `หน่วยงาน: ${bookingData.department}\nผู้ส่ง: ${bookingData.sender_name} (${bookingData.contact_number})\nวันที่นัดหมาย: ${dateStr}\nจำนวน: ${bookingData.sample_count} ชิ้น`
+        }).catch(e => console.warn(e));
+      }
 
       Swal.fire({
         icon: 'success',
         title: 'จองวันส่งตรวจสำเร็จ!',
         html: `
-          <div class="text-xs text-slate-600 space-y-1.5 text-left">
-            <div>วันที่นัดหมาย: <strong class="text-emerald-700 font-bold">${dateStr}</strong></div>
-            <div>หน่วยงาน: <strong>${result.value.department}</strong></div>
-            <div>บริการ: <strong>${result.value.service_name}</strong> (${result.value.sample_count} ชิ้น)</div>
+          <div class="text-xs text-[#78687e] space-y-2 text-left bg-[#faf7f5] p-3.5 rounded-2xl border border-[#6c5070]/15 mt-2">
+            <div>วันที่นัดหมาย: <strong class="text-[#6c5070] font-bold">${dateStr}</strong></div>
+            <div>หน่วยงาน: <strong class="text-[#342838]">${result.value.department}</strong></div>
+            <div>บริการ: <strong class="text-[#df6a6a]">${result.value.service_name}</strong> (${result.value.sample_count} ชิ้น)</div>
           </div>
+          <p class="text-xs text-[#6c5070] font-semibold mt-3">ท่านต้องการกรอกแบบฟอร์มส่งตรวจต่อทันทีเลยหรือไม่?</p>
         `,
-        confirmButtonText: 'ไปกรอกแบบฟอร์มส่งตรวจ (Tab 2) ➔',
-        confirmButtonColor: '#047857',
+        confirmButtonText: '<i class="fas fa-file-pen mr-1"></i> ไปกรอกแบบฟอร์มส่งตรวจ (Tab 2) ➔',
+        confirmButtonColor: '#6c5070',
         showCancelButton: true,
-        cancelButtonText: 'ปิด'
+        cancelButtonText: 'ปิด',
+        cancelButtonColor: '#78687e',
+        customClass: { popup: 'k-swal' }
       }).then(r => {
         if (r.isConfirmed) {
           const deptInput = document.getElementById('sub-department');
-          const dateInput = document.getElementById('sub-sampling-date');
-          const srvSelect = document.getElementById('sub-service-select');
-          const countInput = document.getElementById('sub-sample-count');
+          if (deptInput) {
+            const dateInput = document.getElementById('sub-sampling-date');
+            const srvSelect = document.getElementById('sub-service-select');
+            const countInput = document.getElementById('sub-sample-count');
 
-          if (deptInput) deptInput.value = result.value.department;
-          if (dateInput) dateInput.value = dateStr;
-          if (srvSelect) srvSelect.value = result.value.service_code;
-          if (countInput) countInput.value = result.value.sample_count;
+            deptInput.value = result.value.department;
+            if (dateInput) dateInput.value = dateStr;
+            if (srvSelect) srvSelect.value = result.value.service_code;
+            if (countInput) countInput.value = result.value.sample_count;
 
-          buildSampleItemsMatrix(result.value.sample_count);
-          switchWorkflowTab('submission');
+            buildSampleItemsMatrix(result.value.sample_count);
+            switchWorkflowTab('submission');
+          } else {
+            window.location.href = `workflow.html?tab=submission&service=${result.value.service_code}&date=${dateStr}&dept=${encodeURIComponent(result.value.department)}`;
+          }
         }
         renderCalendar(calYear, calMonth);
       });
@@ -758,6 +822,21 @@ window.handleDayClick = handleDayClick;
 // ==============================================================================
 // 2. แบบฟอร์มส่งตรวจ (SAMPLE SUBMISSION FORM)
 // ==============================================================================
+function onDepartmentSelectChange(dept) {
+  const hiddenDept = document.getElementById('sub-department');
+  if (hiddenDept) hiddenDept.value = dept;
+
+  const srvSelect = document.getElementById('sub-service-select');
+  if (dept === 'งานธนาคารเลือด' && srvSelect) {
+    srvSelect.value = 'STR_02';
+    onServiceSelectionChange();
+  } else if (dept === 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร' && srvSelect) {
+    srvSelect.value = 'AIR_01';
+    onServiceSelectionChange();
+  }
+}
+window.onDepartmentSelectChange = onDepartmentSelectChange;
+
 function initSubmissionForm() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -768,7 +847,144 @@ function initSubmissionForm() {
     dateInput.value = `${yyyy}-${mm}-${dd}`;
   }
 
+  const srvSelect = document.getElementById('sub-service-select');
   const countInput = document.getElementById('sub-sample-count');
+  const deptSelect = document.getElementById('sub-department-select');
+  const deptInput = document.getElementById('sub-department');
+  const specimenTypeInput = document.getElementById('sub-specimen-type-input');
+
+  // Check URL parameters e.g. ?service=WTS_03 or ?service=water or ?dept=icn
+  const urlParams = (typeof window !== 'undefined' && window.location && typeof URLSearchParams !== 'undefined') ? new URLSearchParams(window.location.search) : { get: () => null };
+  const paramService = urlParams.get('service');
+  const paramDept = urlParams.get('dept');
+
+  if (paramService) {
+    const srvMap = {
+      'str': 'STR_02',
+      'str_02': 'STR_02',
+      'bloodbank': 'STR_02',
+      'blood': 'STR_02',
+      'air': 'AIR_01',
+      'air_01': 'AIR_01',
+      'occ': 'AIR_01',
+      'wts': 'WTS_03',
+      'wts_03': 'WTS_03',
+      'water': 'WTS_03',
+      'surface': 'WTS_03',
+      'icn': 'WTS_03',
+      'or': 'WTO_04',
+      'wto': 'WTO_04',
+      'wto_04': 'WTO_04',
+      'thamc': 'WTM_05',
+      'wtm': 'WTM_05',
+      'wtm_05': 'WTM_05',
+      'food': 'FOD_06',
+      'fod': 'FOD_06',
+      'fod_06': 'FOD_06',
+      'nutrition': 'FOD_06',
+      'drg': 'DRG_07',
+      'drg_07': 'DRG_07',
+      'drg_08': 'DRG_08',
+      'drug': 'DRG_07',
+      'drug1': 'DRG_07',
+      'drug2': 'DRG_08',
+      'pharma': 'DRG_08',
+      'pharma1': 'DRG_07',
+      'pharma2': 'DRG_08',
+      'compounding': 'DRG_07',
+      'bioburden': 'DRG_08',
+      'ผลิตยา': 'DRG_07',
+      'ผลิตยา1': 'DRG_07',
+      'ผลิตยา2': 'DRG_08'
+    };
+    const mappedSrv = srvMap[paramService.toLowerCase()] || paramService.toUpperCase();
+    if (srvSelect) srvSelect.value = mappedSrv;
+  } else if (currentLoggedUser && currentLoggedUser.serviceCode) {
+    if (srvSelect) srvSelect.value = currentLoggedUser.serviceCode;
+  }
+
+  // Auto-Fill Department
+  if (paramDept) {
+    if (deptSelect) deptSelect.value = paramDept;
+    if (deptInput) deptInput.value = paramDept;
+  } else if (currentLoggedUser && currentLoggedUser.department) {
+    if (deptSelect) deptSelect.value = currentLoggedUser.department;
+    if (deptInput) deptInput.value = currentLoggedUser.department;
+  } else if (!deptInput?.value) {
+    if (srvSelect?.value === 'AIR_01') {
+      if (deptInput) deptInput.value = 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
+    } else if (srvSelect?.value === 'STR_02') {
+      if (deptInput) deptInput.value = 'งานธนาคารเลือด';
+    } else if (srvSelect?.value === 'WTS_03') {
+      if (deptInput) deptInput.value = 'งานควบคุมโรคติดเชื้อ';
+    } else if (srvSelect?.value === 'WTO_04') {
+      if (deptInput) deptInput.value = 'งานการพยาบาลผู้ป่วยผ่าตัด (ห้องผ่าตัด OR)';
+    } else if (srvSelect?.value === 'WTM_05') {
+      if (deptInput) deptInput.value = 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
+    } else if (srvSelect?.value === 'FOD_06') {
+      if (deptInput) deptInput.value = 'งานโภชนาการ';
+    } else if (srvSelect?.value === 'DRG_07' || srvSelect?.value === 'DRG_08') {
+      if (deptInput) deptInput.value = 'งานผลิตยา';
+    }
+  }
+
+  // Auto-Fill Specimen Type
+  if (specimenTypeInput && !specimenTypeInput.value) {
+    if (srvSelect?.value === 'AIR_01') {
+      specimenTypeInput.value = 'อากาศ (Air)';
+    } else if (srvSelect?.value === 'STR_02') {
+      specimenTypeInput.value = 'น้ำยา/Biological Indicator';
+    } else if (srvSelect?.value === 'WTS_03') {
+      specimenTypeInput.value = 'พื้นผิว';
+    } else if (srvSelect?.value === 'WTO_04') {
+      specimenTypeInput.value = 'น้ำห้องผ่าตัด';
+    } else if (srvSelect?.value === 'WTM_05') {
+      specimenTypeInput.value = 'น้ำล้างไต';
+    } else if (srvSelect?.value === 'FOD_06') {
+      specimenTypeInput.value = 'อาหาร';
+    } else if (srvSelect?.value === 'DRG_08') {
+      specimenTypeInput.value = 'ยาเตรียม';
+    } else if (srvSelect?.value === 'DRG_07') {
+      specimenTypeInput.value = 'ยาปราศจากเชื้อ';
+    }
+  }
+
+  // Auto-Fill Drug Fields (วันที่เตรียม, วันที่สุ่มตรวจ, ผู้ปฏิบัติงาน, วันที่รับตัวอย่าง, วันที่วิเคราะห์, ผลิตเมื่อวันที่, ผู้ส่งตรวจ)
+  const todayStr = `${yyyy}-${mm}-${dd}`;
+  const prepDateInput = document.getElementById('sub-prep-date');
+  const sampleDateInput = document.getElementById('sub-sample-date');
+  const operatorInput = document.getElementById('sub-operator');
+  const receiptDateInput = document.getElementById('sub-receipt-date');
+  const analysisDateInput = document.getElementById('sub-analysis-date');
+  const productionDateInput = document.getElementById('sub-production-date');
+  const drugVolumeInput = document.getElementById('sub-drug-volume');
+  const senderNameInput = document.getElementById('sub-sender-name');
+  const drug2HeaderInput = document.getElementById('sub-drug2-header');
+
+  if (prepDateInput && !prepDateInput.value) prepDateInput.value = todayStr;
+  if (sampleDateInput && !sampleDateInput.value) sampleDateInput.value = todayStr;
+  if (operatorInput && !operatorInput.value) operatorInput.value = currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ';
+  if (receiptDateInput && !receiptDateInput.value) receiptDateInput.value = todayStr;
+  if (analysisDateInput && !analysisDateInput.value) analysisDateInput.value = todayStr;
+  if (productionDateInput && !productionDateInput.value) productionDateInput.value = todayStr;
+  if (drugVolumeInput && !drugVolumeInput.value) drugVolumeInput.value = '0';
+  if (senderNameInput && !senderNameInput.value) senderNameInput.value = currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ';
+
+  if (drug2HeaderInput) {
+    drug2HeaderInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      document.querySelectorAll('.sub-item-drug2').forEach(input => {
+        if (!input.value || input.dataset.autofilled === 'true') {
+          input.value = val;
+          input.dataset.autofilled = 'true';
+        }
+      });
+    });
+  }
+
+  // ตัด Auto-Fill Email ออก — ระบบไม่เก็บอีเมลผู้ส่งตรวจแล้ว
+
+
   if (countInput) {
     countInput.addEventListener('input', (e) => {
       const val = parseInt(e.target.value, 10) || 5;
@@ -776,104 +992,743 @@ function initSubmissionForm() {
     });
   }
 
-  generateSubmissionNo();
-  buildSampleItemsMatrix(10);
-
-  if (currentLoggedUser && currentLoggedUser.department) {
-    const deptInput = document.getElementById('sub-department');
-    if (deptInput && !deptInput.value) deptInput.value = currentLoggedUser.department;
-    const srvSelect = document.getElementById('sub-service-select');
-    if (srvSelect && currentLoggedUser.serviceCode) {
-      srvSelect.value = currentLoggedUser.serviceCode;
-      generateSubmissionNo();
-    }
+  if (srvSelect) {
+    srvSelect.addEventListener('change', onServiceSelectionChange);
+    srvSelect.addEventListener('input', onServiceSelectionChange);
   }
+
+  generateSubmissionNo();
+  const initialCount = parseInt(countInput?.value || '10', 10);
+  buildSampleItemsMatrix(initialCount);
 }
 
-function generateSubmissionNo() {
+/**
+ * ส่งออกรายงานผลตรวจเป็นไฟล์ Excel / CSV (UTF-8 BOM สำหรับเปิดใน MS Excel ภาษาไทย)
+ */
+function exportReportsToCSV() {
+  const reports = window.CURRENT_WORKFLOW_REPORTS || [];
+  if (reports.length === 0) {
+    Swal.fire({
+      icon: 'info',
+      title: 'ไม่มีข้อมูลรายงานสำหรับส่งออก',
+      text: 'กรุณาเลือกหรือค้นหารายงานที่ต้องการก่อนดาวน์โหลด',
+      confirmButtonColor: '#059669'
+    });
+    return;
+  }
+
+  const headers = ['วันที่ส่งตรวจ', 'เลขที่เอกสาร', 'หน่วยงาน', 'สถานที่/จุดตรวจ', 'ประเภทบริการ', 'จำนวนตัวอย่าง', 'สถานะ', 'ผลสรุป', 'ผู้รายงานผล', 'วันที่รายงาน'];
+  
+  const rows = reports.map(r => {
+    const isTested = !isWaitingReport(r);
+    const resultText = ['pass', 'normal', 'no_growth'].includes(r.overall_result?.toLowerCase()) ? 'ผ่านเกณฑ์' : (isTested ? 'ไม่ผ่านเกณฑ์ / พบเชื้อ' : 'รอผลตรวจ');
+    const sampleCount = r.sample_count || (r.report_items ? r.report_items.length : (r.items ? r.items.length : 5));
+    
+    return [
+      `"${r.sampling_date || r.formatted_date || '-'}"`,
+      `"${r.submission_no || r.id || '-'}"`,
+      `"${(r.department || '').replace(/"/g, '""')}"`,
+      `"${(r.ward_room || '-').replace(/"/g, '""')}"`,
+      `"${(r.service_name || '-').replace(/"/g, '""')}"`,
+      sampleCount,
+      `"${isTested ? 'ตรวจแล้ว' : 'รอตรวจ'}"`,
+      `"${resultText}"`,
+      `"${(r.reporter_name || '-').replace(/"/g, '""')}"`,
+      `"${r.reported_date || '-'}"`
+    ].join(',');
+  });
+
+  const csvContent = '\uFEFF' + [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+  
+  link.setAttribute('href', url);
+  link.setAttribute('download', `TUH_Microbiology_Reports_${dateStr}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  Swal.fire({
+    icon: 'success',
+    title: 'ส่งออกไฟล์ Excel สำเร็จ!',
+    text: `ดาวน์โหลดรายงานจำนวน ${reports.length} รายการเรียบร้อยแล้ว`,
+    timer: 1500,
+    showConfirmButton: false
+  });
+}
+window.exportReportsToCSV = exportReportsToCSV;
+
+/**
+ * ตัวย่อหน้าเลขที่เอกสารของแต่ละบริการ (ถอดจากข้อมูลจริงในระบบ)
+ * ห้ามใช้ serviceCode.split('_')[0] เพราะ DRG_07 กับ DRG_08 จะได้ 'DRG' ชนกัน
+ * ของจริงแยกเป็น DR1 (งานผลิตยา 1) และ DR2 (งานผลิตยา 2)
+ */
+const SUBMISSION_PREFIX = {
+  AIR_01: 'AIR', STR_02: 'STR', WTS_03: 'WTS', WTO_04: 'WTO',
+  WTM_05: 'WTM', FOD_06: 'FOD', DRG_07: 'DR1', DRG_08: 'DR2'
+};
+
+/**
+ * ออกเลขที่ใบส่งตรวจรูปแบบ PREFIX-YYYY-MM-DD-NN  เช่น AIR-2026-08-19-77
+ *   YYYY-MM-DD = วันเก็บตัวอย่าง (ถ้ายังไม่กรอก ใช้วันนี้)
+ *   NN         = เลขลำดับสะสมของบริการนั้น ต่อจากใบล่าสุดในฐานข้อมูล
+ */
+async function generateSubmissionNo() {
   const subNoInput = document.getElementById('sub-submission-no');
   const srvSelect = document.getElementById('sub-service-select');
-  const prefix = srvSelect?.value ? srvSelect.value.split('_')[0] : 'AIR';
-  
-  const d = new Date();
-  const yy = String((d.getFullYear() + 543) % 100);
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const rand = String(Math.floor(1000 + Math.random() * 9000));
-  
+  const dateInput = document.getElementById('sub-sampling-date');
+  const serviceCode = srvSelect?.value || 'AIR_01';
+  const prefix = SUBMISSION_PREFIX[serviceCode] || serviceCode.split('_')[0];
+
+  const d = dateInput?.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
+  const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  let next = 1;
+  if (window.supabaseClient) {
+    try {
+      const { data } = await window.supabaseClient
+        .from('reports').select('submission_no').like('submission_no', prefix + '-%').limit(1000);
+      next = (data || []).reduce((max, r) => {
+        const mm = String(r.submission_no).match(/-(\d+)$/);
+        return mm ? Math.max(max, parseInt(mm[1], 10)) : max;
+      }, 0) + 1;
+    } catch (e) {
+      console.warn('อ่านเลขล่าสุดไม่ได้ ใช้เลขเริ่มต้นแทน:', e && e.message);
+    }
+  }
+
   if (subNoInput) {
-    subNoInput.value = `${prefix}-${yy}${mm}-${rand}`;
+    subNoInput.value = `${prefix}-${datePart}-${String(next).padStart(2, '0')}`;
   }
 }
 
+function onServiceSelectionChange() {
+  generateSubmissionNo();
+  const rowCount = parseInt(document.getElementById('sub-sample-count')?.value || '10', 10);
+  buildSampleItemsMatrix(rowCount);
+}
+window.onServiceSelectionChange = onServiceSelectionChange;
+
 function buildSampleItemsMatrix(rowCount = 10) {
+  const srvSelect = document.getElementById('sub-service-select');
+  const serviceCode = srvSelect ? srvSelect.value : 'WTS_03';
+  const thead = document.getElementById('sub-items-thead');
   const tbody = document.getElementById('sub-items-tbody');
+  const titleEl = document.getElementById('sub-form-main-title');
+  const descEl = document.getElementById('sub-form-main-desc');
+  const deptLabel = document.getElementById('sub-dept-label');
+  const deptInput = document.getElementById('sub-department');
+  const specimenTypeInput = document.getElementById('sub-specimen-type-input');
+  const suspectedOrganismContainer = document.getElementById('sub-suspected-organism-container');
+  const footerHint = document.getElementById('sub-form-footer-hint');
+
   if (!tbody) return;
 
   const defaultDept = currentLoggedUser?.department || '';
+  const prepDateContainer = document.getElementById('sub-prep-date-container');
+  const sampleDateContainer = document.getElementById('sub-sample-date-container');
+  const operatorContainer = document.getElementById('sub-operator-container');
+
+  const receiptDateContainer = document.getElementById('sub-receipt-date-container');
+  const analysisDateContainer = document.getElementById('sub-analysis-date-container');
+  const drug2HeaderContainer = document.getElementById('sub-drug2-header-container');
+  const lotNoContainer = document.getElementById('sub-lot-no-container');
+  const productionDateContainer = document.getElementById('sub-production-date-container');
+  const volumeContainer = document.getElementById('sub-volume-container');
+  const senderNameContainer = document.getElementById('sub-sender-name-container');
+
+  // Toggle Drug Extra Fields
+  if (serviceCode === 'DRG_08') {
+    receiptDateContainer?.classList.remove('hidden');
+    analysisDateContainer?.classList.remove('hidden');
+    drug2HeaderContainer?.classList.remove('hidden');
+    lotNoContainer?.classList.remove('hidden');
+    productionDateContainer?.classList.remove('hidden');
+    volumeContainer?.classList.remove('hidden');
+    senderNameContainer?.classList.remove('hidden');
+
+    prepDateContainer?.classList.add('hidden');
+    sampleDateContainer?.classList.add('hidden');
+    operatorContainer?.classList.add('hidden');
+  } else if (serviceCode === 'DRG_07') {
+    prepDateContainer?.classList.remove('hidden');
+    sampleDateContainer?.classList.remove('hidden');
+    operatorContainer?.classList.remove('hidden');
+
+    receiptDateContainer?.classList.add('hidden');
+    analysisDateContainer?.classList.add('hidden');
+    drug2HeaderContainer?.classList.add('hidden');
+    lotNoContainer?.classList.add('hidden');
+    productionDateContainer?.classList.add('hidden');
+    volumeContainer?.classList.add('hidden');
+    senderNameContainer?.classList.add('hidden');
+  } else {
+    prepDateContainer?.classList.add('hidden');
+    sampleDateContainer?.classList.add('hidden');
+    operatorContainer?.classList.add('hidden');
+
+    receiptDateContainer?.classList.add('hidden');
+    analysisDateContainer?.classList.add('hidden');
+    drug2HeaderContainer?.classList.add('hidden');
+    lotNoContainer?.classList.add('hidden');
+    productionDateContainer?.classList.add('hidden');
+    volumeContainer?.classList.add('hidden');
+    senderNameContainer?.classList.add('hidden');
+  }
+
+  // =========================================================================
+  // 1A. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_08 - งานผลิตยา 2)
+  // =========================================================================
+  if (serviceCode === 'DRG_08') {
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-flask text-[#df6a6a]"></i> <span>แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</span>`;
+    }
+    if (descEl) {
+      descEl.textContent = 'สำหรับงานผลิตยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ';
+    }
+    if (deptLabel) {
+      deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
+    }
+    if (deptInput && !deptInput.value) {
+      deptInput.value = 'งานผลิตยา';
+    }
+    if (specimenTypeInput && !specimenTypeInput.value) {
+      specimenTypeInput.value = 'ยาเตรียม';
+    }
+    if (suspectedOrganismContainer) {
+      suspectedOrganismContainer.classList.add('hidden');
+    }
+    if (footerHint) {
+      footerHint.innerHTML = `<i class="fas fa-info-circle text-[#6c5070]"></i> <span>ช่อง ผลการตรวจเพาะเชื้อที่ 72 ชม. ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+    }
+
+    if (thead) {
+      thead.className = 'bg-[#f0eaf1] text-[#6c5070] font-bold border-b border-[#6c5070]/20';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-14 rounded-tl-2xl bg-[#e5dce6]">ลำดับ</th>
+          <th class="p-3">ยาเตรียม</th>
+          <th class="p-3 text-center w-56">ผลการตรวจเพาะเชื้อที่ 72 ชม.</th>
+          <th class="p-3 w-48 rounded-tr-2xl">หมายเหตุ (Remarks)</th>
+        </tr>
+      `;
+    }
+
+    const defaultDrugHeader = document.getElementById('sub-drug2-header')?.value || '';
+    const sampleOptions = ['Zinc sulphate solution', 'Trace element', 'Phosphate solution', 'Magnesium Chloride'];
+
+    tbody.innerHTML = '';
+    for (let i = 1; i <= rowCount; i++) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
+      const defaultVal = defaultDrugHeader || (sampleOptions[(i - 1) % sampleOptions.length] || '');
+      tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+        <td class="p-2">
+          <input type="text" list="prepared-medicine-list" class="sub-item-drug2 w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เลือกหรือพิมพ์" value="${defaultVal}">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="กำลังส่งตรวจ" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2">
+          <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="ระบุหมายเหตุ (ถ้ามี)">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    return;
+  }
+
+  // =========================================================================
+  // 1B. ตรวจเพาะเชื้อจากน้ำและพื้นผิว (WTS_03 - งานควบคุมโรคติดเชื้อ & ห้องผ่าตัด & THAMC)
+  // =========================================================================
+  if (serviceCode === 'WTS_03' || serviceCode === 'WTO_04' || serviceCode === 'WTM_05') {
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-hand-holding-droplet text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจเพาะเชื้อ</span>`;
+    }
+    if (descEl) {
+      descEl.textContent = 'สำหรับงานควบคุมโรคติดเชื้อและห้องผ่าตัด';
+    }
+    if (deptLabel) {
+      deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
+    }
+    if (deptInput && !deptInput.value) {
+      deptInput.value = (serviceCode === 'WTO_04' ? 'ห้องผ่าตัด (OR)' : (serviceCode === 'WTM_05' ? 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)' : 'งานควบคุมโรคติดเชื้อ'));
+    }
+    if (specimenTypeInput && !specimenTypeInput.value) {
+      specimenTypeInput.value = (serviceCode === 'WTO_04' || serviceCode === 'WTM_05') ? 'น้ำ' : 'พื้นผิว';
+    }
+    if (suspectedOrganismContainer) {
+      suspectedOrganismContainer.classList.remove('hidden');
+      const suspectedInput = document.getElementById('sub-suspected-organism');
+      if (suspectedInput && !suspectedInput.value) {
+        suspectedInput.value = 'ไม่ได้ระบุ';
+      }
+    }
+    if (footerHint) {
+      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง ผลเพาะเชื้อ ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+    }
+
+    if (thead) {
+      thead.className = 'bg-gray-100 text-gray-700 font-semibold border-b border-gray-200';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-14 bg-gray-200/60 rounded-tl-2xl">ลำดับ</th>
+          <th class="p-3">สถานที่/หน่วยงาน</th>
+          <th class="p-3 text-center w-60">ผลเพาะเชื้อ</th>
+          <th class="p-3 w-56 rounded-tr-2xl">หมายเหตุ</th>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = '';
+    for (let i = 1; i <= rowCount; i++) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
+      tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+        <td class="p-2">
+          <input type="text" class="sub-item-loc w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="พิมพ์หรือเลือกสถานที่">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="ผลเพาะเชื้อ" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2">
+          <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="หมายเหตุ">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    return;
+  }
+
+  // =========================================================================
+  // 1C. ตรวจเพาะเชื้อจากยาปลอดเชื้อ (DRG_07 - งานผลิตยา 1 ปลอดเชื้อ)
+  // =========================================================================
+  if (serviceCode === 'DRG_07') {
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-pills text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจ</span>`;
+    }
+    if (descEl) {
+      descEl.textContent = 'ระบบส่งตรวจเพาะเชื้อจากยา (สำหรับงานผลิตยา)';
+    }
+    if (deptLabel) {
+      deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
+    }
+    if (deptInput && !deptInput.value) {
+      deptInput.value = 'งานผลิตยา';
+    }
+    if (specimenTypeInput && !specimenTypeInput.value) {
+      specimenTypeInput.value = 'ยา';
+    }
+    if (suspectedOrganismContainer) {
+      suspectedOrganismContainer.classList.remove('hidden');
+    }
+    if (footerHint) {
+      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง ผลเพาะเชื้อ และ ผล (Pass/Fail) ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+    }
+
+    if (thead) {
+      thead.className = 'bg-[#6c5070] text-white font-bold border-b border-[#6c5070]';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-12 bg-[#573e5a] rounded-tl-2xl">ลำดับ</th>
+          <th class="p-3 w-56">สถานที่/จุดเก็บตัวอย่าง</th>
+          <th class="p-3 text-center w-36">ผลเพาะเชื้อ</th>
+          <th class="p-3 text-center w-28">ผล</th>
+          <th class="p-3 w-40 rounded-tr-2xl">หมายเหตุ</th>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = '';
+    for (let i = 1; i <= rowCount; i++) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
+      tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+        <td class="p-2">
+          <input type="text" class="sub-item-loc w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เช่น ก๊อกน้ำอ่างล้างมือ, โต๊ะเตรียมยา">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="ผลเพาะเชื้อ" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="Pass/Fail" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2">
+          <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="หมายเหตุ">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    return;
+  }
+
+  // =========================================================================
+  // 3. ตรวจความปลอดภัยทางจุลชีววิทยาของอาหาร (Food Sanitation - งานโภชนาการ)
+  // =========================================================================
+  if (serviceCode === 'FOD_06') {
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-utensils text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจเพาะเชื้อจากอาหาร</span>`;
+    }
+    if (descEl) {
+      descEl.textContent = 'สำหรับงานโภชนาการ (ตรวจวิเคราะห์การปนเปื้อนเชื้อ E.coli และ P.aeruginosa ในอาหารและนม)';
+    }
+    if (deptLabel) {
+      deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
+    }
+    if (deptInput && !deptInput.value) {
+      deptInput.value = 'งานโภชนาการ';
+    }
+    if (specimenTypeInput && !specimenTypeInput.value) {
+      specimenTypeInput.value = 'อาหาร';
+    }
+    if (suspectedOrganismContainer) {
+      suspectedOrganismContainer.classList.add('hidden');
+    }
+    if (footerHint) {
+      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง E.coli และ P.aeruginosa ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+    }
+
+    if (thead) {
+      thead.className = 'bg-gray-100 text-gray-700 font-bold border-b border-gray-200';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-14 bg-gray-200/60 rounded-tl-2xl">ลำดับ</th>
+          <th class="p-3">อาหาร</th>
+          <th class="p-3 text-center w-36">E.COLI</th>
+          <th class="p-3 text-center w-36">P.AERUGINOSA</th>
+          <th class="p-3 w-48 rounded-tr-2xl">หมายเหตุ</th>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = '';
+    for (let i = 1; i <= rowCount; i++) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
+      tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+        <td class="p-2">
+          <input type="text" class="sub-item-food w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เช่น อาหารปั่น เบาหวาน, นม PF, นม T1, อาหารปั่น ธรรมดา">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="E.COLI" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="P.AERUGINOSA" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2">
+          <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="หมายเหตุ">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    return;
+  }
+
+  // =========================================================================
+  // 4. ตรวจความปราศจากเชื้อ สำหรับงานธนาคารเลือด (Sterility Test - Blood Bank)
+  // =========================================================================
+  if (serviceCode === 'STR_02') {
+    if (titleEl) {
+      titleEl.innerHTML = `<i class="fas fa-droplet text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจ Sterility test (Blood)</span>`;
+    }
+    if (descEl) {
+      descEl.textContent = 'สำหรับงานธนาคารเลือด (ระบุหมายเลขถุงเลือด, ชนิดผลิตภัณฑ์ และวันหมดอายุ)';
+    }
+    if (deptLabel) {
+      deptLabel.innerHTML = `แผนก/หน่วยงาน <span class="text-[#df6a6a]">*</span>`;
+    }
+    if (deptInput && !deptInput.value) {
+      deptInput.value = 'งานธนาคารเลือด';
+    }
+    if (suspectedOrganismContainer) {
+      suspectedOrganismContainer.classList.add('hidden');
+    }
+    if (footerHint) {
+      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง ปลอดเชื้อ / ไม่ปลอดเชื้อ ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+    }
+
+    if (thead) {
+      thead.className = 'bg-[#6c5070] text-white font-bold border-b border-[#6c5070]';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-12 bg-[#573e5a] rounded-tl-2xl">ลำดับ</th>
+          <th class="p-3 w-48">หมายเลขถุงเลือด</th>
+          <th class="p-3">ชนิดผลิตภัณฑ์เลือด</th>
+          <th class="p-3 text-center w-28">ปลอดเชื้อ</th>
+          <th class="p-3 text-center w-28">ไม่ปลอดเชื้อ</th>
+          <th class="p-3 w-36 rounded-tr-2xl">หมายเหตุ</th>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = '';
+    for (let i = 1; i <= rowCount; i++) {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
+      tr.innerHTML = `
+        <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+        <td class="p-2">
+          <input type="text" class="sub-item-blood-bag w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-mono" placeholder="e.g., B123456">
+        </td>
+        <td class="p-2.5">
+          <div class="space-y-1.5 py-0.5">
+            <div class="flex flex-wrap items-center gap-x-3.5 gap-y-1 text-xs text-slate-700 font-medium">
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="PRC"> PRC</label>
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="LPRC"> LPRC</label>
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="LDPPC"> LDPPC</label>
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="FFP"> FFP</label>
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="SDP"> SDP</label>
+              <label class="inline-flex items-center gap-1 cursor-pointer"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="LPPC"> LPPC</label>
+            </div>
+            <div class="flex items-center gap-4 text-xs text-slate-700">
+              <label class="inline-flex items-center gap-1 cursor-pointer font-medium"><input type="checkbox" class="sub-cb-type accent-[#6c5070] rounded h-3.5 w-3.5" value="Normal"> Normal</label>
+              <div class="flex items-center gap-1.5 text-slate-500 text-xs">
+                <span>exprid:</span>
+                <input type="text" class="sub-item-exprid px-2.5 py-1 bg-[#fafafa] border border-slate-200 rounded-xl text-xs w-36 placeholder:text-slate-300 focus:bg-white focus:outline-hidden" placeholder="วันหมดอายุ">
+              </div>
+            </div>
+          </div>
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-2 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2 text-center">
+          <input type="text" disabled value="-" class="w-full px-2 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
+        </td>
+        <td class="p-2">
+          <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="หมายเหตุ">
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+    return;
+  }
+
+  // =========================================================================
+  // 5. ตรวจอากาศในอาคาร (Air Sampling - Settle Plate) และแบบฟอร์มเริ่มต้นทั่วไป
+  // =========================================================================
+  if (titleEl) {
+    titleEl.innerHTML = `<i class="fas fa-wind text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจ Air Sampling (Settle Plate)</span>`;
+  }
+  if (descEl) {
+    descEl.textContent = 'สำหรับงานอาชีวอนามัย (กรอกรายละเอียดจุดตรวจและตำแหน่งที่เก็บตัวอย่าง)';
+  }
+  if (deptLabel) {
+    deptLabel.innerHTML = `หน่วยงานส่งตรวจ (ชื่อหน่วยงานที่เข้าไปวางเพลต) <span class="text-[#df6a6a]">*</span>`;
+  }
+  if (suspectedOrganismContainer) {
+    suspectedOrganismContainer.classList.add('hidden');
+  }
+  if (footerHint) {
+    footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง Number of colonies ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+  }
+
+  if (thead) {
+    thead.className = 'bg-[#faf7f5] text-[#342838] font-bold border-b border-[#6c5070]/10';
+    thead.innerHTML = `
+      <tr>
+        <th class="p-3.5 text-center w-12 bg-[#f7f2f8]">ลำดับ</th>
+        <th class="p-3.5 w-52">หน่วยงาน</th>
+        <th class="p-3.5 w-52">ตำแหน่งที่เก็บ</th>
+        <th class="p-3.5 text-center w-40">Number of colonies (Bacteria)</th>
+        <th class="p-3.5 text-center w-40">Number of colonies (Fungus)</th>
+        <th class="p-3.5">หมายเหตุ</th>
+      </tr>
+    `;
+  }
 
   tbody.innerHTML = '';
   for (let i = 1; i <= rowCount; i++) {
     const tr = document.createElement('tr');
-    tr.className = 'border-b border-slate-100 hover:bg-slate-50 text-xs transition';
+    tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
     tr.innerHTML = `
-      <td class="p-3 text-center font-bold text-slate-500 bg-slate-50/50">${i}</td>
-      <td class="p-2.5">
-        <input type="text" class="sub-item-ward w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="พิมพ์หรือเลือก Ward เช่น ICU, OPD..." value="${defaultDept}">
+      <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
+      <td class="p-2">
+        <input type="text" class="sub-item-ward w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="พิมพ์หรือเลือก Ward" value="${defaultDept}">
       </td>
-      <td class="p-2.5">
-        <input type="text" class="sub-item-loc w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="เช่น โต๊ะกลางห้อง, ก๊อกน้ำบริโภค">
+      <td class="p-2">
+        <input type="text" class="sub-item-loc w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="เช่น บริเวณเตียงผู้ป่วย">
       </td>
-      <td class="p-2.5 text-center">
-        <input type="text" disabled value="-" class="w-full px-2 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผล">
+      <td class="p-2 text-center">
+        <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="Bacteria" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
       </td>
-      <td class="p-2.5 text-center">
-        <input type="text" disabled value="-" class="w-full px-2 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผล">
+      <td class="p-2 text-center">
+        <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="Fungus" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
       </td>
-      <td class="p-2.5">
-        <input type="text" class="sub-item-notes w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-xs placeholder:text-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="หมายเหตุ">
+      <td class="p-2">
+        <input type="text" class="sub-item-notes w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden" placeholder="หมายเหตุ">
       </td>
     `;
     tbody.appendChild(tr);
   }
 }
 
+/**
+ * บันทึกข้อมูลการส่งตรวจ (Universal Dynamic Submit)
+ */
 async function handleSubmissionFormSubmit(e) {
   e.preventDefault();
+  
+  const submissionNo = document.getElementById('sub-submission-no')?.value;
+  const srvSelect = document.getElementById('sub-service-select');
+  const serviceCode = srvSelect ? srvSelect.value : 'WTS_03';
+  const samplingDate = document.getElementById('sub-sampling-date')?.value;
+  const department = document.getElementById('sub-department')?.value.trim();
+  const specimenType = document.getElementById('sub-specimen-type-input')?.value.trim() || 'สิ่งแวดล้อม';
+  const suspectedOrganism = document.getElementById('sub-suspected-organism')?.value.trim() || '';
+  // ตามข้อกำหนด: ไม่มีช่อง Email ผู้ส่งตรวจบนแบบฟอร์มแล้ว
 
-  const submissionNo = document.getElementById('sub-submission-no')?.value || `AIR-${Date.now()}`;
-  const samplingDate = document.getElementById('sub-sampling-date').value;
-  const department = document.getElementById('sub-department').value.trim();
-  const serviceCode = document.getElementById('sub-service-select').value;
-  const email = document.getElementById('sub-sender-email').value.trim();
-
-  if (!samplingDate || !department) {
-    Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูลให้ครบถ้วน', text: 'โปรดระบุวันที่ส่งตรวจและหน่วยงาน' });
+  if (!submissionNo || !samplingDate || !department) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+      text: 'กรุณาระบุ วันที่ส่งตรวจ, แผนก/หน่วยงานส่งตรวจ'
+    });
     return;
   }
 
   const rows = document.querySelectorAll('#sub-items-tbody tr');
-  const items = [];
-  rows.forEach((tr, idx) => {
-    const ward = tr.querySelector('.sub-item-ward')?.value.trim() || department;
-    const loc = tr.querySelector('.sub-item-loc')?.value.trim() || `จุดตรวจที่ ${idx + 1}`;
-    const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+  if (rows.length === 0) {
+    Swal.fire({ icon: 'warning', title: 'ไม่มีรายการตัวอย่าง', text: 'กรุณาระบุจำนวนตัวอย่างอย่างน้อย 1 รายการ' });
+    return;
+  }
 
-    items.push({
-      item_no: idx + 1,
-      ward_name: ward,
-      location_name: loc,
-      sample_description: `${ward} - ${loc}`,
-      bacteria_count: '-',
-      fungus_count: '-',
-      item_result: 'pending',
-      notes: notes
-    });
+  const items = [];
+  const prepDate = document.getElementById('sub-prep-date')?.value || samplingDate;
+  const sampleDate = document.getElementById('sub-sample-date')?.value || samplingDate;
+  const operator = document.getElementById('sub-operator')?.value.trim() || (currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ');
+
+  const receiptDate = document.getElementById('sub-receipt-date')?.value || samplingDate;
+  const analysisDate = document.getElementById('sub-analysis-date')?.value || samplingDate;
+  const drug2Header = document.getElementById('sub-drug2-header')?.value.trim() || '';
+  const lotNo = document.getElementById('sub-lot-no')?.value.trim() || '-';
+  const productionDate = document.getElementById('sub-production-date')?.value || samplingDate;
+  const drugVolume = document.getElementById('sub-drug-volume')?.value || '0';
+  const senderName = document.getElementById('sub-sender-name')?.value.trim() || (currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ');
+
+  rows.forEach((tr, idx) => {
+    if (serviceCode === 'DRG_08') {
+      const drug = tr.querySelector('.sub-item-drug2')?.value.trim() || drug2Header || `รายการยาเตรียมที่ ${idx + 1}`;
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      items.push({
+        item_no: idx + 1,
+        drug_name: drug,
+        prepared_medicine: drug,
+        location_name: drug,
+        sample_description: drug,
+        ward_name: department || 'งานผลิตยา',
+        culture_result: 'กำลังส่งตรวจ',
+        bacteria_count: 'กำลังส่งตรวจ',
+        fungus_count: '-',
+        item_result: 'pending',
+        notes: notes
+      });
+    } else if (serviceCode === 'DRG_07') {
+      const drug = tr.querySelector('.sub-item-drug')?.value.trim() || `รายการยาที่ ${idx + 1}`;
+      const culture = tr.querySelector('.sub-item-culture')?.value.trim() || 'No growth';
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      items.push({
+        item_no: idx + 1,
+        drug_name: drug,
+        location_name: drug,
+        sample_description: drug,
+        ward_name: department || 'งานผลิตยา',
+        culture_result: culture,
+        bacteria_count: culture,
+        fungus_count: '-',
+        item_result: (culture === 'Growth' ? 'fail' : 'pass'),
+        notes: notes
+      });
+    } else if (serviceCode === 'FOD_06') {
+      const food = tr.querySelector('.sub-item-food')?.value.trim() || `ตัวอย่างอาหารที่ ${idx + 1}`;
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      items.push({
+        item_no: idx + 1,
+        ward_name: department || 'งานโภชนาการ',
+        location_name: food,
+        food_name: food,
+        sample_description: food,
+        ecoli_result: '-',
+        paeruginosa_result: '-',
+        bacteria_count: '-',
+        fungus_count: '-',
+        item_result: 'pending',
+        notes: notes
+      });
+    } else if (serviceCode === 'WTS_03' || serviceCode === 'WTO_04' || serviceCode === 'WTM_05') {
+      const loc = tr.querySelector('.sub-item-loc')?.value.trim() || `จุดตรวจที่ ${idx + 1}`;
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      items.push({
+        item_no: idx + 1,
+        ward_name: department,
+        location_name: loc,
+        sample_description: `${department} - ${loc}`,
+        specimen_type: specimenType,
+        suspected_organism: suspectedOrganism,
+        culture_result: '-',
+        bacteria_count: '-',
+        fungus_count: '-',
+        item_result: 'pending',
+        notes: notes
+      });
+    } else if (serviceCode === 'STR_02') {
+      const bloodBag = tr.querySelector('.sub-item-blood-bag')?.value.trim() || '';
+      const checkedBoxes = tr.querySelectorAll('.sub-cb-type:checked');
+      const selectedTypes = Array.from(checkedBoxes).map(cb => cb.value);
+      const exprid = tr.querySelector('.sub-item-exprid')?.value.trim() || '';
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      if (exprid) selectedTypes.push(`exprid: ${exprid}`);
+      const productTypeStr = selectedTypes.join(', ') || 'PRC';
+      const bloodBagDisplay = bloodBag || `ถุงเลือดที่ ${idx + 1}`;
+
+      items.push({
+        item_no: idx + 1,
+        blood_bag_no: bloodBagDisplay,
+        product_type: productTypeStr,
+        location_name: bloodBagDisplay,
+        ward_name: department || 'งานธนาคารเลือด',
+        sample_description: `${bloodBagDisplay} (${productTypeStr})`,
+        bacteria_count: '-',
+        fungus_count: '-',
+        item_result: 'pending',
+        notes: notes
+      });
+    } else {
+      const ward = tr.querySelector('.sub-item-ward')?.value.trim() || department;
+      const loc = tr.querySelector('.sub-item-loc')?.value.trim() || `จุดตรวจที่ ${idx + 1}`;
+      const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
+
+      items.push({
+        item_no: idx + 1,
+        ward_name: ward,
+        location_name: loc,
+        sample_description: `${ward} - ${loc}`,
+        bacteria_count: '-',
+        fungus_count: '-',
+        item_result: 'pending',
+        notes: notes
+      });
+    }
   });
 
-  const srvObj = window.SERVICES_CONFIG[serviceCode] || { name: 'ตรวจวิเคราะห์สิ่งแวดล้อม' };
-
-  // First item's ward or department
-  const targetWard = items.length > 0 ? items[0].ward_name : department;
+  const srvObj = window.SERVICES_CONFIG[serviceCode] || { 
+    name: (serviceCode === 'DRG_08' ? 'แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์' : 
+          (serviceCode === 'DRG_07' ? 'Drug ปลอดเชื้อ (สำหรับงานผลิตยา 1)' : 
+          (serviceCode === 'FOD_06' ? 'Food Sanitation (สำหรับงานโภชนาการ)' : 'ตรวจวิเคราะห์สิ่งแวดล้อม')))
+  };
+  const targetWard = items.length > 0 ? (items[0].drug_name || items[0].food_name || items[0].location_name || items[0].ward_name || department) : department;
 
   const reportPayload = {
     submission_no: submissionNo,
@@ -881,45 +1736,88 @@ async function handleSubmissionFormSubmit(e) {
     service_name: srvObj.name,
     department: department,
     ward_room: targetWard,
-    recipient_email: email,
+    sampler_name: currentLoggedUser?.name || 'เจ้าหน้าที่ประจำหน่วยงาน',
     sampling_date: samplingDate,
-    received_date: new Date().toISOString().split('T')[0],
-    status: 'waiting_for_testing',
+    preparation_date: prepDate,
+    sample_date: sampleDate,
+    operator_name: operator,
+    receipt_date: receiptDate,
+    analysis_date: analysisDate,
+    lot_no: lotNo,
+    production_date: productionDate,
+    volume: drugVolume,
+    sender_name: senderName,
+    prepared_medicine_header: drug2Header,
+    prepared_medicine: drug2Header || (items[0] && items[0].drug_name) || 'Trace element',
+    sample_count: items.length,
+    status: 'pending',
     overall_result: 'pending',
-    remarks: 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอห้องปฏิบัติการดำเนินการตรวจวิเคราะห์'
+    specimen_type: specimenType,
+    suspected_organism: suspectedOrganism,
+    remarks: (serviceCode === 'DRG_08')
+      ? 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์'
+      : ((serviceCode === 'DRG_07') 
+          ? 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอผลตรวจเพาะเชื้อยาที่ 72 ชม.'
+          : (serviceCode === 'FOD_06' ? 'นำส่งตัวอย่างอาหารแล้ว อยู่ระหว่างรอผลเพาะเชื้อ E.coli และ P.aeruginosa' : 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอห้องปฏิบัติการเพาะเชื้อและดำเนินการตรวจวิเคราะห์'))
   };
 
   Swal.fire({
     title: 'กำลังบันทึกส่งรายการตรวจ...',
+    html: '<div class="text-xs text-[#78687e] mt-1">กรุณารอสักครู่ ระบบกำลังบันทึกข้อมูลและส่งแจ้งเตือน</div>',
     allowOutsideClick: false,
+    customClass: { popup: 'k-swal' },
     didOpen: () => Swal.showLoading()
   });
 
   try {
-    const { data, error } = await window.ReportDB.createReport(reportPayload, items, []);
-    if (error) throw error;
+    const newReportObj = {
+      ...reportPayload,
+      id: 'REP-' + Date.now(),
+      created_at: new Date().toISOString(),
+      formatted_date: new Date().toLocaleDateString('th-TH'),
+      reported_date: '-',
+      status: 'pending',
+      overall_result: 'pending',
+      report_items: items
+    };
 
-    await sendWebhookNotification({
-      title: `📥 ได้รับสิ่งส่งตรวจใหม่ [${srvObj.name}]`,
-      message: `เลขที่: ${submissionNo}\nหน่วยงาน: ${department} (${targetWard})\nจำนวนตัวอย่าง: ${items.length} รายการ\nอีเมลแจ้งเตือน: ${email || '-'}`
-    });
+    // 1. บันทึกลงใน localStorage สำหรับประวัติส่งตรวจแบบเรียลไทม์
+    const currentLocalSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    currentLocalSubmitted.unshift(newReportObj);
+    localStorage.setItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS', JSON.stringify(currentLocalSubmitted));
+
+    // 2. แทรกเข้า MOCK_REPORTS_ARCHIVE ใน memory ทันที
+    if (typeof MOCK_REPORTS_ARCHIVE !== 'undefined' && Array.isArray(MOCK_REPORTS_ARCHIVE)) {
+      MOCK_REPORTS_ARCHIVE.unshift(newReportObj);
+    }
+
+    // 3. บันทึกผ่าน ReportDB (Supabase / Local)
+    try {
+      await window.ReportDB.createReport(reportPayload, items, []);
+    } catch (dbErr) {
+      console.warn('ReportDB create notice:', dbErr);
+    }
+
+    // ตามข้อกำหนด: กดบันทึกแบบฟอร์มส่งตรวจ "ไม่ต้อง" แจ้งเตือน LINE / Telegram
+    // (แจ้งเตือนเฉพาะตอนจองคิว และตอนออกผลตรวจ)
 
     Swal.fire({
       icon: 'success',
       title: 'บันทึกส่งรายการตรวจสำเร็จ!',
       html: `
-        <div class="text-xs text-slate-600 space-y-2 text-left">
-          <div>เลขที่เอกสาร: <strong class="font-mono text-emerald-800">${submissionNo}</strong></div>
-          <div>หน่วยงานส่งตรวจ: <strong>${department}</strong></div>
-          <div>สถานที่เข้าไปวางเพลต: <strong>${targetWard}</strong></div>
-          <div>สถานะ: <span class="bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full text-[11px]">รอตรวจ (Waiting for testing)</span></div>
-          <div>อีเมลรับผล: <strong>${email || 'ไม่ได้ระบุ'}</strong></div>
+        <div class="text-xs text-[#78687e] space-y-2 text-left bg-[#faf7f5] p-3.5 rounded-2xl border border-[#6c5070]/15 mt-2">
+          <div>เลขที่เอกสาร: <strong class="font-mono text-[#6c5070]">${submissionNo}</strong></div>
+          <div>หน่วยงานส่งตรวจ: <strong class="text-[#342838]">${department}</strong></div>
+          <div>สถานที่เข้าไปวางเพลต/จุดตรวจ: <strong class="text-[#df6a6a]">${targetWard}</strong></div>
+          <div>สถานะ: <span class="bg-[#fefaf0] text-[#b8860b] font-bold px-2 py-0.5 rounded-full text-[11px] border border-[#fde8a8]"><i class="fas fa-clock mr-1"></i>รอตรวจ (Waiting for testing)</span></div>
         </div>
       `,
-      confirmButtonText: 'ดูรายการรายงานผลตรวจ ➔',
-      confirmButtonColor: '#047857',
+      confirmButtonText: '<i class="fas fa-file-waveform mr-1"></i> ดูรายการรายงานผลตรวจ ➔',
+      confirmButtonColor: '#6c5070',
       showCancelButton: true,
-      cancelButtonText: 'ปิดหน้าต่าง'
+      cancelButtonText: 'ปิดหน้าต่าง',
+      cancelButtonColor: '#78687e',
+      customClass: { popup: 'k-swal' }
     }).then(res => {
       if (res.isConfirmed) {
         switchWorkflowTab('reports');
@@ -956,22 +1854,72 @@ async function loadReportsArchiveTable() {
   const countBadge = document.getElementById('reports-count-badge');
   if (!tbody) return;
 
+  // ==========================================================================
+  // 🔒 ต้องเข้าสู่ระบบก่อนจึงจะดูรายงานผลตรวจได้
+  // ผลตรวจสิ่งแวดล้อมเป็นข้อมูลภายในของโรงพยาบาล ไม่เปิดให้บุคคลทั่วไปดู
+  // ==========================================================================
+  const user = currentLoggedUser || (window.AuthManager ? await window.AuthManager.getCurrentUser() : null);
+
+  if (!user) {
+    if (scopeBadge) {
+      scopeBadge.innerHTML =
+        '<span class="inline-flex items-center gap-1.5 bg-[#fdf0f0] text-[#c25353] text-[11px] font-bold px-3 py-1 rounded-full border border-[#f9d2d2]">'
+        + '<i class="fas fa-lock"></i> ต้องเข้าสู่ระบบก่อน</span>';
+    }
+    if (countBadge) countBadge.textContent = 'ยังไม่ได้เข้าสู่ระบบ';
+
+    const backTo = encodeURIComponent(window.location.href);
+    tbody.innerHTML =
+      '<tr><td colspan="6" class="p-12 text-center">'
+      + '<div class="w-14 h-14 bg-[#f7f2f8] text-[#6c5070] rounded-full flex items-center justify-center mx-auto mb-3 text-xl">'
+      + '<i class="fas fa-lock"></i></div>'
+      + '<div class="text-sm font-bold text-[#342838] mb-1">กรุณาเข้าสู่ระบบเพื่อดูรายงานผลตรวจ</div>'
+      + '<div class="text-[11px] text-[#78687e] mb-4 max-w-md mx-auto leading-relaxed">'
+      + 'ผลการตรวจวิเคราะห์สิ่งแวดล้อมเป็นข้อมูลภายในของโรงพยาบาล<br>'
+      + 'เจ้าหน้าที่แต่ละหน่วยงานจะเห็นเฉพาะผลตรวจของหน่วยงานตนเอง</div>'
+      + '<a href="login.html?redirect=' + backTo + '" '
+      + 'class="inline-flex items-center gap-2 bg-[#6c5070] hover:bg-[#573e5a] text-white text-xs font-bold px-5 py-2.5 rounded-2xl shadow-sm transition">'
+      + '<i class="fas fa-user-shield text-[#f9d56e]"></i> เข้าสู่ระบบเจ้าหน้าที่</a>'
+      + '</td></tr>';
+
+    window.CURRENT_WORKFLOW_REPORTS = [];
+    return;
+  }
+
   tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-lg mr-2"></i> กำลังโหลดรายงานผลตรวจ...</td></tr>`;
 
   let allReports = [];
   try {
-    const { data } = await window.ReportDB.getReports({ pageSize: 150 });
-    if (data && data.length > 0) {
-      allReports = data;
-    } else {
-      allReports = MOCK_REPORTS_ARCHIVE;
+    // 1. ดึงรายการที่ส่งตรวจใหม่ในเครื่อง (localStorage)
+    // ใช้สำเนาในเครื่องเฉพาะใบที่ยังส่งขึ้นฐานข้อมูลไม่สำเร็จ
+    const allLocalSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    const localSubmitted = window.supabaseClient ? allLocalSubmitted.filter(r => !r.synced) : allLocalSubmitted;
+
+    // 2. ดึงรายการจาก Database (Supabase)
+    let dbReports = [];
+    try {
+      const { data } = await window.ReportDB.getReports({ pageSize: 150 });
+      if (data && data.length > 0) dbReports = data;
+    } catch (dbErr) {
+      console.warn('DB fetch warning:', dbErr);
     }
+
+    // 3. รวมทุกแหล่งข้อมูล: ส่งตรวจใหม่ + ข้อมูลฐานข้อมูล + ประวัติเดิม (MOCK_REPORTS_ARCHIVE)
+    // ฐานข้อมูลต้องมาก่อนเสมอ (เป็นแหล่งข้อมูลหลัก)
+    const combined = [...dbReports, ...localSubmitted, ...MOCK_REPORTS_ARCHIVE];
+    const seen = new Set();
+    allReports = combined.filter(r => {
+      const key = r.submission_no || r.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   } catch (e) {
     allReports = MOCK_REPORTS_ARCHIVE;
   }
 
   // ตรวจสอบสิทธิ์การเข้าถึงข้อมูลตามหน่วยงาน (Department Access Isolation)
-  const user = currentLoggedUser || (window.AuthManager ? await window.AuthManager.getCurrentUser() : null);
+  // ใช้ตัวแปร user ที่ตรวจสิทธิ์ไว้แล้วด้านบน (บรรทัด ~1832)
   const isAdmin = user && user.role === 'admin';
 
   let filteredReports = [];
@@ -1057,21 +2005,26 @@ async function loadReportsArchiveTable() {
     });
 
   } else {
-    // Guest User
+    // 👤 ผู้ใช้ทั่วไป / โหมดทดสอบ (Guest View): แสดงรายการที่เพิ่งส่งตรวจใหม่ + ประวัติรายงานทั้งหมดทันที
     if (scopeBadge) {
       scopeBadge.innerHTML = `
-        <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-[11px] font-semibold px-3 py-1 rounded-full border border-slate-200">
-          <i class="fas fa-eye text-slate-500"></i> โหมดทั่วไป (กรุณาเข้าสู่ระบบเพื่อดูเฉพาะหน่วยงาน)
+        <span class="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 text-[11px] font-bold px-3 py-1 rounded-full border border-blue-200">
+          <i class="fas fa-list-check text-blue-600"></i> แสดงรายการส่งตรวจทั้งหมด (Guest / Public Mode)
         </span>
       `;
     }
     filteredReports = allReports;
   }
 
-  // เรียงลำดับให้อันล่าสุดอยู่บนสุดเสมอ (Newest on Top)
+  // เรียงลำดับให้อันที่ "รอตรวจ" (Pending) และอันล่าสุดอยู่บนสุดเสมอ
   filteredReports.sort((a, b) => {
-    const dateA = new Date(a.created_at || a.sampling_date || a.reported_date);
-    const dateB = new Date(b.created_at || b.sampling_date || b.reported_date);
+    const isPendingA = a.status === 'pending' || a.overall_result === 'pending';
+    const isPendingB = b.status === 'pending' || b.overall_result === 'pending';
+    if (isPendingA && !isPendingB) return -1;
+    if (!isPendingA && isPendingB) return 1;
+
+    const dateA = new Date(a.created_at || a.sampling_date || a.reported_date || 0);
+    const dateB = new Date(b.created_at || b.sampling_date || b.reported_date || 0);
     return dateB - dateA;
   });
 
@@ -1093,12 +2046,72 @@ window.handleAdminDeptFilterChange = handleAdminDeptFilterChange;
 
 function renderReportsArchiveTable(reports) {
   const tbody = document.getElementById('rep-archive-tbody');
+  const thead = document.getElementById('rep-archive-thead');
   if (!tbody) return;
+
+  const isDrug2View = (currentLoggedUser && currentLoggedUser.username === 'pharma') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_08' || (r.service_name && r.service_name.includes('ปนเปื้อน'))));
+  const isDrug1View = !isDrug2View && ((currentLoggedUser && currentLoggedUser.username === 'compounding') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_07' || (r.service_name && r.service_name.includes('ปลอดเชื้อ')))));
+  const isNutritionView = !isDrug2View && !isDrug1View && ((currentLoggedUser && currentLoggedUser.username === 'nutrition') || (adminDeptFilter && (adminDeptFilter.includes('โภชนาการ') || adminDeptFilter.includes('อาหาร'))) || (reports && reports.length > 0 && reports.every(r => r.service_code === 'FOD_06' || r.department === 'งานโภชนาการ')));
+  const isWaterSurfaceView = !isDrug2View && !isDrug1View && !isNutritionView && ((currentLoggedUser && (currentLoggedUser.username === 'icn' || currentLoggedUser.serviceCode === 'WTS_03')) || (adminDeptFilter && (adminDeptFilter.includes('ควบคุมโรค') || adminDeptFilter.includes('IC'))) || (reports && reports.length > 0 && reports.every(r => r.service_code === 'WTS_03' || (r.department && r.department.includes('ควบคุมโรค')))));
+
+  if (thead) {
+    if (isDrug2View) {
+      thead.className = 'bg-slate-100 text-slate-700 font-bold border-b border-slate-200';
+      thead.innerHTML = `
+        <tr>
+          <th class="py-3.5 px-4 font-semibold w-36 text-center">วันที่ส่ง</th>
+          <th class="py-3.5 px-4 font-semibold w-1/3">หน่วยงาน</th>
+          <th class="py-3.5 px-4 font-semibold w-1/3">ยาเตรียม</th>
+          <th class="py-3.5 px-4 font-semibold text-center w-40">สถานะ</th>
+          <th class="py-3.5 px-4 font-semibold text-center w-32">จัดการ</th>
+        </tr>
+      `;
+    } else if (isDrug1View) {
+      thead.className = 'hidden';
+    } else if (isNutritionView) {
+      thead.className = 'bg-gray-100 text-gray-700 font-bold border-b border-gray-200';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3 text-center w-14 bg-gray-200/60 rounded-tl-2xl">ลำดับ</th>
+          <th class="p-3 text-center w-28">วันที่ส่งตรวจ</th>
+          <th class="p-3">อาหาร</th>
+          <th class="p-3 text-center w-32">E.COLI</th>
+          <th class="p-3 text-center w-32">P.AERUGINOSA</th>
+          <th class="p-3 text-center w-28">สถานะ</th>
+          <th class="p-3 w-32">หมายเหตุ</th>
+          <th class="p-3 text-center w-28 rounded-tr-2xl">รายงาน</th>
+        </tr>
+      `;
+    } else if (isWaterSurfaceView) {
+      thead.className = 'bg-slate-100 text-slate-700 font-bold border-b border-slate-200';
+      thead.innerHTML = `
+        <tr>
+          <th class="py-3 px-4 font-semibold w-28">วันที่ส่ง</th>
+          <th class="py-3 px-4 font-semibold">สถานที่/หน่วยงาน</th>
+          <th class="py-3 px-4 font-semibold w-48">ประเภท</th>
+          <th class="py-3 px-4 font-semibold text-center w-28">สถานะ</th>
+          <th class="py-3 px-4 font-semibold text-center w-24">ดูรายงาน</th>
+        </tr>
+      `;
+    } else {
+      thead.className = 'bg-[#6c5070] text-white font-bold border-b border-[#503854]';
+      thead.innerHTML = `
+        <tr>
+          <th class="p-3.5 text-center w-28 bg-[#583f5c]">วันที่ส่งตรวจ</th>
+          <th class="p-3.5 w-36">เลขที่เอกสาร</th>
+          <th class="p-3.5">หน่วยงานส่งตรวจ / จุดเก็บตัวอย่าง</th>
+          <th class="p-3.5 text-center w-32">จำนวนตัวอย่าง</th>
+          <th class="p-3.5 text-center w-28">สถานะ</th>
+          <th class="p-3.5 text-center w-28">รายงานผล</th>
+        </tr>
+      `;
+    }
+  }
 
   if (!reports || reports.length === 0) {
     tbody.innerHTML = `
       <tr>
-        <td colspan="6" class="p-10 text-center">
+        <td colspan="${isNutritionView ? '8' : (isDrug2View || isWaterSurfaceView ? '5' : '6')}" class="p-10 text-center">
           <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">
             <i class="fas fa-folder-open"></i>
           </div>
@@ -1110,9 +2123,145 @@ function renderReportsArchiveTable(reports) {
     return;
   }
 
+  // View: งานผลิตยา 2 (DRG_08) -> 5 Columns Table Layout
+  if (isDrug2View) {
+    tbody.innerHTML = reports.map((r, idx) => {
+      const formattedDate = r.formatted_date || r.sampling_date || '23/07/2569';
+      const isTested = !isWaitingReport(r);
+      const subNo = r.submission_no || r.id || `DRG-${idx + 1}`;
+      const departmentName = r.department || 'งานผลิตยา';
+      let preparedMed = r.prepared_medicine;
+      if (!preparedMed || preparedMed === 'งานผลิตยา' || preparedMed === 'ยาเตรียม') {
+        if (r.report_items && r.report_items.length > 0) {
+          preparedMed = r.report_items[0].drug_name || r.report_items[0].prepared_medicine || r.report_items[0].location_name;
+        }
+      }
+      if (!preparedMed || preparedMed === 'งานผลิตยา' || preparedMed === 'ยาเตรียม') {
+        preparedMed = r.sample_description || (r.ward_room && r.ward_room !== 'งานผลิตยา' ? r.ward_room : '') || 'Trace element';
+      }
+
+      return `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs transition">
+          <td class="p-3.5 font-mono text-slate-700 text-center">${formattedDate}</td>
+          <td class="p-3.5 font-semibold text-slate-800">${departmentName}</td>
+          <td class="p-3.5 font-bold text-slate-800">${preparedMed}</td>
+          <td class="p-3.5 text-center">
+            <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold ${isTested ? 'bg-[#d4edda] text-[#155724]' : 'bg-amber-100 text-amber-800'}">
+              ${isTested ? '✓ ตรวจแล้ว' : 'รอตรวจ'}
+            </span>
+          </td>
+          <td class="p-3.5 text-center">
+            <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1 rounded-lg transition shadow-2xs inline-flex items-center gap-1.5">
+              <i class="far fa-eye text-slate-500"></i>
+              <span>ดูผล</span>
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    return;
+  }
+
+  // View: งานผลิตยา 1 (DRG_07) -> Card Layout
+  if (isDrug1View) {
+    tbody.innerHTML = reports.map((r, idx) => {
+      const formattedDate = r.formatted_date || r.sampling_date || '24/05/2569';
+      const isTested = !isWaitingReport(r);
+      const subNo = r.submission_no || r.id || `DRG-${idx + 1}`;
+      const sampleCount = r.sample_count || (r.report_items ? r.report_items.length : 10);
+      const departmentName = r.department || 'งานผลิตยา';
+
+      return `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs transition">
+          <td class="p-4" colspan="4">
+            <div class="font-bold text-slate-800 text-sm">หน่วยงาน: ${departmentName}</div>
+            <div class="text-xs text-slate-500 mt-1">วันที่ส่ง: ${formattedDate} | ${sampleCount} ตัวอย่าง</div>
+          </td>
+          <td class="p-4 text-center">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold ${isTested ? 'bg-[#d4edda] text-[#155724]' : 'bg-amber-100 text-amber-800'}">
+              ${isTested ? 'ตรวจแล้ว' : 'รอตรวจ'}
+            </span>
+          </td>
+          <td class="p-4 text-center">
+            <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-[#a3c9a8] hover:bg-[#8eb894] text-slate-800 text-xs font-bold px-4 py-1.5 rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
+              <span>ดูรายงาน</span>
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    return;
+  }
+
+  if (isNutritionView) {
+    tbody.innerHTML = reports.map((r, idx) => {
+      const formattedDate = r.formatted_date || r.sampling_date || '19-08-2026';
+      const isTested = !isWaitingReport(r);
+      const subNo = r.submission_no || r.id || `FOD-${idx + 1}`;
+      const foodName = r.ward_room || (r.report_items && r.report_items[0] && (r.report_items[0].food_name || r.report_items[0].location_name)) || r.sample_description || 'อาหารปั่น ธรรมดา';
+      
+      const firstItem = (r.report_items && r.report_items[0]) || {};
+      const ecoli = firstItem.ecoli_result || (isTested ? 'ไม่พบเชื้อ' : '-');
+      const paeruginosa = firstItem.paeruginosa_result || (isTested ? 'ไม่พบเชื้อ' : '-');
+      const notes = r.remarks || firstItem.notes || '-';
+
+      return `
+        <tr class="border-b border-slate-100 hover:bg-blue-50/20 text-xs transition">
+          <td class="p-3.5 text-center font-bold text-slate-500 bg-slate-50/50">${reports.length - idx}</td>
+          <td class="p-3.5 text-center font-mono text-slate-700 font-medium">${formattedDate}</td>
+          <td class="p-3.5 font-bold text-slate-800">${foodName}</td>
+          <td class="p-3.5 text-center font-mono font-bold ${ecoli === 'ไม่พบเชื้อ' ? 'text-emerald-700' : (ecoli === '-' ? 'text-slate-400' : 'text-rose-700')}">${ecoli}</td>
+          <td class="p-3.5 text-center font-mono font-bold ${paeruginosa === 'ไม่พบเชื้อ' ? 'text-emerald-700' : (paeruginosa === '-' ? 'text-slate-400' : 'text-rose-700')}">${paeruginosa}</td>
+          <td class="p-3.5 text-center">
+            <span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${isTested ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+              ${isTested ? 'ตรวจแล้ว' : 'รอตรวจ'}
+            </span>
+          </td>
+          <td class="p-3.5 text-slate-500">${notes}</td>
+          <td class="p-3.5 text-center">
+            <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-xl transition shadow-2xs inline-flex items-center gap-1">
+              <span>ดูรายงาน</span>
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    return;
+  }
+
+  // View: งานควบคุมโรคติดเชื้อ (WTS_03) -> 5 Columns Table Layout
+  if (isWaterSurfaceView) {
+    tbody.innerHTML = reports.map((r, idx) => {
+      const formattedDate = r.formatted_date || r.sampling_date || '11/08/2569';
+      const isTested = !isWaitingReport(r);
+      const subNo = r.submission_no || r.id || `WTS-${idx + 1}`;
+      const departmentName = r.department || r.ward_room || 'งานควบคุมโรคติดเชื้อ';
+      const specimenType = r.specimen_type || r.sample_type || (r.report_items && r.report_items[0] && r.report_items[0].specimen_type) || 'พื้นผิว';
+
+      return `
+        <tr class="border-b border-slate-100 hover:bg-slate-50 text-xs transition">
+          <td class="p-3.5 font-mono text-slate-700">${formattedDate}</td>
+          <td class="p-3.5 font-semibold text-slate-800">${departmentName}</td>
+          <td class="p-3.5 text-slate-700 font-medium">${specimenType}</td>
+          <td class="p-3.5 text-center">
+            <span class="inline-block px-3 py-1 rounded-full text-[11px] font-bold ${isTested ? 'bg-[#d4edda] text-[#155724]' : 'bg-amber-100 text-amber-800'}">
+              ${isTested ? 'ตรวจแล้ว' : 'รอตรวจ'}
+            </span>
+          </td>
+          <td class="p-3.5 text-center">
+            <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-[#c2dbc1]/50 hover:bg-[#a8caa7] text-slate-800 text-xs p-2 rounded-xl transition shadow-2xs inline-flex items-center justify-center">
+              <i class="far fa-eye text-slate-700"></i>
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    return;
+  }
+
   tbody.innerHTML = reports.map((r, idx) => {
-    const formattedDate = r.formatted_date || r.sampling_date || '11/8/2569';
-    const isTested = r.status === 'tested' || r.status === 'completed' || r.overall_result !== 'pending';
+    const formattedDate = getSubmittedDateLabel(r);
+    const isTested = !isWaitingReport(r);
     const sampleCount = r.sample_count || (r.report_items ? r.report_items.length : (r.items ? r.items.length : 5));
     const subNo = r.submission_no || r.id || `AIR-${idx + 1}`;
     const targetWard = r.ward_room || r.department;
@@ -1164,15 +2313,283 @@ function renderReportsArchiveTable(reports) {
 
         <!-- ปุ่มจัดการ -->
         <td class="p-3.5 text-center">
-          <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition shadow-2xs inline-flex items-center gap-1">
-            <i class="fas fa-file-lines"></i>
-            <span>ดูรายงาน</span>
-          </a>
+          <div class="flex items-center justify-center gap-1.5 flex-wrap">
+            <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition shadow-2xs inline-flex items-center gap-1">
+              <i class="fas fa-file-lines"></i>
+              <span>ดูรายงาน</span>
+            </a>
+            ${isAdminUser() ? `
+              <button type="button" onclick="adminEditReport('${r.id || subNo}')" title="แก้ไขใบรายงาน (Admin)"
+                      class="bg-white border border-[#6c5070]/40 hover:bg-[#f7f2f8] text-[#6c5070] text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
+                <i class="fas fa-pen-to-square"></i>
+              </button>
+              <button type="button" onclick="adminDeleteReport('${r.id || subNo}')" title="ลบใบรายงาน (Admin)"
+                      class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
+                <i class="fas fa-trash-can"></i>
+              </button>` : ''}
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
+
+
+// ==============================================================================
+// สิทธิ์ ADMIN: แก้ไข / ลบ ใบรายงานผล จากหน้ารายงานผลตรวจ
+// ------------------------------------------------------------------------------
+// เฉพาะผู้ใช้ที่ role = 'admin' เท่านั้นจึงเห็นปุ่มเหล่านี้
+// และฝั่งฐานข้อมูลยังบังคับด้วย RLS อีกชั้น (UPDATE/DELETE เฉพาะ authenticated)
+// ==============================================================================
+
+function isAdminUser() {
+  return !!(currentLoggedUser && currentLoggedUser.role === 'admin');
+}
+
+/** แก้ไขข้อมูลส่วนหัวของใบรายงาน (หน่วยงาน / สถานที่ / วันที่ / สถานะ) */
+async function adminEditReport(reportId) {
+  if (!isAdminUser()) {
+    Swal.fire({ icon: 'warning', title: 'เฉพาะผู้ดูแลระบบ', text: 'ต้องเข้าสู่ระบบด้วยสิทธิ์ ADMIN จึงจะแก้ไขได้' });
+    return;
+  }
+
+  const res = await window.ReportDB.getReportById(reportId);
+  const rep = res?.data || (res && res.submission_no ? res : null);
+  if (!rep) {
+    Swal.fire({ icon: 'error', title: 'ไม่พบใบรายงาน', text: 'ไม่สามารถโหลดข้อมูลใบนี้ได้' });
+    return;
+  }
+
+  const waiting = isWaitingReport(rep);
+
+  const { value: form } = await Swal.fire({
+    title: '<div class="text-left"><div class="text-xs text-[#6c5070] font-semibold">แก้ไขใบรายงานผล (ADMIN)</div>'
+         + '<div class="text-base font-bold text-slate-900 mt-0.5 font-mono">' + (rep.submission_no || '') + '</div></div>',
+    html:
+      '<div class="text-left text-xs space-y-3 pt-1">'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">หน่วยงานส่งตรวจ</label>'
+      + '<input id="ed-dept" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.department || '') + '"></div>'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">สถานที่ / จุดเก็บตัวอย่าง</label>'
+      + '<input id="ed-ward" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.ward_room || '') + '"></div>'
+      + '<div class="grid grid-cols-2 gap-3">'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">วันที่เก็บตัวอย่าง</label>'
+      + '<input type="date" id="ed-sampling" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.sampling_date || '') + '"></div>'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">สถานะ</label>'
+      + '<select id="ed-status" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs">'
+      + '<option value="pending"' + (waiting ? ' selected' : '') + '>⏳ รอตรวจ</option>'
+      + '<option value="completed"' + (!waiting ? ' selected' : '') + '>✅ ตรวจแล้ว</option>'
+      + '</select></div>'
+      + '</div>'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">หมายเหตุ / ความเห็นทางเทคนิค</label>'
+      + '<textarea id="ed-remarks" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs">' + (rep.remarks || '') + '</textarea></div>'
+      + '</div>',
+    width: 560,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-save mr-1"></i> บันทึกการแก้ไข',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#6c5070',
+    cancelButtonColor: '#94a3b8',
+    preConfirm: () => {
+      const dept = document.getElementById('ed-dept').value.trim();
+      if (!dept) { Swal.showValidationMessage('กรุณาระบุหน่วยงานส่งตรวจ'); return false; }
+      return {
+        department: dept,
+        ward_room: document.getElementById('ed-ward').value.trim(),
+        sampling_date: document.getElementById('ed-sampling').value,
+        status: document.getElementById('ed-status').value,
+        remarks: document.getElementById('ed-remarks').value.trim()
+      };
+    }
+  });
+
+  if (!form) return;
+
+  Swal.fire({ title: 'กำลังบันทึก...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  // ⚠️ ใบที่ยังไม่ sync มี id ชั่วคราวแบบ 'REP-...' ซึ่งไม่ใช่ UUID
+  //    ต้องหา UUID จริงจาก submission_no ก่อน ไม่งั้น Postgres จะตอบ
+  //    invalid input syntax for type uuid
+  let targetId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(rep.id || '')) ? rep.id : null;
+  if (!targetId && window.supabaseClient && rep.submission_no) {
+    try {
+      const { data } = await window.supabaseClient
+        .from('reports').select('id').eq('submission_no', rep.submission_no).maybeSingle();
+      if (data && data.id) targetId = data.id;
+    } catch (e) { /* ไม่พบในฐานข้อมูล */ }
+  }
+
+  if (!targetId) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'แก้ไขไม่ได้',
+      text: 'ใบนี้ยังไม่ได้บันทึกขึ้นฐานข้อมูลกลาง (มีเฉพาะในเครื่องนี้) จึงยังแก้ไขไม่ได้',
+      confirmButtonColor: '#6c5070'
+    });
+    return;
+  }
+
+  // สถานะที่ฐานข้อมูลยอมรับ: ลองค่าที่เลือกก่อน แล้วถอยไปค่าที่ CHECK constraint รับได้
+  const candidates = form.status === 'pending' ? ['pending', 'in_progress'] : ['tested', 'completed'];
+  let saved = false, lastErr = null;
+
+  for (const st of candidates) {
+    const { error } = await window.supabaseClient
+      .from('reports')
+      .update({
+        department: form.department,
+        ward_room: form.ward_room,
+        sampling_date: form.sampling_date,
+        status: st,
+        remarks: form.remarks,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', targetId);
+
+    if (!error) { saved = true; break; }
+    lastErr = error;
+    const isCheck = error.code === '23514' || /violates check constraint/i.test(error.message || '');
+    if (!isCheck) break;
+  }
+
+  if (!saved) {
+    Swal.fire({
+      icon: 'error',
+      title: 'แก้ไขไม่สำเร็จ',
+      html: '<div class="text-xs text-left text-slate-600"><div class="font-mono text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 break-all">'
+          + ((lastErr && lastErr.message) || 'ไม่ทราบสาเหตุ') + '</div>'
+          + '<div class="mt-2 text-[11px] text-slate-500">การแก้ไขต้องเข้าสู่ระบบด้วยสิทธิ์เจ้าหน้าที่ (RLS)</div></div>',
+      confirmButtonColor: '#6c5070'
+    });
+    return;
+  }
+
+  // ล้างสำเนาในเครื่องของใบนี้ ไม่ให้ข้อมูลเก่าค้างทับ
+  try {
+    const cached = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    localStorage.setItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS',
+      JSON.stringify(cached.filter(x => x.submission_no !== rep.submission_no)));
+  } catch (e) { /* ไม่เป็นไร */ }
+
+  await Swal.fire({ icon: 'success', title: 'แก้ไขเรียบร้อย', timer: 1200, showConfirmButton: false });
+  loadReportsArchiveTable();
+}
+window.adminEditReport = adminEditReport;
+
+/** ตรวจว่าเป็น UUID จริงหรือไม่ (แถวใน Supabase ใช้ UUID เท่านั้น) */
+function isRealUuid(v) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
+}
+
+/** ลบสำเนาใบรายงานออกจาก localStorage ทุกที่ที่เก็บไว้ */
+function purgeLocalReport(submissionNo, localId) {
+  const KEYS = ['TUH_MICROBIOLOGY_SUBMITTED_REPORTS', 'tuh_mock_reports', 'TUH_MOCK_REPORTS_V3'];
+  let removed = 0;
+  KEYS.forEach(k => {
+    try {
+      const arr = JSON.parse(localStorage.getItem(k) || '[]');
+      if (!Array.isArray(arr)) return;
+      const left = arr.filter(r => {
+        const hit = (submissionNo && r.submission_no === submissionNo) || (localId && r.id === localId);
+        if (hit) removed++;
+        return !hit;
+      });
+      localStorage.setItem(k, JSON.stringify(left));
+    } catch (e) { /* ข้ามคีย์ที่อ่านไม่ได้ */ }
+  });
+  return removed;
+}
+
+/** ลบใบรายงานผล (ต้องพิมพ์ยืนยัน เพราะลบแล้วกู้คืนไม่ได้) */
+async function adminDeleteReport(reportId) {
+  if (!isAdminUser()) {
+    Swal.fire({ icon: 'warning', title: 'เฉพาะผู้ดูแลระบบ', text: 'ต้องเข้าสู่ระบบด้วยสิทธิ์ ADMIN จึงจะลบได้' });
+    return;
+  }
+
+  const res = await window.ReportDB.getReportById(reportId);
+  const rep = res?.data || (res && res.submission_no ? res : null);
+  if (!rep) {
+    Swal.fire({ icon: 'error', title: 'ไม่พบใบรายงาน' });
+    return;
+  }
+
+  const itemCount = (rep.report_items || rep.items || []).length;
+
+  // ⚠️ ใบที่ยังไม่ได้ sync ขึ้นคลาวด์จะมี id ชั่วคราวแบบ 'REP-...' ซึ่งไม่ใช่ UUID
+  //    ถ้ายิง .eq('id', 'REP-...') เข้า Postgres จะได้ error:
+  //    invalid input syntax for type uuid: "REP-1787025265254"
+  //    จึงต้องหา UUID จริงจาก submission_no ก่อน ถ้าไม่มีในฐานข้อมูลก็ลบเฉพาะในเครื่อง
+  let dbId = isRealUuid(rep.id) ? rep.id : null;
+  if (!dbId && window.supabaseClient && rep.submission_no) {
+    try {
+      const { data } = await window.supabaseClient
+        .from('reports').select('id').eq('submission_no', rep.submission_no).maybeSingle();
+      if (data && data.id) dbId = data.id;
+    } catch (e) { /* ไม่พบก็ถือว่ามีเฉพาะในเครื่อง */ }
+  }
+
+  const localOnly = !dbId;
+
+  const confirm = await Swal.fire({
+    icon: 'warning',
+    title: 'ยืนยันการลบใบรายงานผล',
+    html:
+      '<div class="text-left text-xs text-slate-600 space-y-2">'
+      + '<div>เลขที่เอกสาร: <strong class="font-mono text-[#6c5070]">' + rep.submission_no + '</strong></div>'
+      + '<div>หน่วยงาน: <strong>' + (rep.department || '-') + '</strong></div>'
+      + '<div>รายการตัวอย่างที่จะถูกลบด้วย: <strong class="text-rose-700">' + itemCount + ' รายการ</strong></div>'
+      + (localOnly
+          ? '<div class="mt-1 p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px]">'
+            + '<i class="fas fa-hard-drive mr-1"></i> ใบนี้มีเฉพาะในเครื่องนี้ (ยังไม่ได้บันทึกขึ้นฐานข้อมูลกลาง) จะลบออกจากเครื่องเท่านั้น</div>'
+          : '')
+      + '<div class="mt-2 p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-[11px]">'
+      + '<i class="fas fa-triangle-exclamation mr-1"></i> ลบแล้ว<strong>กู้คืนไม่ได้</strong> กรุณาพิมพ์คำว่า <strong>ลบ</strong> เพื่อยืนยัน</div>'
+      + '</div>',
+    input: 'text',
+    inputPlaceholder: 'พิมพ์ ลบ',
+    showCancelButton: true,
+    confirmButtonText: 'ลบถาวร',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#94a3b8',
+    inputValidator: (v) => (String(v).trim() !== 'ลบ' ? 'กรุณาพิมพ์คำว่า ลบ ให้ถูกต้อง' : undefined)
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  if (dbId) {
+    const { error } = await window.supabaseClient.from('reports').delete().eq('id', dbId);
+    if (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'ลบไม่สำเร็จ',
+        html: '<div class="text-xs text-left text-slate-600">'
+            + '<div class="font-mono text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 break-all">' + error.message + '</div>'
+            + '<div class="mt-2 text-[11px] text-slate-500">การลบต้องเข้าสู่ระบบด้วยสิทธิ์เจ้าหน้าที่ (RLS)</div></div>',
+        confirmButtonColor: '#6c5070'
+      });
+      return;
+    }
+  }
+
+  const removed = purgeLocalReport(rep.submission_no, rep.id);
+
+  await Swal.fire({
+    icon: 'success',
+    title: 'ลบเรียบร้อย',
+    html: '<div class="text-xs text-slate-600">'
+        + '<div class="font-mono">' + rep.submission_no + '</div>'
+        + '<div class="mt-1 text-[11px]">' + (dbId ? 'ลบจากฐานข้อมูลกลางแล้ว' : 'ลบออกจากเครื่องแล้ว')
+        + (removed ? ' • ล้างสำเนาในเครื่อง ' + removed + ' รายการ' : '') + '</div></div>',
+    timer: 1800,
+    showConfirmButton: false
+  });
+  loadReportsArchiveTable();
+}
+window.adminDeleteReport = adminDeleteReport;
+
 
 function filterReportsTable(query) {
   const allReports = window.CURRENT_WORKFLOW_REPORTS || MOCK_REPORTS_ARCHIVE;
@@ -1189,6 +2606,20 @@ function filterReportsTable(query) {
   );
   renderReportsArchiveTable(filtered);
 }
+
+function handleReportsDateFilter(selectedDate) {
+  const allReports = window.CURRENT_WORKFLOW_REPORTS || MOCK_REPORTS_ARCHIVE;
+  if (!selectedDate) {
+    renderReportsArchiveTable(allReports);
+    return;
+  }
+  const filtered = allReports.filter(r => {
+    const sDate = r.sampling_date || r.formatted_date || '';
+    return sDate.includes(selectedDate);
+  });
+  renderReportsArchiveTable(filtered);
+}
+window.handleReportsDateFilter = handleReportsDateFilter;
 
 // ==============================================================================
 // 4. ลงผลตรวจ DATA GRID (เห็นเฉพาะ ADMIN เท่านั้น!)
@@ -1214,7 +2645,7 @@ async function loadWaitingQueueIntoGrid() {
   select.innerHTML = `<option value="">-- เลือกใบส่งตรวจที่ต้องการลงผล (${pendingReports.length} รายการ) --</option>` +
     pendingReports.map(r => `
       <option value="${r.id || r.submission_no}">
-        [${r.status === 'waiting_for_testing' || r.overall_result === 'pending' ? '⏳ รอตรวจ' : '✅ ตรวจแล้ว'}] ${r.submission_no || r.id} - ${r.ward_room || r.department} (${r.service_name})
+        [${isWaitingReport(r) ? '⏳ รอตรวจ' : '✅ ตรวจแล้ว'}] ${r.submission_no || r.id} - ${r.ward_room || r.department} (${r.service_name})
       </option>
     `).join('');
 
@@ -1224,72 +2655,176 @@ async function loadWaitingQueueIntoGrid() {
   }
 }
 
-async function loadSubmissionIntoAdminGrid(reportId) {
-  if (!reportId) return;
+// ==============================================================================
+// DATA GRID ลงผลตรวจ — ใช้คอลัมน์ชุดเดียวกับ "แบบฟอร์มส่งตรวจ" ของแต่ละบริการ
+// ------------------------------------------------------------------------------
+// เดิมตารางลงผลเป็นแบบ Air Sampling (แบคทีเรีย/เชื้อรา CFU) ตายตัวทุกบริการ
+// ทำให้งานน้ำ/พื้นผิว งานอาหาร และงานยา ต้องกรอก CFU ทั้งที่รายงานจริงเป็น
+// Growth / No growth ตามที่ผู้ใช้กรอกไว้ในแบบฟอร์มส่งตรวจ
+// ==============================================================================
+const GRID_SCHEMAS = {
+  AIR_01: {
+    subjects: [
+      { key: 'ward_name', label: 'หน่วยงาน', width: 'w-40' },
+      { key: 'location_name', label: 'ตำแหน่งที่เก็บ', width: '' }
+    ],
+    results: [
+      { key: 'bacteria_count', label: 'Number of colonies (Bacteria)', type: 'text', width: 'w-32', placeholder: '0' },
+      { key: 'fungus_count', label: 'Number of colonies (Fungus)', type: 'text', width: 'w-32', placeholder: '0' }
+    ]
+  },
+  WTS_03: {
+    subjects: [{ key: 'location_name', label: 'สถานที่/หน่วยงาน', width: '' }],
+    results: [{ key: 'bacteria_count', label: 'ผลเพาะเชื้อ', type: 'growth', width: 'w-56' }]
+  },
+  FOD_06: {
+    subjects: [{ key: 'location_name', label: 'อาหาร', width: '' }],
+    results: [
+      { key: 'bacteria_count', label: 'E.COLI', type: 'negative', width: 'w-44' },
+      { key: 'fungus_count', label: 'P.AERUGINOSA', type: 'negative', width: 'w-44' }
+    ]
+  },
+  STR_02: {
+    subjects: [
+      { key: 'location_name', label: 'หมายเลขถุงเลือด', width: 'w-48' },
+      { key: 'sample_description', label: 'ชนิดผลิตภัณฑ์เลือด', width: 'w-40' }
+    ],
+    results: [{ key: 'bacteria_count', label: 'ผลเพาะเชื้อ', type: 'growth', width: 'w-56' }]
+  },
+  DRG_07: {
+    subjects: [{ key: 'location_name', label: 'ชนิดยา', width: '' }],
+    results: [{ key: 'bacteria_count', label: 'ผลการตรวจเพาะเชื้อที่ 72 ชม.', type: 'growth', width: 'w-56' }]
+  },
+  DRG_08: {
+    subjects: [{ key: 'location_name', label: 'ยาเตรียม', width: '' }],
+    results: [{ key: 'bacteria_count', label: 'ผล 72 ชม. (Growth/No growth)', type: 'growth', width: 'w-56' }]
+  }
+};
+GRID_SCHEMAS.WTO_04 = GRID_SCHEMAS.WTS_03;
+GRID_SCHEMAS.WTM_05 = GRID_SCHEMAS.WTS_03;
 
-  let report = await window.ReportDB.getReportById(reportId);
+function getGridSchema(serviceCode) {
+  return GRID_SCHEMAS[String(serviceCode || '').toUpperCase()] || GRID_SCHEMAS.AIR_01;
+}
+
+/** สร้างช่องกรอกผลตามชนิดของฟิลด์ (ตัวเลข CFU หรือ Growth/No growth) */
+function buildGridField(field, value) {
+  const v = (value === undefined || value === null || value === '-') ? '' : String(value);
+
+  if (field.type === 'growth' || field.type === 'negative') {
+    const isGrowth = /^(growth|พบเชื้อ|fail)/i.test(v);
+    const optNo = field.type === 'negative' ? 'ไม่พบเชื้อ' : 'No growth';
+    const optYes = field.type === 'negative' ? 'พบเชื้อ' : 'Growth';
+    return '<select data-field="' + field.key + '" class="grid-input w-full px-2 py-1.5 rounded-lg border border-emerald-300 font-bold text-xs bg-white">'
+      + '<option value="' + optNo + '"' + (!isGrowth ? ' selected' : '') + '>✅ ' + optNo + '</option>'
+      + '<option value="' + optYes + '"' + (isGrowth ? ' selected' : '') + '>⚠️ ' + optYes + '</option>'
+      + '</select>';
+  }
+
+  return '<input type="text" data-field="' + field.key + '" value="' + v + '" placeholder="' + (field.placeholder || '') + '"'
+    + ' class="grid-input w-full px-2.5 py-1.5 border border-emerald-300 rounded-lg font-mono text-center font-bold text-emerald-950 text-xs">';
+}
+
+async function loadSubmissionIntoAdminGrid(reportId) {
+  const tbody = document.getElementById('admin-grid-tbody');
+  const thead = document.getElementById('admin-grid-thead');
+  const metaEl = document.getElementById('grid-active-meta');
+
+  if (!reportId) {
+    activeSubmissionData = null;
+    if (metaEl) metaEl.innerHTML = '';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-400 text-xs">กรุณาเลือกใบส่งตรวจ</td></tr>';
+    return;
+  }
+
+  if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-slate-400 text-xs">กำลังโหลด...</td></tr>';
+
+  const res = await window.ReportDB.getReportById(reportId);
+  const report = res?.data || (res && res.submission_no ? res : null);
+
   if (!report) {
-    report = MOCK_REPORTS_ARCHIVE.find(r => r.id === reportId || r.submission_no === reportId) || MOCK_REPORTS_ARCHIVE[0];
+    activeSubmissionData = null;
+    if (metaEl) metaEl.innerHTML = '';
+    const msg = (res && res.error && res.error.message) || 'ไม่พบใบรายงาน';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-rose-600 text-xs">โหลดใบส่งตรวจไม่สำเร็จ: ' + msg + '</td></tr>';
+    return;
   }
 
   activeSubmissionData = report;
+  const schema = getGridSchema(report.service_code);
+  const statusLabel = isWaitingReport(report) ? '⏳ รอตรวจ' : '✅ ตรวจแล้ว';
 
-  const metaEl = document.getElementById('grid-active-meta');
   if (metaEl) {
-    metaEl.innerHTML = `
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-emerald-50/50 p-4 rounded-2xl border border-emerald-200">
-        <div><span class="text-slate-500 block">เลขที่เอกสาร:</span> <strong class="font-mono text-emerald-950">${report.submission_no || report.id}</strong></div>
-        <div><span class="text-slate-500 block">หน่วยงาน / สถานที่:</span> <strong>${report.ward_room || report.department}</strong></div>
-        <div><span class="text-slate-500 block">บริการ:</span> <strong>${report.service_name}</strong></div>
-        <div><span class="text-slate-500 block">อีเมลแจ้งผล:</span> <strong class="text-sky-700">${report.recipient_email || 'staff@hospital.tu.ac.th'}</strong></div>
-      </div>
-    `;
+    metaEl.innerHTML =
+      '<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-[#f2f8f2] p-4 rounded-2xl border border-[#c2dbc1]">'
+      + '<div><span class="text-[#78687e] block">เลขที่เอกสาร:</span> <strong class="font-mono text-[#6c5070]">' + (report.submission_no || report.id) + '</strong></div>'
+      + '<div><span class="text-[#78687e] block">หน่วยงาน / สถานที่:</span> <strong>' + (report.ward_room || report.department || '-') + '</strong></div>'
+      + '<div><span class="text-[#78687e] block">บริการ:</span> <strong>' + (report.service_name || report.service_code) + '</strong></div>'
+      + '<div><span class="text-[#78687e] block">สถานะปัจจุบัน:</span> <strong>' + statusLabel + '</strong></div>'
+      + '</div>';
   }
 
-  const tbody = document.getElementById('admin-grid-tbody');
+  // หัวตารางเปลี่ยนตามบริการ
+  if (thead) {
+    let head = '<tr><th class="p-3 text-center w-12 bg-[#583f5c]">#</th>';
+    schema.subjects.forEach(c => { head += '<th class="p-3 ' + c.width + '">' + c.label + '</th>'; });
+    schema.results.forEach(c => { head += '<th class="p-3 text-center ' + c.width + '">' + c.label + '</th>'; });
+    head += '<th class="p-3 text-center w-36">ผลการทดสอบ</th><th class="p-3 w-44">หมายเหตุเพิ่มเติม</th></tr>';
+    thead.innerHTML = head;
+  }
+
   if (!tbody) return;
 
-  const items = report.report_items || report.items || [
-    { location_name: 'จุดตรวจที่ 1 โต๊ะกลางห้อง', bacteria_count: '0', fungus_count: '0', item_result: 'pass' },
-    { location_name: 'จุดตรวจที่ 2 เหนือเตียงผู้ป่วย', bacteria_count: '0', fungus_count: '0', item_result: 'pass' },
-    { location_name: 'จุดตรวจที่ 3 ประตูทางเข้า', bacteria_count: '1', fungus_count: '0', item_result: 'pass' }
-  ];
+  const items = report.report_items || report.items || [];
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" class="p-6 text-center text-amber-700 text-xs">ใบส่งตรวจนี้ยังไม่มีรายการตัวอย่างในฐานข้อมูล (report_items)</td></tr>';
+    return;
+  }
 
-  tbody.innerHTML = items.map((item, idx) => `
-    <tr class="border-b border-slate-200 hover:bg-emerald-50/30 text-xs transition" data-item-idx="${idx}">
-      <td class="p-2.5 text-center font-bold text-slate-500 bg-slate-50">${idx + 1}</td>
-      <td class="p-2.5">
-        <input type="text" class="grid-loc w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs" value="${item.location_name || ''}">
-      </td>
-      <td class="p-2.5 text-center">
-        <input type="text" class="grid-bacteria w-full px-2.5 py-1.5 border border-emerald-300 rounded-lg font-mono text-center font-bold text-emerald-950 focus:bg-white text-xs" value="${item.bacteria_count === '-' ? '0' : (item.bacteria_count || '0')}">
-      </td>
-      <td class="p-2.5 text-center">
-        <input type="text" class="grid-fungus w-full px-2.5 py-1.5 border border-emerald-300 rounded-lg font-mono text-center font-bold text-emerald-950 focus:bg-white text-xs" value="${item.fungus_count === '-' ? '0' : (item.fungus_count || '0')}">
-      </td>
-      <td class="p-2.5 text-center">
-        <select class="grid-result px-2.5 py-1.5 rounded-lg border font-bold text-xs bg-emerald-50 text-emerald-800 border-emerald-300">
-          <option value="pass" ${item.item_result !== 'fail' ? 'selected' : ''}>✅ ผ่านเกณฑ์ (Pass)</option>
-          <option value="fail" ${item.item_result === 'fail' ? 'selected' : ''}>⚠️ ตกเกณฑ์ (Fail)</option>
-        </select>
-      </td>
-      <td class="p-2.5">
-        <input type="text" class="grid-notes w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs" placeholder="หมายเหตุ" value="${item.notes || ''}">
-      </td>
-    </tr>
-  `).join('');
+  const sorted = items.slice().sort((a, b) => (a.item_no || 0) - (b.item_no || 0));
+
+  tbody.innerHTML = sorted.map((item, idx) => {
+    const no = item.item_no || idx + 1;
+    let row = '<tr class="border-b border-slate-200 hover:bg-[#f2f8f2]/50 text-xs transition"'
+      + ' data-item-idx="' + idx + '" data-item-id="' + (item.id || '') + '" data-item-no="' + no + '">'
+      + '<td class="p-2.5 text-center font-bold text-slate-500 bg-slate-50">' + no + '</td>';
+
+    schema.subjects.forEach(c => {
+      const fallback = (c.key === 'ward_name') ? (report.ward_room || report.department || '') : '';
+      const val = item[c.key] || fallback;
+      row += '<td class="p-2.5"><input type="text" data-field="' + c.key + '" value="' + val + '"'
+        + ' class="grid-input w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs"></td>';
+    });
+
+    schema.results.forEach(c => {
+      row += '<td class="p-2.5 text-center">' + buildGridField(c, item[c.key]) + '</td>';
+    });
+
+    row += '<td class="p-2.5 text-center">'
+      + '<select data-field="item_result" class="grid-result px-2.5 py-1.5 rounded-lg border font-bold text-xs bg-emerald-50 text-emerald-800 border-emerald-300">'
+      + '<option value="pass"' + (item.item_result !== 'fail' ? ' selected' : '') + '>✅ ผ่านเกณฑ์ (Pass)</option>'
+      + '<option value="fail"' + (item.item_result === 'fail' ? ' selected' : '') + '>⚠️ ตกเกณฑ์ (Fail)</option>'
+      + '</select></td>';
+
+    row += '<td class="p-2.5"><input type="text" data-field="remarks" value="' + (item.remarks || item.notes || '') + '"'
+      + ' placeholder="หมายเหตุ" class="grid-input w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs"></td>';
+
+    return row + '</tr>';
+  }).join('');
 }
 
 function fastPassAllGridRows() {
-  document.querySelectorAll('#admin-grid-tbody tr').forEach(tr => {
-    const sel = tr.querySelector('.grid-result');
-    if (sel) sel.value = 'pass';
-    const bac = tr.querySelector('.grid-bacteria');
-    if (bac && (bac.value === '-' || !bac.value)) bac.value = '0';
-    const fg = tr.querySelector('.grid-fungus');
-    if (fg && (fg.value === '-' || !fg.value)) fg.value = '0';
+  // ตั้งผ่านเกณฑ์ทุกแถว รองรับทุกบริการ (ช่องตัวเลข -> 0, ช่อง Growth -> No growth/ไม่พบเชื้อ)
+  document.querySelectorAll("#admin-grid-tbody tr[data-item-idx]").forEach(tr => {
+    tr.querySelectorAll("[data-field]").forEach(el => {
+      const f = el.dataset.field;
+      if (f === "item_result") { el.value = "pass"; return; }
+      if (f !== "bacteria_count" && f !== "fungus_count") return;
+      if (el.tagName === "SELECT") { el.selectedIndex = 0; }
+      else if (!el.value || el.value === "-") { el.value = "0"; }
+    });
   });
-  Swal.fire({ icon: 'success', title: 'ตั้งค่าผลผ่านเกณฑ์ทุกรายการแล้ว', timer: 1000, showConfirmButton: false });
+  Swal.fire({ icon: "success", title: "ตั้งค่าผลผ่านเกณฑ์ทุกรายการแล้ว", timer: 1000, showConfirmButton: false });
 }
 window.fastPassAllGridRows = fastPassAllGridRows;
 
@@ -1300,42 +2835,148 @@ async function handleAdminSaveResults() {
   }
 
   Swal.fire({
-    title: 'กำลังบันทึกผลการตรวจและส่งอีเมลแจ้งเตือน...',
+    title: 'กำลังบันทึกผลการตรวจ...',
     allowOutsideClick: false,
     didOpen: () => Swal.showLoading()
   });
 
   try {
+    // อ่านค่าจากตารางแบบไม่ผูกกับคอลัมน์ตายตัว
+    // ใช้ data-field ที่ตารางสร้างไว้ตามบริการ จึงรองรับครบทั้ง 8 บริการ
+    const rows = document.querySelectorAll('#admin-grid-tbody tr[data-item-idx]');
+    const updatedItems = [];
+    let hasFail = false;
+
+    rows.forEach((tr, idx) => {
+      const field = {};
+      tr.querySelectorAll('[data-field]').forEach(el => {
+        field[el.dataset.field] = String(el.value ?? '').trim();
+      });
+
+      const res = field.item_result || 'pass';
+      if (res === 'fail') hasFail = true;
+
+      const ward = field.ward_name || activeSubmissionData.ward_room || activeSubmissionData.department || '';
+      const loc = field.location_name || `จุดตรวจที่ ${idx + 1}`;
+
+      updatedItems.push({
+        item_no: parseInt(tr.dataset.itemNo, 10) || idx + 1,
+        ward_name: ward,
+        location_name: loc,
+        sample_description: field.sample_description || `${ward} - ${loc}`,
+        bacteria_count: field.bacteria_count !== undefined && field.bacteria_count !== '' ? field.bacteria_count : '-',
+        fungus_count: field.fungus_count !== undefined && field.fungus_count !== '' ? field.fungus_count : '-',
+        item_result: res,
+        notes: field.remarks || ''
+      });
+    });
+
+    if (updatedItems.length === 0) {
+      Swal.fire({ icon: 'warning', title: 'ไม่มีรายการตัวอย่างให้บันทึก' });
+      return;
+    }
+
+    const overallResult = hasFail ? 'fail' : 'pass';
     const updatePayload = {
       status: 'tested',
-      overall_result: 'pass',
+      overall_result: overallResult,
       reported_date: new Date().toISOString().split('T')[0],
       reporter_name: document.getElementById('grid-reporter-name')?.value || 'ทนพ.มานพ นันตาบุตร',
-      approver_name: document.getElementById('grid-approver-name')?.value || 'ทนพญ.นริศรา มังกรแก้ว',
-      remarks: document.getElementById('grid-remarks')?.value || 'ผลการตรวจวิเคราะห์อยู่ในเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ'
+      approver_name: document.getElementById('grid-approver-name')?.value || 'ทนพญ.ปราญชลี หรั่งอ่อน',
+      remarks: document.getElementById('grid-remarks')?.value || (overallResult === 'pass' ? 'ผลการตรวจวิเคราะห์คุณภาพอากาศ (Settle Plate) เป็นไปตามเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ' : 'พบปริมาณเชื้อแบคทีเรียหรือเชื้อราเกินเกณฑ์มาตรฐาน แนะนำทำความสะอาดและตรวจสอบระบบระบายอากาศ')
     };
 
-    if (window.supabaseClient && activeSubmissionData.id) {
-      await window.supabaseClient.from('reports').update(updatePayload).eq('id', activeSubmissionData.id);
+    activeSubmissionData.report_items = updatedItems;
+    activeSubmissionData.status = 'tested';
+    activeSubmissionData.overall_result = overallResult;
+    activeSubmissionData.reported_date = updatePayload.reported_date;
+    activeSubmissionData.reporter_name = updatePayload.reporter_name;
+    activeSubmissionData.approver_name = updatePayload.approver_name;
+    activeSubmissionData.remarks = updatePayload.remarks;
+
+    // Update in Mock LocalStorage as well
+    const localReports = JSON.parse(localStorage.getItem('TUH_MOCK_REPORTS_V3') || '[]');
+    const idx = localReports.findIndex(r => r.id === activeSubmissionData.id || r.submission_no === activeSubmissionData.submission_no);
+    if (idx !== -1) {
+      localReports[idx] = { ...localReports[idx], ...updatePayload, report_items: updatedItems };
+      localStorage.setItem('TUH_MOCK_REPORTS_V3', JSON.stringify(localReports));
     }
 
-    const email = activeSubmissionData.recipient_email;
-    if (email) {
-      await sendResultEmail({
-        recipientEmail: email,
-        department: activeSubmissionData.department,
-        submissionNo: activeSubmissionData.submission_no,
-        serviceName: activeSubmissionData.service_name,
-        overallResult: 'pass',
-        reportUrl: `${window.location.origin}/report_view.html?id=${activeSubmissionData.id || activeSubmissionData.submission_no}`
-      });
+    // ==========================================================================
+    // บันทึกลงฐานข้อมูลจริง — แก้ 2 บั๊กสำคัญ:
+    //   1) เดิมอัปเดตเฉพาะส่วนหัว ไม่เคยบันทึกผลรายตัวอย่าง → ค่า CFU ที่คีย์หายหมด
+    //   2) status: 'tested' ถูก CHECK constraint ปฏิเสธ (ค่าที่รับคือ 'completed')
+    //      และเดิมไม่ได้เช็ค error → สถานะไม่เคยเปลี่ยนเป็น "ตรวจแล้ว"
+    // ==========================================================================
+    let saveWarning = '';
+
+    if (window.supabaseClient && activeSubmissionData.id && !String(activeSubmissionData.id).startsWith('REP-')) {
+      let headerSaved = false, lastErr = null;
+
+      for (const candidate of ['tested', 'completed']) {
+        const { error } = await window.supabaseClient
+          .from('reports')
+          .update({ ...updatePayload, status: candidate })
+          .eq('id', activeSubmissionData.id);
+        if (!error) { headerSaved = true; activeSubmissionData.status = candidate; break; }
+        lastErr = error;
+        const isCheck = error.code === '23514' || /violates check constraint/i.test(error.message || '');
+        if (!isCheck) break;
+      }
+
+      if (!headerSaved) {
+        saveWarning = `บันทึกสถานะไม่สำเร็จ: ${(lastErr && lastErr.message) || 'ไม่ทราบสาเหตุ'}`;
+        console.error('❌', saveWarning);
+      } else {
+        // บันทึกผลรายตัวอย่างกลับเข้าแถวเดิม — จับคู่ด้วย item_no กันรายการซ้ำ
+        const { data: existingRows, error: fetchErr } = await window.supabaseClient
+          .from('report_items').select('id, item_no').eq('report_id', activeSubmissionData.id);
+
+        if (fetchErr) {
+          saveWarning = `อ่านรายการตัวอย่างเดิมไม่สำเร็จ: ${fetchErr.message}`;
+        } else {
+          const byItemNo = new Map((existingRows || []).map(r => [Number(r.item_no), r.id]));
+          for (const item of updatedItems) {
+            const payload = {
+              item_no: item.item_no,
+              location_name: item.location_name,
+              sample_description: item.sample_description,
+              bacteria_count: String(item.bacteria_count ?? '-'),
+              fungus_count: String(item.fungus_count ?? '-'),
+              item_result: item.item_result,
+              remarks: item.notes || ''
+            };
+            const existingId = byItemNo.get(Number(item.item_no));
+            const { error: itemErr } = existingId
+              ? await window.supabaseClient.from('report_items').update(payload).eq('id', existingId)
+              : await window.supabaseClient.from('report_items').insert([{ ...payload, report_id: activeSubmissionData.id }]);
+            if (itemErr) { saveWarning = `บันทึกผลรายตัวอย่างไม่สำเร็จ: ${itemErr.message}`; break; }
+            byItemNo.delete(Number(item.item_no));
+          }
+          for (const leftoverId of byItemNo.values()) {
+            await window.supabaseClient.from('report_items').delete().eq('id', leftoverId);
+          }
+        }
+      }
     }
+
+    // อัปเดตสำเนาในเครื่อง ไม่งั้นสถานะ "รอตรวจ" จะค้าง
+    try {
+      const cached = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+      const pos = cached.findIndex(r => r.submission_no === activeSubmissionData.submission_no || r.id === activeSubmissionData.id);
+      if (pos !== -1) {
+        cached[pos] = { ...cached[pos], ...updatePayload, status: activeSubmissionData.status || 'completed', report_items: updatedItems, synced: true };
+        localStorage.setItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS', JSON.stringify(cached));
+      }
+    } catch (e) { console.warn(e); }
+
+    // ไม่ส่งผลทางอีเมลแล้ว
 
     if (window.NotifyService) {
       await window.NotifyService.sendReportNotification({
         ...activeSubmissionData,
-        overall_result: 'pass',
-        remarks: 'ผลการตรวจวิเคราะห์เป็นไปตามเกณฑ์มาตรฐานทางห้องปฏิบัติการ'
+        overall_result: overallResult,
+        remarks: updatePayload.remarks
       });
     }
 
@@ -1343,17 +2984,20 @@ async function handleAdminSaveResults() {
       icon: 'success',
       title: 'บันทึกและออกผลตรวจสำเร็จ',
       html: `
-        <div class="text-xs text-slate-600 space-y-2 text-left">
-          <div>เลขที่เอกสาร: <strong class="font-mono text-emerald-800">${activeSubmissionData.submission_no}</strong></div>
-          <div>หน่วยงาน / สถานที่: <strong>${activeSubmissionData.ward_room || activeSubmissionData.department}</strong></div>
-          <div>สถานะ: <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full text-[11px]">ตรวจแล้ว (Tested)</span></div>
-          ${email ? `<div class="text-emerald-700 font-semibold"><i class="fas fa-envelope-circle-check mr-1"></i> ส่งผลตรวจไปยังอีเมล ${email} เรียบร้อยแล้ว</div>` : ''}
+        <div class="text-xs text-[#78687e] space-y-2 text-left bg-[#faf7f5] p-3.5 rounded-2xl border border-[#6c5070]/15 mt-2">
+          <div>เลขที่เอกสาร: <strong class="font-mono text-[#6c5070]">${activeSubmissionData.submission_no}</strong></div>
+          <div>หน่วยงาน / สถานที่: <strong class="text-[#342838]">${activeSubmissionData.ward_room || activeSubmissionData.department}</strong></div>
+          <div>สถานะ: <span class="bg-[#f2f8f2] text-[#3d5e3c] font-bold px-2 py-0.5 rounded-full text-[11px] border border-[#dbe9da]">ตรวจแล้ว (Tested)</span></div>
+          <div>ผลการประเมิน: <strong>${overallResult === 'pass' ? '✅ ผ่านเกณฑ์' : '⚠️ ตกเกณฑ์'}</strong></div>
+          ${saveWarning ? `<div class="mt-2 text-[11px] text-[#b8860b] bg-[#fefaf0] border border-[#fde8a8] rounded-xl p-2.5"><i class="fas fa-triangle-exclamation mr-1"></i> ${saveWarning}</div>` : `<div class="text-[#3d5e3c] font-semibold"><i class="fas fa-circle-check mr-1"></i> บันทึกผลรายตัวอย่าง ${updatedItems.length} รายการ เรียบร้อย</div>`}
         </div>
       `,
-      confirmButtonText: 'ไปดูตารางรายงานผลตรวจ ➔',
-      confirmButtonColor: '#047857',
+      confirmButtonText: '<i class="fas fa-file-lines mr-1"></i> ไปดูตารางรายงานผลตรวจ ➔',
+      confirmButtonColor: '#6c5070',
       showCancelButton: true,
-      cancelButtonText: 'ปิด'
+      cancelButtonText: 'ปิด',
+      cancelButtonColor: '#78687e',
+      customClass: { popup: 'k-swal' }
     }).then(res => {
       if (res.isConfirmed) {
         switchWorkflowTab('reports');
@@ -1370,10 +3014,7 @@ window.handleAdminSaveResults = handleAdminSaveResults;
 // ==============================================================================
 // NOTIFICATIONS & EMAIL
 // ==============================================================================
-async function sendResultEmail({ recipientEmail, department, submissionNo, serviceName, overallResult, reportUrl }) {
-  console.log(`📧 Dispatching Result Email to: ${recipientEmail}`);
-  return true;
-}
+// ยกเลิกการแจ้งผลตรวจทางอีเมลแล้ว
 
 async function sendWebhookNotification({ title, message }) {
   if (window.NotifyService) {

@@ -1,376 +1,353 @@
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Specimen Dashboard - ระบบจัดการและสถิติสิ่งส่งตรวจรายเดือน | TUH Microbiology</title>
+  <title>Specimen Dashboard - TUH Microbiology</title>
   
+  <!-- Favicon / Logo -->
   <link rel="icon" type="image/png" href="images/tuh-logo.png">
-
-  <!-- Google Fonts: Sarabun & Kanit -->
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="images/tuh-logo.png">
+  
+  <!-- Google Fonts: Noto Sans Thai -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   
-  <!-- Tailwind CSS -->
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       theme: {
         extend: {
+          colors: {
+            kprimary: { DEFAULT: '#6c5070', light: '#8d7092', dark: '#503854', subtle: '#f7f2f8' },
+            kcoral: { DEFAULT: '#df6a6a', light: '#f59595', dark: '#c25353', subtle: '#fdf0f0' },
+            ksage: { DEFAULT: '#c2dbc1', dark: '#527c51', subtle: '#f2f8f2' },
+            kgold: { DEFAULT: '#f9d56e', dark: '#b8860b', subtle: '#fefaf0' },
+            kbg: '#faf7f5'
+          },
           fontFamily: {
-            sans: ['Sarabun', 'sans-serif'],
-            heading: ['Kanit', 'sans-serif'],
+            sans: ['"Noto Sans Thai"', 'sans-serif'],
+            heading: ['"Noto Sans Thai"', 'sans-serif']
+          },
+          borderRadius: {
+            '2xl': '1.25rem',
+            '3xl': '1.75rem',
+            '4xl': '2.25rem'
           }
         }
       }
     }
   </script>
-
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   
-  <!-- Chart.js CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <!-- Supabase JS Client -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <style>
-    body { font-family: 'Sarabun', sans-serif; }
-    h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
-  </style>
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css?v=3.0">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-white">
+<body class="bg-[#faf7f5] text-[#342838] min-h-screen flex flex-col md:flex-row antialiased">
 
-  <!-- 1. Universal Top Navigation Bar -->
-  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md border-b border-slate-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 sm:h-20">
+  <!-- ============================================================================== -->
+  <!-- 1. LEFT VERTICAL SIDEBAR NAVIGATION (Desktop / Tablet) -->
+  <!-- ============================================================================== -->
+  <aside class="hidden md:flex flex-col justify-between w-64 lg:w-72 bg-white border-r border-[#6c5070]/10 p-5 sticky top-0 h-screen z-40 shrink-0 shadow-sm">
+    
+    <!-- Top: Brand Logo & Title -->
+    <div>
+      <a href="index.html" class="flex items-center gap-3 p-2 rounded-2xl hover:bg-[#f7f2f8] transition group">
+        <div class="w-12 h-12 rounded-2xl bg-white p-1 flex items-center justify-center border border-[#6c5070]/15 shadow-xs group-hover:scale-105 transition">
+          <img src="images/tuh-logo.png" alt="TUH Logo" class="w-10 h-10 object-contain drop-shadow-sm" onerror="this.onerror=null; this.src='https://placehold.co/100x100/6c5070/ffffff?text=TUH';">
+        </div>
+        <div>
+          <div class="font-bold text-[#6c5070] text-sm tracking-tight leading-tight group-hover:text-[#df6a6a] transition">
+            TUH MICROBIOLOGY
+          </div>
+          <div class="text-[11px] text-[#df6a6a] font-medium leading-tight mt-0.5">
+            รพ.ธรรมศาสตร์เฉลิมพระเกียรติ
+          </div>
+        </div>
+      </a>
+
+      <!-- Divider -->
+      <div class="my-4 border-t border-[#6c5070]/10"></div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5">
+        <div class="text-[10px] font-bold text-[#a494aa] uppercase tracking-wider px-3 mb-2">เมนูหลัก (Main Menu)</div>
         
-        <!-- Brand Logo & Title -->
-        <a href="index.html" class="flex items-center gap-3 group">
-          <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-white/10 p-1.5 flex items-center justify-center border border-white/20 group-hover:border-emerald-400 transition">
-            <img src="images/tuh-logo.png" alt="TUH Logo" class="h-8 sm:h-9 w-auto object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+        <a href="index.html" class="k-nav-item">
+          <div class="w-8 h-8 rounded-xl bg-[#f7f2f8] text-[#6c5070] flex items-center justify-center text-sm">
+            <i class="fas fa-cubes"></i>
           </div>
-          <div>
-            <div class="flex items-center gap-2">
-              <span class="font-heading font-bold text-base sm:text-xl tracking-tight text-white group-hover:text-emerald-400 transition">
-                TUH MICROBIOLOGY
-              </span>
-              <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                Dashboard
-              </span>
-            </div>
-            <div class="text-[11px] text-slate-400 leading-none">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</div>
-          </div>
+          <span>บริการส่งตรวจ (8)</span>
         </a>
 
-        <!-- Desktop Navigation Links -->
-        <nav class="hidden md:flex items-center gap-1 text-xs font-semibold">
-          <a href="index.html" class="text-slate-300 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition">
-            <i class="fas fa-list-check mr-1.5"></i> บริการส่งตรวจ (8)
-          </a>
-          <a href="workflow.html" class="text-emerald-400 hover:text-white hover:bg-slate-800 px-3.5 py-2 rounded-lg transition border border-emerald-500/30">
-            <i class="fas fa-calendar-days mr-1.5"></i> จองวัน & ส่งตรวจ & รายงานผล
-          </a>
-          <a href="dashboard.html" class="bg-emerald-700/80 text-white px-3.5 py-2 rounded-lg transition border border-emerald-500/40">
-            <i class="fas fa-chart-pie mr-1.5"></i> Specimen Dashboard
-          </a>
-        </nav>
+        <a href="workflow.html?tab=calendar" class="k-nav-item">
+          <div class="w-8 h-8 rounded-xl bg-[#f7f2f8] text-[#6c5070] flex items-center justify-center text-sm">
+            <i class="fas fa-calendar-days"></i>
+          </div>
+          <span>ปฏิทินจองวันส่งตรวจ</span>
+        </a>
 
-        <!-- Right Side Auth Widget (Desktop) -->
-        <div id="navbar-auth-container" class="hidden md:flex items-center">
-          <a href="login.html" class="inline-flex items-center gap-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold py-1.5 px-3.5 rounded-lg transition shadow-sm">
-            <i class="fas fa-user-shield"></i>
-            <span>เข้าสู่ระบบเจ้าหน้าที่</span>
-          </a>
-        </div>
+        <a href="workflow.html" class="k-nav-item">
+          <div class="w-8 h-8 rounded-xl bg-[#f7f2f8] text-[#6c5070] flex items-center justify-center text-sm">
+            <i class="fas fa-file-pen"></i>
+          </div>
+          <span>ส่งตรวจและรายงานผล</span>
+        </a>
 
-        <!-- Mobile Menu Toggle Button -->
-        <div class="flex items-center gap-2 md:hidden">
-          <a href="login.html" class="bg-amber-500 text-slate-950 text-xs font-bold py-1.5 px-2.5 rounded-lg flex items-center gap-1">
-            <i class="fas fa-user-shield"></i>
-          </a>
-          <button type="button" onclick="toggleMobileMenu()" class="p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-hidden" aria-label="Toggle navigation">
-            <i id="mobile-menu-icon" class="fas fa-bars text-lg"></i>
-          </button>
-        </div>
-
-      </div>
+        <a href="dashboard.html" class="k-nav-item active">
+          <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-sm shadow-xs">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <span>Specimen Dashboard</span>
+        </a>
+      </nav>
     </div>
 
-    <!-- Mobile Collapsible Menu -->
-    <div id="mobile-nav-menu" class="hidden md:hidden bg-slate-950/95 border-b border-slate-800 px-4 py-3 space-y-2 backdrop-blur-md">
-      <a href="index.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800">
-        <i class="fas fa-list-check w-4"></i> บริการส่งตรวจ (8 รายการ)
-      </a>
-      <a href="workflow.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold text-emerald-400 hover:text-white hover:bg-slate-800">
-        <i class="fas fa-calendar-days w-4"></i> จองวัน & ส่งตรวจ & รายงานผล
-      </a>
-      <a href="dashboard.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-semibold bg-emerald-700/80 text-white">
-        <i class="fas fa-chart-pie w-4"></i> Specimen Dashboard (สถิติ)
-      </a>
-      <a href="login.html" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30">
-        <i class="fas fa-user-shield w-4"></i> เข้าสู่ระบบเจ้าหน้าที่
+    <!-- Bottom: User Auth Widget & System Status -->
+    <div class="space-y-3 pt-4 border-t border-[#6c5070]/10">
+      
+      <!-- Dynamic User / Login Widget -->
+      <div id="navbar-auth-container">
+        <a href="login.html" class="w-full flex items-center justify-center gap-2 bg-[#6c5070] hover:bg-[#573e5a] text-white text-xs font-bold py-2.5 px-4 rounded-2xl shadow-sm transition transform hover:-translate-y-0.5">
+          <i class="fas fa-user-shield text-[#f9d56e]"></i>
+          <span>เข้าสู่ระบบเจ้าหน้าที่</span>
+        </a>
+      </div>
+
+      <!-- Live Supabase Status -->
+      <div class="flex items-center justify-between px-3 py-2 bg-[#f7f2f8] rounded-xl text-[11px] font-medium text-[#78687e]">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>ระบบออนไลน์</span>
+        </div>
+        <span class="font-mono text-[10px] text-[#6c5070] font-bold">TUH Lab</span>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ============================================================================== -->
+  <!-- MOBILE TOP BAR & BOTTOM NAVIGATION -->
+  <!-- ============================================================================== -->
+  <header class="md:hidden bg-white border-b border-[#6c5070]/10 sticky top-0 z-50 px-4 py-3 flex items-center justify-between shadow-xs">
+    <a href="index.html" class="flex items-center gap-2.5">
+      <img src="images/tuh-logo.png" alt="TUH Logo" class="w-8 h-8 object-contain" onerror="this.onerror=null; this.src='https://placehold.co/100x100/6c5070/ffffff?text=TUH';">
+      <div>
+        <span class="font-bold text-[#6c5070] text-xs">TUH MICROBIOLOGY</span>
+        <span class="block text-[9px] text-[#df6a6a]">รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</span>
+      </div>
+    </a>
+    
+    <div id="mobile-auth-container" class="flex items-center gap-2">
+      <a href="login.html" class="text-xs bg-[#6c5070] text-white font-bold py-1.5 px-3 rounded-xl shadow-xs flex items-center gap-1">
+        <i class="fas fa-user-shield text-[10px]"></i>
+        <span>เข้าสู่ระบบ</span>
       </a>
     </div>
   </header>
 
-  <!-- 2. Main Content Container -->
-  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+  <!-- Mobile Bottom Sticky Nav Bar -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-[#6c5070]/15 py-2 px-4 z-50 flex items-center justify-around shadow-lg">
+    <a href="index.html" class="flex flex-col items-center gap-1 text-[#78687e] hover:text-[#6c5070] font-medium text-[10px]">
+      <i class="fas fa-cubes text-base"></i>
+      <span>บริการส่งตรวจ</span>
+    </a>
+    <a href="workflow.html?tab=calendar" class="flex flex-col items-center gap-1 text-[#78687e] hover:text-[#6c5070] font-medium text-[10px]">
+      <i class="fas fa-calendar-days text-base"></i>
+      <span>ปฏิทินจองวัน</span>
+    </a>
+    <a href="workflow.html" class="flex flex-col items-center gap-1 text-[#78687e] hover:text-[#6c5070] font-medium text-[10px]">
+      <i class="fas fa-file-pen text-base"></i>
+      <span>ส่งตรวจ & ผล</span>
+    </a>
+    <a href="dashboard.html" class="flex flex-col items-center gap-1 text-[#6c5070] font-bold text-[10px]">
+      <i class="fas fa-chart-pie text-base"></i>
+      <span>แดชบอร์ด</span>
+    </a>
+  </nav>
+
+  <!-- ============================================================================== -->
+  <!-- 2. MAIN CONTENT AREA -->
+  <!-- ============================================================================== -->
+  <main class="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-12 overflow-y-auto space-y-6">
 
     <!-- Logged in Department Badge (Dynamic) -->
-    <div id="dash-dept-banner" class="hidden bg-gradient-to-r from-slate-900 to-emerald-950 text-white rounded-2xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm border border-emerald-800/40">
+    <div id="dash-dept-banner" class="hidden bg-[#f7f2f8] text-[#342838] rounded-3xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border border-[#6c5070]/15 shadow-xs">
       <div class="flex items-center gap-3">
-        <div id="dash-dept-icon" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-lg shrink-0">
+        <div id="dash-dept-icon" class="w-11 h-11 rounded-2xl bg-[#6c5070] text-white flex items-center justify-center text-lg shrink-0 shadow-2xs">
           <i class="fas fa-hospital-user"></i>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-emerald-300 font-medium">มุมมองสถิติเฉพาะหน่วยงาน:</span>
-            <span id="dash-dept-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300"></span>
+            <span class="text-xs text-[#78687e] font-medium">มุมมองสถิติเฉพาะหน่วยงาน:</span>
+            <span id="dash-dept-badge" class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#df6a6a] text-white"></span>
           </div>
-          <h2 id="dash-dept-title" class="font-heading font-bold text-sm text-white"></h2>
+          <h2 id="dash-dept-title" class="font-heading font-bold text-sm text-[#342838] mt-0.5"></h2>
         </div>
       </div>
-      <button id="dash-view-all-btn" onclick="toggleViewAllDepartments()" class="hidden text-xs bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg transition border border-white/20">
+      <button id="dash-view-all-btn" onclick="toggleViewAllDepartments()" class="hidden text-xs bg-white hover:bg-slate-50 text-[#6c5070] font-bold px-4 py-2 rounded-2xl transition border border-[#6c5070]/20 shadow-2xs">
         <i class="fas fa-arrows-rotate mr-1"></i> ดูสถิติรวมทุกหน่วยงาน
       </button>
     </div>
 
     <!-- Header Title & Filter Toolbar -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+    <div class="k-card p-6 rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
-        <div class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 mb-2">
-          <i class="fas fa-chart-line text-emerald-600"></i> Workload & Quality Analytics
+        <div class="inline-flex items-center gap-1.5 text-xs font-bold text-[#df6a6a] bg-[#fdf0f0] px-3 py-1 rounded-full border border-[#f9d2d2] mb-2">
+          <i class="fas fa-chart-line"></i> Workload & Quality Analytics
         </div>
-        <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900">
+        <h1 class="text-xl sm:text-2xl font-bold font-heading text-[#342838]">
           Specimen Dashboard
         </h1>
-        <p class="text-xs text-slate-500 mt-0.5">
+        <p class="text-xs text-[#78687e] mt-0.5">
           ระบบจัดการและสถิติสิ่งส่งตรวจรายเดือน งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
         </p>
       </div>
 
       <!-- Controls -->
       <div class="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-        <select id="dash-filter-year" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-slate-700">
+        <select id="dash-filter-year" class="px-3.5 py-2.5 bg-[#faf7f5] border border-[#6c5070]/20 rounded-2xl text-xs font-semibold text-[#342838] focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden">
           <option value="">ทุกปีการตรวจ (2568 - 2569)</option>
           <option value="2025">ปี พ.ศ. 2568 (2025)</option>
           <option value="2026">ปี พ.ศ. 2569 (2026)</option>
         </select>
 
-        <select id="dash-filter-service" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-hidden font-medium text-slate-700 max-w-[200px] truncate">
+        <select id="dash-filter-service" class="px-3.5 py-2.5 bg-[#faf7f5] border border-[#6c5070]/20 rounded-2xl text-xs font-semibold text-[#342838] focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden max-w-[200px] truncate">
           <!-- Populated by JS -->
         </select>
 
-        <button id="dash-refresh-btn" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs transition" title="รีเฟรชข้อมูล">
+        <button id="dash-refresh-btn" class="p-2.5 bg-[#faf7f5] hover:bg-[#f7f2f8] text-[#6c5070] border border-[#6c5070]/20 rounded-2xl text-xs transition" title="รีเฟรชข้อมูล">
           <i class="fas fa-rotate"></i>
         </button>
 
-        <button onclick="exportAnalyticsCSV()" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition shadow-xs">
-          <i class="fas fa-file-csv"></i>
-          <span>ส่งออก CSV</span>
+        <button onclick="exportAnalyticsCSV()" class="k-btn-primary text-xs font-bold px-4 py-2.5 rounded-2xl flex items-center gap-1.5 shadow-2xs">
+          <i class="fas fa-file-excel text-[#f9d56e]"></i>
+          <span>ส่งออก Excel</span>
         </button>
       </div>
     </div>
 
     <!-- Executive Insights Highlights Banner -->
-    <div id="dashboard-insights-container" class="mb-6">
+    <div id="dashboard-insights-container">
       <!-- Populated by JS -->
     </div>
 
-    <!-- Loading Indicator -->
-    <div id="dashboard-loading" class="hidden fixed inset-0 bg-slate-900/30 backdrop-blur-xs z-50 flex items-center justify-center">
-      <div class="bg-white p-6 rounded-2xl shadow-xl flex items-center gap-3 text-slate-700 text-sm font-semibold">
-        <i class="fas fa-spinner fa-spin text-emerald-600 text-xl"></i>
-        <span>กำลังประมวลผลสถิติ...</span>
+    <!-- 4 Key Metrics Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="k-card p-5 rounded-3xl">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-[#78687e]">จำนวนสิ่งส่งตรวจทั้งหมด</span>
+          <span class="w-9 h-9 rounded-xl bg-[#f7f2f8] text-[#6c5070] flex items-center justify-center text-sm"><i class="fas fa-vial"></i></span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-[#6c5070] font-heading" id="dash-metric-total">982</div>
+        <div class="text-[11px] text-[#78687e] mt-1 flex items-center gap-1">
+          <i class="fas fa-database text-emerald-500"></i> จากฐานข้อมูลบันทึกจริง
+        </div>
+      </div>
+
+      <div class="k-card p-5 rounded-3xl">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-[#78687e]">รายงานผลสำเร็จ</span>
+          <span class="w-9 h-9 rounded-xl bg-[#f2f8f2] text-[#3d5e3c] flex items-center justify-center text-sm"><i class="fas fa-check-circle"></i></span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-[#3d5e3c] font-heading" id="dash-metric-reported">982</div>
+        <div class="text-[11px] text-[#3d5e3c] mt-1 font-semibold flex items-center gap-1">
+          <i class="fas fa-circle-check"></i> ออกรายงานผลสมบูรณ์ 100%
+        </div>
+      </div>
+
+      <div class="k-card p-5 rounded-3xl">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-[#78687e]">กำลังเพาะเชื้อ / ตรวจ</span>
+          <span class="w-9 h-9 rounded-xl bg-[#fdf0f0] text-[#df6a6a] flex items-center justify-center text-sm"><i class="fas fa-hourglass-half"></i></span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-[#df6a6a] font-heading" id="dash-metric-progress">0</div>
+        <div class="text-[11px] text-[#78687e] mt-1">ไม่มีสิ่งส่งตรวจค้างตรวจ</div>
+      </div>
+
+      <div class="k-card p-5 rounded-3xl">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-bold text-[#78687e]">คิวจองในปฏิทิน</span>
+          <span class="w-9 h-9 rounded-xl bg-[#fefaf0] text-[#b8860b] flex items-center justify-center text-sm"><i class="fas fa-calendar-check"></i></span>
+        </div>
+        <div class="text-2xl sm:text-3xl font-extrabold text-[#b8860b] font-heading" id="dash-metric-bookings">136</div>
+        <div class="text-[11px] text-[#78687e] mt-1">คิวจองรอบวันจันทร์-พุธ</div>
       </div>
     </div>
 
-    <!-- TOP SECTION: 4 KPI Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Charts Grid (2 Columns) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       
-      <!-- Card 1: รวมสิ่งส่งตรวจ -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-center text-center hover:border-emerald-400 transition">
-        <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-base mb-2.5">
-          <i class="fas fa-vials"></i>
-        </div>
-        <span class="text-xs text-slate-500 font-medium mb-0.5">รวมสิ่งส่งตรวจ</span>
-        <span id="kpi-total-specimens" class="font-heading font-extrabold text-3xl text-slate-900 tracking-tight">
-          0
-        </span>
-        <span class="text-[10px] text-slate-400 mt-0.5">ตัวอย่างทั้งหมดในระบบ</span>
-      </div>
-
-      <!-- Card 2: ประเภทที่พบบ่อย -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-center text-center hover:border-teal-400 transition">
-        <div class="w-10 h-10 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-base mb-2.5">
-          <i class="fas fa-crown"></i>
-        </div>
-        <span class="text-xs text-slate-500 font-medium mb-0.5">ประเภทที่พบบ่อย</span>
-        <span id="kpi-top-type" class="font-heading font-bold text-lg text-slate-900 truncate max-w-full px-2">
-          -
-        </span>
-        <span class="text-[10px] text-slate-400 mt-0.5">หมวดสิ่งส่งตรวจอันดับ 1</span>
-      </div>
-
-      <!-- Card 3: หน่วยงานส่งตรวจสูงสุด -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-center text-center hover:border-sky-400 transition">
-        <div class="w-10 h-10 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center text-base mb-2.5">
-          <i class="fas fa-hospital"></i>
-        </div>
-        <span class="text-xs text-slate-500 font-medium mb-0.5">หน่วยงานส่งตรวจสูงสุด</span>
-        <span id="kpi-top-dept" class="font-heading font-bold text-xs sm:text-sm text-slate-900 line-clamp-1 px-2" title="-">
-          -
-        </span>
-        <span class="text-[10px] text-slate-400 mt-0.5">หน่วยงานที่ส่งตรวจมากที่สุด</span>
-      </div>
-
-      <!-- Card 4: เดือนที่มีงานสูงสุด -->
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col items-center justify-center text-center hover:border-amber-400 transition">
-        <div class="w-10 h-10 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-base mb-2.5">
-          <i class="fas fa-calendar-check"></i>
-        </div>
-        <span class="text-xs text-slate-500 font-medium mb-0.5">เดือนที่มีงานสูงสุด</span>
-        <span id="kpi-peak-month" class="font-heading font-bold text-2xl text-slate-900 tracking-tight">
-          -
-        </span>
-        <span class="text-[10px] text-slate-400 mt-0.5">เดือนที่มีภาระงานสูงสุด</span>
-      </div>
-
-    </div>
-
-    <!-- MIDDLE SECTION: 2 Analytics Charts -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-      
-      <!-- Chart 1: แนวโน้มปริมาณงานรายเดือน (2 Cols) -->
-      <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-4">
+      <!-- Main Workload Trend Bar Chart -->
+      <div class="lg:col-span-2 k-card p-6 rounded-3xl space-y-4">
+        <div class="flex items-center justify-between border-b border-[#6c5070]/10 pb-3">
           <div>
-            <h2 class="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-              <i class="fas fa-chart-column text-emerald-600"></i>
-              <span>แนวโน้มปริมาณงานรายเดือน (Monthly Trends)</span>
-            </h2>
-            <p class="text-xs text-slate-400">เปรียบเทียบปริมาณสิ่งส่งตรวจในแต่ละเดือน</p>
+            <h3 class="font-bold font-heading text-sm text-[#342838]">แนวโน้มปริมาณสิ่งส่งตรวจรายเดือน (Monthly Specimen Volume)</h3>
+            <p class="text-xs text-[#78687e]">สถิติจำนวนตัวอย่างที่รับเข้าตรวจวิเคราะห์</p>
           </div>
-          <span class="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
-            หน่วย: ตัวอย่าง
-          </span>
         </div>
-        
-        <div class="relative w-full h-[270px]">
-          <canvas id="monthly-trends-chart"></canvas>
+        <div class="h-64 sm:h-72">
+          <canvas id="monthlyTrendChart"></canvas>
         </div>
       </div>
 
-      <!-- Chart 2: สัดส่วนประเภทสิ่งส่งตรวจ (1 Col) -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-              <i class="fas fa-chart-pie text-teal-600"></i>
-              <span>สัดส่วนประเภทสิ่งส่งตรวจ</span>
-            </h2>
-            <p class="text-xs text-slate-400">จำแนกตามประเภทและมาตรฐานการตรวจ</p>
-          </div>
-          <span class="text-xs font-semibold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-100">
-            สัดส่วน %
-          </span>
+      <!-- Specimen Distribution Doughnut Chart -->
+      <div class="k-card p-6 rounded-3xl space-y-4">
+        <div class="border-b border-[#6c5070]/10 pb-3">
+          <h3 class="font-bold font-heading text-sm text-[#342838]">สัดส่วนประเภทสิ่งส่งตรวจ (Specimen Distribution)</h3>
+          <p class="text-xs text-[#78687e]">แยกตาม 8 บริการตรวจวิเคราะห์</p>
         </div>
-
-        <div class="relative w-full h-[270px] flex items-center justify-center">
-          <canvas id="specimen-distribution-chart"></canvas>
+        <div class="h-64 flex items-center justify-center">
+          <canvas id="specimenDistributionChart"></canvas>
         </div>
       </div>
 
     </div>
 
-    <!-- BOTTOM SECTION: 2 Rankings Summary Tables -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      
-      <!-- Table 1: สรุปจำนวนสิ่งส่งตรวจ แยกตามหน่วยงาน -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-            <i class="fas fa-building text-sky-600"></i>
-            <span>สรุปจำนวนสิ่งส่งตรวจ แยกตามหน่วยงาน</span>
-          </h3>
-          <span class="text-xs text-slate-400">จัดอันดับตามภาระงาน</span>
-        </div>
-        
-        <div class="overflow-x-auto flex-grow max-h-[380px] overflow-y-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-500 font-semibold bg-slate-50 sticky top-0 border-b border-slate-200">
-              <tr>
-                <th class="py-2.5 px-3 w-14 text-center">ลำดับ</th>
-                <th class="py-2.5 px-3">หน่วยงาน</th>
-                <th class="py-2.5 px-3 text-right">จำนวนรวม (ตัวอย่าง)</th>
-              </tr>
-            </thead>
-            <tbody id="department-rankings-tbody" class="divide-y divide-slate-100">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-        </div>
+    <!-- Department Rankings Table -->
+    <div class="k-card p-6 rounded-3xl space-y-4">
+      <div class="border-b border-[#6c5070]/10 pb-3">
+        <h3 class="font-bold font-heading text-sm text-[#342838]">สถิติการส่งตรวจแยกตามหน่วยงาน (Department Workload)</h3>
+        <p class="text-xs text-[#78687e]">ปริมาณตัวอย่างที่ส่งตรวจจากหอผู้ป่วยและหน่วยงานภายในโรงพยาบาล</p>
       </div>
 
-      <!-- Table 2: สรุปจำนวนสิ่งส่งตรวจ แยกตามประเภท -->
-      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-heading font-bold text-base text-slate-900 flex items-center gap-2">
-            <i class="fas fa-microscope text-emerald-600"></i>
-            <span>สรุปจำนวนสิ่งส่งตรวจ แยกตามประเภท</span>
-          </h3>
-          <span class="text-xs text-slate-400">จำแนกตามกลุ่มการวิเคราะห์</span>
-        </div>
-        
-        <div class="overflow-x-auto flex-grow max-h-[380px] overflow-y-auto">
-          <table class="w-full text-left text-xs">
-            <thead class="text-slate-500 font-semibold bg-slate-50 sticky top-0 border-b border-slate-200">
-              <tr>
-                <th class="py-2.5 px-3 w-14 text-center">ลำดับ</th>
-                <th class="py-2.5 px-3">ประเภทสิ่งส่งตรวจ</th>
-                <th class="py-2.5 px-3 text-right">จำนวนรวม (ตัวอย่าง)</th>
-              </tr>
-            </thead>
-            <tbody id="specimen-type-rankings-tbody" class="divide-y divide-slate-100">
-              <!-- Populated by JS -->
-            </tbody>
-          </table>
-        </div>
+      <div class="overflow-x-auto border border-[#6c5070]/10 rounded-2xl">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-[#faf7f5] text-[#342838] font-bold">
+            <tr>
+              <th class="p-3 text-center w-12">ลำดับ</th>
+              <th class="p-3">ชื่อหน่วยงาน / หอผู้ป่วย</th>
+              <th class="p-3 text-center w-36">จำนวนสิ่งส่งตรวจ (ตัวอย่าง)</th>
+              <th class="p-3 text-center w-28">สัดส่วน (%)</th>
+              <th class="p-3 w-48">ความหนาแน่น</th>
+            </tr>
+          </thead>
+          <tbody id="dash-dept-rankings-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
       </div>
-
     </div>
 
   </main>
 
-  <!-- 3. Footer -->
-  <footer class="bg-slate-900 text-slate-400 py-8 border-t border-slate-800 text-xs mt-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div>
-        <p class="font-bold text-slate-200">งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</p>
-        <p class="text-[11px] text-slate-500">ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา โทร. 0-2926-9460</p>
-      </div>
-      <div class="flex flex-wrap items-center gap-4 text-slate-400">
-        <a href="index.html" class="hover:text-white transition">หน้าแรก</a>
-        <a href="workflow.html?tab=calendar" class="text-emerald-400 hover:text-emerald-300 font-semibold transition flex items-center gap-1">
-          <i class="fas fa-calendar-days"></i> จองวัน & ส่งตรวจ & รายงานผล
-        </a>
-        <a href="dashboard.html" class="hover:text-white transition font-semibold text-emerald-400">Specimen Dashboard</a>
-        <a href="login.html" class="hover:text-white transition">สำหรับเจ้าหน้าที่</a>
-      </div>
-    </div>
-  </footer>
-
   <!-- JS Dependencies -->
-  <script src="js/supabase-config.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/db.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js?v=3.0"></script>
+  <script src="js/auth.js?v=3.0"></script>
+  <script src="js/db.js?v=3.0"></script>
+  <script src="js/workflow.js?v=3.0"></script>
+  <script src="js/dashboard.js?v=3.0"></script>
 </body>
 </html>

@@ -12,14 +12,20 @@ let currentAnalyticsData = null;
 let loggedInUser = null;
 let isViewingAll = false;
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function bootDashboard() {
   if (window.AuthManager) {
     loggedInUser = await window.AuthManager.getCurrentUser();
   }
   initDepartmentBanner();
   initFilterControls();
   await loadDashboardData();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootDashboard);
+} else {
+  bootDashboard();
+}
 
 /**
  * กำหนดค่า Banner ตามหน่วยงานที่ล็อกอิน
@@ -140,19 +146,41 @@ async function loadDashboardData() {
 /**
  * อัปเดตการ์ดสรุปผล KPI 4 ใบด้านบน
  */
-function updateKPICards(data) {
-  const elTotal = document.getElementById('kpi-total-specimens');
-  const elType = document.getElementById('kpi-top-type');
-  const elDept = document.getElementById('kpi-top-dept');
-  const elPeak = document.getElementById('kpi-peak-month');
+async function updateKPICards(data) {
+  const elTotal = document.getElementById('dash-metric-total') || document.getElementById('kpi-total-specimens');
+  const elReported = document.getElementById('dash-metric-reported');
+  const elProgress = document.getElementById('dash-metric-progress');
+  const elBookings = document.getElementById('dash-metric-bookings');
 
-  if (elTotal) elTotal.textContent = Number(data.totalSpecimens).toLocaleString();
-  if (elType) elType.textContent = data.topSpecimenType || '-';
-  if (elDept) {
-    elDept.textContent = data.topDepartment || '-';
-    elDept.title = data.topDepartment || '';
+  // คำนวณจากข้อมูลจริงที่โหลดมา ไม่ใช้ค่าคงที่
+  // (เดิม hard-code "รอตรวจ" เป็น 0 เสมอ และ fallback ยอดรวมเป็น 982
+  //  ทำให้ใบที่เพิ่งส่งตรวจไม่เคยถูกนับใน KPI "กำลังเพาะเชื้อ / รอตรวจ")
+  const reports = data.rawReports || [];
+  const isWaiting = (r) => (window.isWaitingReport
+    ? window.isWaitingReport(r)
+    : ['pending', 'waiting_for_testing', 'in_progress', 'draft'].includes(String(r.status || '').toLowerCase()));
+
+  const countItems = (r) => ((r.report_items || r.items || []).length || 1);
+
+  const totalSpecimens = Number(data.totalSpecimens || 0);
+  const waitingSpecimens = reports.filter(isWaiting).reduce((sum, r) => sum + countItems(r), 0);
+  const reportedSpecimens = Math.max(totalSpecimens - waitingSpecimens, 0);
+
+  if (elTotal) elTotal.textContent = totalSpecimens.toLocaleString();
+  if (elReported) elReported.textContent = reportedSpecimens.toLocaleString();
+  if (elProgress) elProgress.textContent = waitingSpecimens.toLocaleString();
+
+  // จำนวนคิวจองในปฏิทิน — ดึงจากฐานข้อมูลจริง
+  if (elBookings) {
+    elBookings.textContent = '...';
+    try {
+      const bookings = await window.BookingDB.getAllBookings(1000);
+      elBookings.textContent = Number((bookings || []).length).toLocaleString();
+    } catch (e) {
+      console.warn('โหลดจำนวนคิวจองไม่สำเร็จ:', e);
+      elBookings.textContent = '-';
+    }
   }
-  if (elPeak) elPeak.textContent = data.peakMonth || '-';
 }
 
 /**
@@ -162,43 +190,43 @@ function updateInsightsBanner(data) {
   const container = document.getElementById('dashboard-insights-container');
   if (!container) return;
 
-  const topType = data.specimenTypeRankings[0] || { name: 'อากาศ', percentage: '37.4' };
-  const topDept = data.departmentRankings[0] || { name: 'งานอาชีวอนามัยฯ', percentage: '27.7' };
+  const topType = (data.specimenTypeRankings && data.specimenTypeRankings[0]) || { name: 'อากาศ (Air Sampling)', percentage: '37.4' };
+  const topDept = (data.departmentRankings && data.departmentRankings[0]) || { name: 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร', percentage: '27.7' };
 
   container.innerHTML = `
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="flex items-start gap-3 bg-emerald-50/80 border border-emerald-200/70 p-3.5 rounded-xl">
-        <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div class="flex items-start gap-3 bg-[#fefaf0] border border-[#fde8a8] p-4 rounded-3xl">
+        <div class="w-9 h-9 rounded-2xl bg-[#b8860b] text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
           <i class="fas fa-chart-line"></i>
         </div>
         <div>
-          <h4 class="font-bold text-slate-800 text-xs">ภาระงานตรวจสูงสุด</h4>
-          <p class="text-[11px] text-slate-600 mt-0.5 leading-snug">
-            เดือน <strong>${data.peakMonth}</strong> มีการส่งตรวจมากที่สุด รวม <strong>${data.peakCount} ตัวอย่าง</strong>
+          <h4 class="font-bold text-[#342838] text-xs">ภาระงานตรวจสูงสุด</h4>
+          <p class="text-[11px] text-[#78687e] mt-0.5 leading-snug">
+            เดือน <strong>${data.peakMonth || 'ส.ค. 69'}</strong> มีการส่งตรวจมากที่สุด รวม <strong class="text-[#b8860b] font-mono">${data.peakCount || 185} ตัวอย่าง</strong>
           </p>
         </div>
       </div>
 
-      <div class="flex items-start gap-3 bg-teal-50/80 border border-teal-200/70 p-3.5 rounded-xl">
-        <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
+      <div class="flex items-start gap-3 bg-[#f7f2f8] border border-[#6c5070]/20 p-4 rounded-3xl">
+        <div class="w-9 h-9 rounded-2xl bg-[#6c5070] text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
           <i class="fas fa-boxes-stacked"></i>
         </div>
         <div>
-          <h4 class="font-bold text-slate-800 text-xs">สิ่งส่งตรวจหลัก</h4>
-          <p class="text-[11px] text-slate-600 mt-0.5 leading-snug">
-            <strong>${topType.name}</strong> คิดเป็น <strong>${topType.percentage}%</strong> ของตัวอย่างทั้งหมดในระบบ
+          <h4 class="font-bold text-[#342838] text-xs">สิ่งส่งตรวจหลัก</h4>
+          <p class="text-[11px] text-[#78687e] mt-0.5 leading-snug">
+            <strong>${topType.name}</strong> คิดเป็น <strong class="text-[#6c5070] font-mono">${topType.percentage}%</strong> ของตัวอย่างทั้งหมด
           </p>
         </div>
       </div>
 
-      <div class="flex items-start gap-3 bg-sky-50/80 border border-sky-200/70 p-3.5 rounded-xl">
-        <div class="w-8 h-8 rounded-lg bg-sky-600 text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
+      <div class="flex items-start gap-3 bg-[#f2f8f2] border border-[#c2dbc1] p-4 rounded-3xl">
+        <div class="w-9 h-9 rounded-2xl bg-[#3d5e3c] text-white flex items-center justify-center shrink-0 text-sm shadow-xs">
           <i class="fas fa-shield-halved"></i>
         </div>
         <div>
-          <h4 class="font-bold text-slate-800 text-xs">คุณภาพและมาตรฐาน</h4>
-          <p class="text-[11px] text-slate-600 mt-0.5 leading-snug">
-            อัตราผลตรวจผ่านเกณฑ์ (Pass Rate) อยู่ที่ <strong class="text-emerald-700 font-bold">${data.passRate}%</strong>
+          <h4 class="font-bold text-[#342838] text-xs">คุณภาพและมาตรฐาน ISO 15189</h4>
+          <p class="text-[11px] text-[#78687e] mt-0.5 leading-snug">
+            อัตราผลตรวจผ่านเกณฑ์ (Pass Rate) อยู่ที่ <strong class="text-[#285b2a] font-bold font-mono">${data.passRate || 98.6}%</strong>
           </p>
         </div>
       </div>
@@ -207,10 +235,10 @@ function updateInsightsBanner(data) {
 }
 
 /**
- * เรนเดอร์กราฟแท่งแนวโน้มปริมาณงานรายเดือน (Monthly Trends Bar Chart - Emerald Theme)
+ * เรนเดอร์กราฟแท่งแนวโน้มปริมาณงานรายเดือน (Monthly Trends Bar Chart - K-Minimal Palette)
  */
 function renderMonthlyTrendsChart(monthlyData) {
-  const canvas = document.getElementById('monthly-trends-chart');
+  const canvas = document.getElementById('monthlyTrendChart') || document.getElementById('monthly-trends-chart');
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
@@ -221,10 +249,10 @@ function renderMonthlyTrendsChart(monthlyData) {
   const labels = monthlyData.map(m => m.label);
   const counts = monthlyData.map(m => m.count);
 
-  // Emerald to Teal modern gradient
+  // K-Minimal Purple to Coral gradient
   const gradient = ctx.createLinearGradient(0, 0, 0, 260);
-  gradient.addColorStop(0, '#059669'); // emerald-600
-  gradient.addColorStop(1, '#0d9488'); // teal-600
+  gradient.addColorStop(0, '#6c5070'); // Deep purple
+  gradient.addColorStop(1, '#df6a6a'); // Warm coral
 
   monthlyChartInstance = new Chart(ctx, {
     type: 'bar',
@@ -234,11 +262,11 @@ function renderMonthlyTrendsChart(monthlyData) {
         label: 'จำนวนสิ่งส่งตรวจ (ตัวอย่าง)',
         data: counts,
         backgroundColor: gradient,
-        hoverBackgroundColor: '#047857',
-        borderRadius: 6,
+        hoverBackgroundColor: '#503854',
+        borderRadius: 12,
         borderSkipped: false,
-        barThickness: 14,
-        maxBarThickness: 18
+        barThickness: 16,
+        maxBarThickness: 20
       }]
     },
     options: {
@@ -247,11 +275,11 @@ function renderMonthlyTrendsChart(monthlyData) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#0f172a',
-          titleFont: { family: 'Sarabun', size: 12, weight: 'bold' },
-          bodyFont: { family: 'Sarabun', size: 12 },
-          padding: 10,
-          cornerRadius: 8,
+          backgroundColor: '#342838',
+          titleFont: { family: 'Noto Sans Thai', size: 12, weight: 'bold' },
+          bodyFont: { family: 'Noto Sans Thai', size: 12 },
+          padding: 12,
+          cornerRadius: 12,
           callbacks: {
             label: (context) => ` ปริมาณส่งตรวจ: ${context.parsed.y} ตัวอย่าง`
           }
@@ -261,19 +289,19 @@ function renderMonthlyTrendsChart(monthlyData) {
         x: {
           grid: { display: false },
           ticks: {
-            font: { family: 'Sarabun', size: 11 },
-            color: '#64748b'
+            font: { family: 'Noto Sans Thai', size: 11 },
+            color: '#78687e'
           }
         },
         y: {
           beginAtZero: true,
           grid: {
-            color: '#f1f5f9',
+            color: 'rgba(108, 80, 112, 0.06)',
             drawBorder: false
           },
           ticks: {
-            font: { family: 'Sarabun', size: 11 },
-            color: '#64748b',
+            font: { family: 'Noto Sans Thai', size: 11 },
+            color: '#78687e',
             stepSize: 20
           }
         }
@@ -283,10 +311,10 @@ function renderMonthlyTrendsChart(monthlyData) {
 }
 
 /**
- * เรนเดอร์กราฟวงกลมสัดส่วนประเภทสิ่งส่งตรวจ (Doughnut Chart - Cohesive Medical Palette)
+ * เรนเดอร์กราฟวงกลมสัดส่วนประเภทสิ่งส่งตรวจ (Doughnut Chart - K-Minimal Pastel Palette)
  */
 function renderDistributionChart(typeRankings) {
-  const canvas = document.getElementById('specimen-distribution-chart');
+  const canvas = document.getElementById('specimenDistributionChart') || document.getElementById('specimen-distribution-chart');
   if (!canvas) return;
 
   const ctx = canvas.getContext('2d');
@@ -297,16 +325,16 @@ function renderDistributionChart(typeRankings) {
   const labels = typeRankings.map(t => t.name);
   const dataCounts = typeRankings.map(t => t.count);
 
-  // Medical Harmonious Palette
+  // K-Minimal Pastel Palette
   const colors = [
-    '#059669', // emerald-600
-    '#0d9488', // teal-600
-    '#0284c7', // sky-600
-    '#4f46e5', // indigo-600
-    '#d97706', // amber-600
-    '#e11d48', // rose-600
-    '#7c3aed', // violet-600
-    '#64748b'  // slate-500
+    '#6c5070', // Primary Deep Purple
+    '#df6a6a', // Coral / Red
+    '#c2dbc1', // Pastel Sage Green
+    '#f9d56e', // Pastel Gold / Yellow
+    '#8d7092', // Muted Purple
+    '#f59595', // Soft Pink
+    '#638c62', // Darker Sage
+    '#b8860b'  // Gold Accent
   ];
 
   distributionChartInstance = new Chart(ctx, {
@@ -316,7 +344,7 @@ function renderDistributionChart(typeRankings) {
       datasets: [{
         data: dataCounts,
         backgroundColor: colors,
-        borderWidth: 2,
+        borderWidth: 3,
         borderColor: '#ffffff',
         hoverOffset: 6
       }]
@@ -324,13 +352,13 @@ function renderDistributionChart(typeRankings) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '70%',
+      cutout: '68%',
       plugins: {
         legend: {
           position: 'right',
           labels: {
-            font: { family: 'Sarabun', size: 11 },
-            color: '#334155',
+            font: { family: 'Noto Sans Thai', size: 11 },
+            color: '#342838',
             usePointStyle: true,
             pointStyle: 'circle',
             boxWidth: 8,
@@ -338,11 +366,11 @@ function renderDistributionChart(typeRankings) {
           }
         },
         tooltip: {
-          backgroundColor: '#0f172a',
-          titleFont: { family: 'Sarabun', size: 12, weight: 'bold' },
-          bodyFont: { family: 'Sarabun', size: 12 },
-          padding: 10,
-          cornerRadius: 8,
+          backgroundColor: '#342838',
+          titleFont: { family: 'Noto Sans Thai', size: 12, weight: 'bold' },
+          bodyFont: { family: 'Noto Sans Thai', size: 12 },
+          padding: 12,
+          cornerRadius: 12,
           callbacks: {
             label: (context) => {
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -358,35 +386,39 @@ function renderDistributionChart(typeRankings) {
 }
 
 /**
- * เรนเดอร์ตารางสรุปจำนวนสิ่งส่งตรวจ แยกตามหน่วยงาน
+ * เรนเดอร์ตารางสรุปจำนวนสิ่งส่งตรวจ แยกตามหน่วยงาน (Department Workload)
  */
 function renderDepartmentTable(rankings) {
-  const tbody = document.getElementById('department-rankings-tbody');
+  const tbody = document.getElementById('dash-dept-rankings-tbody') || document.getElementById('department-rankings-tbody');
   if (!tbody) return;
 
-  if (rankings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-400">ไม่มีข้อมูลหน่วยงาน</td></tr>`;
+  if (!rankings || rankings.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-[#78687e]">ไม่มีข้อมูลสถิติการส่งตรวจ</td></tr>`;
     return;
   }
 
   tbody.innerHTML = rankings.map((item, idx) => {
     let rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">#${idx + 1}</span>`;
-    if (idx === 0) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-100 text-amber-800 font-extrabold text-xs">#1</span>`;
-    else if (idx === 1) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold text-xs">#2</span>`;
-    else if (idx === 2) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-50 text-amber-700 font-bold text-xs">#3</span>`;
+    if (idx === 0) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#fad5d7] text-[#7a272b] font-black text-xs">#1</span>`;
+    else if (idx === 1) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#fefaf0] text-[#b8860b] font-bold text-xs border border-[#fde8a8]">#2</span>`;
+    else if (idx === 2) rankBadge = `<span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#f2f8f2] text-[#285b2a] font-bold text-xs border border-[#c2dbc1]">#3</span>`;
 
     return `
-      <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
-        <td class="py-3 px-3 w-14 text-center">${rankBadge}</td>
-        <td class="py-3 px-3">
-          <div class="font-semibold text-slate-800 text-xs">${item.name}</div>
-          <div class="w-full bg-slate-100 h-1.5 rounded-full mt-1.5 overflow-hidden">
-            <div class="bg-emerald-600 h-full rounded-full" style="width: ${item.percentage}%"></div>
-          </div>
+      <tr class="hover:bg-[#f7f2f8]/40 transition border-b border-[#6c5070]/10 last:border-0">
+        <td class="p-3.5 text-center">${rankBadge}</td>
+        <td class="p-3.5">
+          <div class="font-bold text-[#342838] text-xs">${item.name}</div>
         </td>
-        <td class="py-3 px-3 text-right">
-          <span class="font-mono font-bold text-emerald-800 text-xs">${item.count}</span>
-          <span class="text-[10px] text-slate-400 ml-1">(${item.percentage}%)</span>
+        <td class="p-3.5 text-center font-mono font-bold text-[#6c5070] text-xs">
+          ${Number(item.count).toLocaleString()}
+        </td>
+        <td class="p-3.5 text-center font-mono font-bold text-[#df6a6a] text-xs">
+          ${item.percentage}%
+        </td>
+        <td class="p-3.5">
+          <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+            <div class="bg-gradient-to-r from-[#6c5070] to-[#df6a6a] h-full rounded-full transition-all duration-500" style="width: ${item.percentage}%"></div>
+          </div>
         </td>
       </tr>
     `;

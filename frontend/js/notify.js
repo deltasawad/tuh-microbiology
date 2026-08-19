@@ -13,10 +13,10 @@ const NotifyService = {
   getConfig() {
     return window.NOTIFY_CONFIG || {
       enabled: true,
-      telegramBotToken: 'REMOVED__USE_ENV_TELEGRAM_BOT_TOKEN',
-      telegramChatId: '-5294922475',
-      lineAccessToken: 'REMOVED__USE_ENV_LINE_CHANNEL_ACCESS_TOKEN',
-      lineGroupId: 'C087508cdd6240cfd4c6358d8a88fcaaa'
+      telegramBotToken: '',
+      telegramChatId: '',
+      lineAccessToken: '',
+      lineGroupId: ''
     };
   },
 
@@ -32,7 +32,42 @@ const NotifyService = {
 
     const results = [];
 
-    // 1. ส่งผ่าน Telegram Bot API
+    // 0. ลองส่งผ่าน Backend Proxy API ก่อน เพื่อหลีกเลี่ยงข้อจำกัด CORS ของ LINE API
+    try {
+      const backendUrls = [
+        '/api/notify/broadcast',
+        'http://127.0.0.1:8001/api/notify/broadcast',
+        'http://localhost:8001/api/notify/broadcast',
+        '/.netlify/functions/notify',
+        'http://127.0.0.1:8000/api/notify/broadcast',
+        'http://localhost:8000/api/notify/broadcast'
+      ];
+
+      for (const bUrl of backendUrls) {
+        try {
+          const proxyRes = await fetch(bUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // ส่งเฉพาะข้อความ ไม่ส่ง token ใด ๆ จากฝั่งเบราว์เซอร์
+            // token ทั้งหมดอยู่ใน Environment Variables ฝั่งเซิร์ฟเวอร์เท่านั้น
+            body: JSON.stringify({ text: text }),
+            signal: AbortSignal.timeout(4000)
+          });
+          if (proxyRes.ok) {
+            const proxyData = await proxyRes.json();
+            console.log('🚀 Notification dispatched via backend proxy:', proxyData);
+            return { success: true, results: proxyData.results || [] };
+          }
+        } catch (e) {
+          // Continue to next URL or direct fallback
+        }
+      }
+    } catch (proxyErr) {
+      console.log('Backend proxy unavailable, falling back to direct delivery');
+    }
+
+    // 1. Telegram (Direct) — ใช้ได้เฉพาะกรณีที่ตั้ง token ไว้ใน NOTIFY_CONFIG เอง
+    //    ปกติจะไม่มี token ฝั่งเบราว์เซอร์แล้ว จึงข้ามไปโดยอัตโนมัติ
     if (config.telegramBotToken && config.telegramChatId) {
       try {
         const tgUrl = `https://api.telegram.org/bot${config.telegramBotToken}/sendMessage`;
@@ -54,32 +89,39 @@ const NotifyService = {
       }
     }
 
-    // 2. ส่งผ่าน LINE Messaging API (Push to Group)
+    // 2. LINE Messaging API — ยิงตรงจากเบราว์เซอร์ "ไม่ได้"
+    //    api.line.me ไม่ส่ง Access-Control-Allow-Origin กลับมา เบราว์เซอร์จึงบล็อก
+    //    ตั้งแต่ preflight ข้อความไม่เคยถูกส่งออกไปเลย (ยืนยันแล้วว่า Token ใช้งานได้ปกติ:
+    //    GET https://api.line.me/v2/bot/info -> 200 OK, bot = microlabtuh)
+    //    => ต้องส่งผ่าน proxy ฝั่งเซิร์ฟเวอร์ที่ /api/notify/broadcast เท่านั้น
+    //    (ไฟล์ api/notify/broadcast.js สำหรับ Vercel, netlify/functions/notify.js สำหรับ Netlify)
     if (config.lineAccessToken && config.lineGroupId) {
-      try {
-        const lineRes = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${config.lineAccessToken}`
-          },
-          body: JSON.stringify({
-            to: config.lineGroupId,
-            messages: [{
-              type: 'text',
-              text: text.replace(/<[^>]*>?/gm, '') // Strip HTML tags for LINE
-            }]
-          })
-        });
-        results.push({ channel: 'LINE', ok: lineRes.ok, status: lineRes.status });
-        console.log('💬 LINE Push Notify Dispatched:', lineRes.ok);
-      } catch (err) {
-        console.warn('LINE notify error:', err);
-        results.push({ channel: 'LINE', ok: false, error: err.message });
-      }
+      results.push({
+        channel: 'LINE',
+        ok: false,
+        error: 'ส่ง LINE จากเบราว์เซอร์โดยตรงไม่ได้ (ถูก CORS บล็อก) — ต้อง deploy proxy /api/notify/broadcast หรือเปิดเว็บผ่านเซิร์ฟเวอร์ที่มี proxy'
+      });
+      console.warn('💬 LINE: ' + results[results.length - 1].error);
     }
 
-    return { success: true, results };
+    if (results.length === 0) {
+      results.push({
+        channel: 'ทั้งหมด',
+        ok: false,
+        error: 'ติดต่อ /api/notify/broadcast ไม่ได้ และไม่มี token ฝั่งเบราว์เซอร์ (ถูกย้ายไป Environment Variables แล้ว) — ต้องเปิดเว็บผ่านเซิร์ฟเวอร์ที่ deploy serverless function ไว้'
+      });
+    }
+
+    // ❗ เดิม return success: true เสมอ ทำให้หน้าจอขึ้นว่าแจ้งเตือนสำเร็จทั้งที่ LINE ไม่เคยส่งออกไป
+    return { success: results.some(r => r.ok), results };
+  },
+
+  /** แปลงผลการส่งเป็นข้อความสั้น ๆ สำหรับแสดงบนหน้าจอ */
+  summarize(result) {
+    if (!result || !result.results || result.results.length === 0) return 'ไม่ได้ส่งการแจ้งเตือน';
+    return result.results
+      .map(r => `${r.channel}: ${r.ok ? 'ส่งสำเร็จ ✅' : 'ส่งไม่สำเร็จ ⚠️'}`)
+      .join(' • ');
   },
 
   /**
@@ -116,7 +158,6 @@ const NotifyService = {
 📍 <b>สถานที่วางเพลต/จุดตรวจ:</b> ${subData.ward_room || subData.department}
 📅 <b>วันที่เก็บตัวอย่าง:</b> ${subData.sampling_date}
 📦 <b>จำนวนตัวอย่าง:</b> ${subData.sample_count || (subData.items ? subData.items.length : 1)} รายการ
-📧 <b>อีเมลรับผล:</b> ${subData.recipient_email || '-'}
 ⏳ <b>สถานะ:</b> รอตรวจ (Waiting for testing)
 ━━━━━━━━━━━━━━━━━━━━━
 🌐 ดูรายละเอียดในระบบ: ${window.location.origin}/workflow.html?tab=reports`;

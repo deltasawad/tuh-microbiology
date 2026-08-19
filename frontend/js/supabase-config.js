@@ -26,15 +26,15 @@ const NOTIFY_CONFIG = {
   enabled: true,
 
   // [ตัวเลือกที่ 1] LINE Messaging API Channel Access Token & Group ID
-  lineAccessToken: 'REMOVED__USE_ENV_LINE_CHANNEL_ACCESS_TOKEN',
-  lineGroupId: 'C087508cdd6240cfd4c6358d8a88fcaaa',
+  lineAccessToken: '',
+  lineGroupId: '',
   
   // [ตัวเลือกที่ 2] Discord Webhook URL (ทางเลือกเสริม)
   discordWebhookUrl: '',
 
   // [ตัวเลือกที่ 3] Telegram Bot Token & Chat ID
-  telegramBotToken: 'REMOVED__USE_ENV_TELEGRAM_BOT_TOKEN',
-  telegramChatId: '-5294922475'
+  telegramBotToken: '',
+  telegramChatId: ''
 };
 
 // ==============================================================================

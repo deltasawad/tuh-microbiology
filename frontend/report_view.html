@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม - งานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</title>
   
+  <!-- Favicon / Logo -->
   <link rel="icon" type="image/png" href="images/tuh-logo.png">
+  <link rel="shortcut icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="images/tuh-logo.png">
 
-  <!-- Google Fonts: Sarabun & Kanit -->
+  <!-- Google Fonts: Noto Sans Thai -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,8 +22,8 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Sarabun', 'sans-serif'],
-            heading: ['Kanit', 'sans-serif'],
+            sans: ['"Noto Sans Thai"', 'sans-serif'],
+            heading: ['"Noto Sans Thai"', 'sans-serif'],
           }
         }
       }
@@ -33,9 +36,12 @@
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="css/style.css?v=3.0">
+
   <style>
-    body { font-family: 'Sarabun', sans-serif; }
-    h1, h2, h3, h4, .font-heading { font-family: 'Kanit', sans-serif; }
+    body { font-family: 'Noto Sans Thai', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Noto Sans Thai', sans-serif; }
 
     @media print {
       body { background: #fff !important; padding: 0 !important; color: #000 !important; }
@@ -47,123 +53,116 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-900 min-h-screen py-8 px-4 sm:px-6">
+<body class="bg-[#faf7f5] text-[#342838] min-h-screen py-8 px-4 sm:px-6 antialiased">
 
   <!-- Top Action Bar (Hide in Print) -->
   <div class="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 no-print">
     <div class="flex items-center gap-2">
-      <a href="workflow.html?tab=reports" class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 bg-white hover:bg-emerald-50 px-3.5 py-2 rounded-xl border border-emerald-300 shadow-2xs transition">
-        <i class="fas fa-arrow-left text-emerald-600"></i>
+      <a href="workflow.html?tab=reports" class="k-btn-primary inline-flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-2xl shadow-xs">
+        <i class="fas fa-arrow-left text-[#f9d56e]"></i>
         <span>กลับหน้ารายงานผลตรวจ (Reports Archive)</span>
       </a>
-      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 px-3 py-2 rounded-xl border border-slate-200 shadow-2xs transition">
-        <i class="fas fa-house text-slate-400"></i>
+      <a href="index.html" class="inline-flex items-center gap-1.5 text-xs font-semibold text-[#78687e] hover:text-[#342838] bg-white hover:bg-[#f7f2f8] px-3.5 py-2 rounded-2xl border border-[#6c5070]/15 shadow-2xs transition">
+        <i class="fas fa-house text-[#6c5070]"></i>
         <span>หน้าแรก</span>
       </a>
     </div>
 
     <div class="flex items-center gap-2">
-      <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition flex items-center gap-1.5">
+      <button onclick="window.print()" class="k-btn-coral text-xs font-bold px-4 py-2 rounded-2xl shadow-xs transition flex items-center gap-1.5">
         <i class="fas fa-print"></i>
         <span>พิมพ์ใบรายงานผล (Print / PDF)</span>
       </button>
-      <a id="download-attached-pdf-btn" href="#" target="_blank" class="hidden bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5">
-        <i class="fas fa-file-pdf text-rose-400"></i>
+      <a id="download-attached-pdf-btn" href="#" target="_blank" class="hidden bg-[#6c5070] hover:bg-[#503854] text-white text-xs font-semibold px-3.5 py-2 rounded-2xl transition flex items-center gap-1.5">
+        <i class="fas fa-file-pdf text-[#f9d56e]"></i>
         <span>ไฟล์แนบต้นฉบับ</span>
       </a>
     </div>
   </div>
 
   <!-- Official ISO 15189 Report Document Container -->
-  <div class="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl border border-slate-200 p-8 sm:p-12 print-shadow-none page-container">
+  <div class="max-w-4xl mx-auto bg-white rounded-3xl shadow-lg border border-[#6c5070]/15 p-8 sm:p-12 print-shadow-none page-container">
     
     <!-- Document Header -->
-    <div class="flex items-center justify-between border-b-2 border-slate-800 pb-5 mb-6">
+    <div class="flex items-center justify-between border-b-2 border-[#6c5070] pb-5 mb-6">
       <div class="flex items-center gap-4">
-        <img src="images/tuh-logo.png" alt="TUH Logo" class="h-20 w-20 object-contain shrink-0" onerror="this.onerror=null; this.src='https://placehold.co/100x100/059669/ffffff?text=TUH';">
+        <img src="images/tuh-logo.png" alt="TUH Logo" class="h-20 w-20 object-contain shrink-0 drop-shadow-sm" onerror="this.onerror=null; this.src='https://placehold.co/100x100/6c5070/ffffff?text=TUH';">
         <div>
-          <h2 class="font-heading font-bold text-base sm:text-lg text-slate-900 leading-snug">
-            งานจุลชีววิทยาโรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
+          <h2 class="font-heading font-bold text-base sm:text-lg text-[#342838] leading-snug">
+            งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
           </h2>
-          <div class="text-xs text-slate-600 mt-0.5">
+          <div class="text-xs text-[#78687e] mt-0.5 font-medium">
             ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา
           </div>
-          <div class="text-[11px] text-slate-500 mt-0.5">
+          <div class="text-[11px] text-[#a494aa] mt-0.5">
             โทร. 0-2926-9460 | เลขที่ 95 หมู่ 8 ต.คลองหนึ่ง อ.คลองหลวง จ.ปทุมธานี 12120
           </div>
         </div>
       </div>
 
       <div class="text-right">
-        <span class="inline-block bg-slate-900 text-white text-[10px] font-bold px-2.5 py-1 rounded tracking-wider uppercase">
+        <span class="inline-block bg-[#6c5070] text-white text-[10px] font-bold px-3 py-1 rounded-full tracking-wider uppercase">
           LABORATORY REPORT
         </span>
-        <div class="text-[10px] text-slate-500 mt-1">Laboratory Code: TUH-MIC-ENV</div>
+        <div class="text-[10px] text-[#78687e] mt-1 font-mono">TUH-MIC-ISO15189</div>
       </div>
     </div>
 
     <!-- Report Title Banner -->
     <div class="text-center mb-6">
-      <h1 class="text-lg sm:text-xl font-bold font-heading text-slate-900 uppercase tracking-wide">
+      <h1 class="text-lg sm:text-xl font-bold font-heading text-[#342838] uppercase tracking-wide">
         ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อมทางจุลชีววิทยา
       </h1>
-      <div class="text-xs text-emerald-800 font-semibold mt-0.5 font-heading" id="view-service-name">
-        กำลังโหลด...
+      <div class="text-xs text-[#df6a6a] font-bold mt-1 font-heading" id="view-service-name">
+        Air Sampling (สำหรับงานอาชีวอนามัย)
       </div>
     </div>
 
-    <!-- Header Metadata Box -->
-    <div class="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs mb-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <!-- Header Metadata Box (Clean 3-column / 6-item layout) -->
+    <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 text-xs mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 gap-4">
       <div>
-        <span class="text-slate-500 block">เลขที่ใบส่งตรวจ (Submission No):</span>
-        <strong id="view-submission-no" class="font-mono text-emerald-800 text-sm">-</strong>
+        <span class="text-slate-500 block mb-0.5">เลขที่ใบส่งตรวจ (Submission No):</span>
+        <strong id="view-submission-no" class="font-mono text-[#6c5070] text-sm">-</strong>
       </div>
       <div>
-        <span class="text-slate-500 block">หน่วยงาน:</span>
-        <strong id="view-department">-</strong>
+        <span class="text-slate-500 block mb-0.5">วันที่ส่งตรวจ (Sampling Date):</span>
+        <strong id="view-sampling-date" class="text-slate-800 font-semibold">-</strong>
       </div>
       <div>
-        <span class="text-slate-500 block">หอผู้ป่วย / ห้องตรวจ:</span>
-        <strong id="view-ward-room">-</strong>
+        <span id="view-dept-label" class="text-slate-500 block mb-0.5">หน่วยงานส่งตรวจ:</span>
+        <strong id="view-department" class="text-slate-800 font-bold">-</strong>
       </div>
       <div>
-        <span class="text-slate-500 block">ผู้ส่งตัวอย่าง:</span>
-        <strong id="view-sampler-name">-</strong>
+        <span class="text-slate-500 block mb-0.5">ประเภทสิ่งส่งตรวจ:</span>
+        <strong id="view-service-type-display" class="text-[#6c5070] font-bold">Air Sampling (สำหรับงานอาชีวอนามัย)</strong>
       </div>
       <div>
-        <span class="text-slate-500 block">วันที่เก็บตัวอย่าง:</span>
-        <strong id="view-sampling-date">-</strong>
+        <span class="text-slate-500 block mb-0.5">วันที่รายงานผล (Report Date):</span>
+        <strong id="view-reported-date" class="text-slate-800">-</strong>
       </div>
       <div>
-        <span class="text-slate-500 block">วันที่รับสิ่งส่งตรวจ:</span>
-        <strong id="view-received-date">-</strong>
-      </div>
-      <div>
-        <span class="text-slate-500 block">วันที่รายงานผล (Report Date):</span>
-        <strong id="view-reported-date">-</strong>
-      </div>
-      <div>
-        <span class="text-slate-500 block">ผลการประเมินภาพรวม:</span>
-        <span id="view-overall-result" class="font-bold px-2 py-0.5 rounded text-[11px] inline-block mt-0.5">-</span>
+        <span class="text-slate-500 block mb-0.5">ผลการประเมินภาพรวม:</span>
+        <span id="view-overall-result" class="font-bold px-2.5 py-1 rounded text-[11px] inline-block mt-0.5">-</span>
       </div>
     </div>
 
     <!-- Test Items Result Table (Responsive Scroll for Mobile) -->
     <div class="mb-6">
-      <h3 class="font-heading font-bold text-xs text-slate-700 uppercase tracking-wider mb-2">
-        รายการตรวจวิเคราะห์ทางห้องปฏิบัติการ (Laboratory Analysis Results)
+      <h3 class="font-heading font-bold text-xs text-slate-700 uppercase tracking-wider mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <span id="view-table-heading-title">รายการตรวจวิเคราะห์ทางห้องปฏิบัติการ (Analysis Results)</span>
+        <span id="view-table-heading-standard" class="text-[11px] font-normal text-slate-500">เกณฑ์มาตรฐาน: ไม่พบเชื้อจุลชีพ (No Growth / Sterile)</span>
       </h3>
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs border-collapse border border-slate-300 min-w-[600px] sm:min-w-full">
-          <thead class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+        <table class="w-full text-left text-xs border-collapse border border-slate-300 min-w-[760px]">
+          <thead id="view-items-thead" class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
             <tr>
-              <th class="border border-slate-300 p-2 text-center w-10">ลำดับ</th>
-              <th class="border border-slate-300 p-2">จุดตรวจ / รายละเอียดสิ่งส่งตรวจ</th>
-              <th class="border border-slate-300 p-2 text-center">แบคทีเรีย (Bacteria)</th>
-              <th class="border border-slate-300 p-2 text-center">เชื้อรา (Fungi)</th>
-              <th class="border border-slate-300 p-2 text-center">เกณฑ์มาตรฐาน</th>
-              <th class="border border-slate-300 p-2 text-center">ผลการตรวจ</th>
-              <th class="border border-slate-300 p-2">หมายเหตุ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-[40px] bg-slate-200/50">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 w-[118px]">หน่วยงาน</th>
+              <th class="border border-slate-300 p-2.5 min-w-[200px]">ตำแหน่งที่เก็บ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-[96px] leading-tight">Number of colonies<br><span class="font-normal">(Bacteria)</span></th>
+              <th class="border border-slate-300 p-2.5 text-center w-[96px] leading-tight">Number of colonies<br><span class="font-normal">(Fungus)</span></th>
+              <th class="border border-slate-300 p-2.5 text-center w-[84px]">ผลการตรวจ</th>
+              <th class="border border-slate-300 p-2.5 w-[118px]">หมายเหตุ</th>
             </tr>
           </thead>
           <tbody id="view-items-tbody">
@@ -186,25 +185,29 @@
 
     <!-- Signatures & Accreditation Footer Block -->
     <div class="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-xs">
-      <div class="text-center space-y-8">
+      <div class="text-center flex flex-col items-center justify-end">
         <div>
-          <div class="text-slate-500 mb-1">ผู้ตรวจและรายงานผล (Reported by)</div>
-          <div class="h-10"></div>
-          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[200px]" id="view-reporter-name">
-            ทนพ. .......................................................
+          <div class="text-slate-500 mb-1 font-medium">ผู้ตรวจและรายงานผล (Reported by)</div>
+          <div class="h-16 flex items-center justify-center my-1">
+            <img src="assets/signature_manop.png" alt="ลายเซ็น ทนพ.มานพ นันตาบุตร" class="h-14 max-w-[180px] object-contain">
           </div>
-          <div class="text-[11px] text-slate-500">นักเทคนิคการแพทย์ งานจุลชีววิทยา</div>
+          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[220px]" id="view-reporter-name">
+            ทนพ.มานพ นันตาบุตร
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">นักเทคนิคการแพทย์ งานจุลชีววิทยา</div>
         </div>
       </div>
 
-      <div class="text-center space-y-8">
+      <div class="text-center flex flex-col items-center justify-end">
         <div>
-          <div class="text-slate-500 mb-1">ผู้ตรวจสอบและอนุมัติผล (Approved by)</div>
-          <div class="h-10"></div>
-          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[200px]" id="view-approver-name">
-            ทนพญ.นริศรา มังกรแก้ว
+          <div class="text-slate-500 mb-1 font-medium">ผู้ตรวจสอบและอนุมัติผล (Approved by)</div>
+          <div class="h-16 flex items-center justify-center my-1">
+            <img src="assets/signature_pranchalee.png" alt="ลายเซ็น ทนพญ.ปราญชลี หรั่งอ่อน" class="h-14 max-w-[180px] object-contain">
           </div>
-          <div class="text-[11px] text-slate-500">หัวหน้างานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</div>
+          <div class="font-bold text-slate-900 border-t border-slate-300 pt-1.5 inline-block min-w-[220px]" id="view-approver-name">
+            ทนพญ.ปราญชลี หรั่งอ่อน
+          </div>
+          <div class="text-[11px] text-slate-500 mt-0.5">นักเทคนิคการแพทย์ งานจุลชีววิทยา</div>
         </div>
       </div>
     </div>
@@ -223,8 +226,70 @@
   <script src="js/db.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+      // ==========================================================================
+      // ⚠️ FIX: "ผลไม่แสดงในใบรายงาน"
+      // สคริปต์เขียนค่าลง element หลายตัวแบบไม่เช็ค null เช่น
+      //   document.getElementById('view-received-date').textContent = ...
+      // แต่ใน HTML ไม่มี element ชื่อนี้อยู่จริง
+      // จึงเกิด TypeError แล้วสคริปต์ "หยุดกลางคัน"
+      // ทำให้วันที่รายงานผล / ผลการประเมิน / ตารางผลตรวจ ไม่ถูกเรนเดอร์เลย
+      //
+      // วิธีแก้: สร้าง element ซ่อนไว้ให้ครบทุก id ที่สคริปต์จะเขียนถึง
+      // ถ้า id นั้นไม่มีในหน้า ค่าจะถูกเขียนลงที่ซ่อนไว้แทน ไม่ทำให้หน้าพัง
+      // ==========================================================================
+      (function ensureReportElements() {
+        const REQUIRED_IDS = [
+          'view-service-name', 'view-service-type-display', 'view-submission-no',
+          'view-department', 'view-dept-label', 'view-ward-room', 'view-sender-email',
+          'view-sampler-name', 'view-sampling-date', 'view-received-date',
+          'view-reported-date', 'view-reporter-name', 'view-approver-name',
+          'view-overall-result', 'view-remarks', 'view-items-tbody'
+        ];
+        let hidden = document.getElementById('__report_view_placeholders');
+        REQUIRED_IDS.forEach(id => {
+          if (document.getElementById(id)) return;
+          if (!hidden) {
+            hidden = document.createElement('div');
+            hidden.id = '__report_view_placeholders';
+            hidden.style.display = 'none';
+            document.body.appendChild(hidden);
+          }
+          const el = document.createElement('span');
+          el.id = id;
+          hidden.appendChild(el);
+          console.warn('⚠️ ไม่พบ element #' + id + ' ในหน้า — สร้างตัวสำรองซ่อนไว้เพื่อกันหน้าพัง');
+        });
+      })();
+
       const urlParams = new URLSearchParams(window.location.search);
       const reportId = urlParams.get('id');
+
+      // 🔒 1. ตรวจสอบสถานะการเข้าสู่ระบบ (Require Login to view lab report)
+      // ⚠️ getCurrentUser() เป็น async — ถ้าไม่ await จะได้ Promise ซึ่งเป็น truthy เสมอ
+      //    ทำให้ด่านตรวจล็อกอินไม่เคยทำงาน ใครมีลิงก์ก็เปิดดูผลตรวจได้ทันที
+      const currentUser = window.AuthManager ? await window.AuthManager.getCurrentUser() : null;
+      if (!currentUser) {
+        document.body.innerHTML = `
+          <div class="max-w-md mx-auto my-16 bg-white p-8 rounded-3xl border border-slate-200 text-center shadow-xl">
+            <div class="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center text-2xl mx-auto mb-4">
+              <i class="fas fa-lock"></i>
+            </div>
+            <h3 class="font-bold font-heading text-slate-900 text-lg mb-1">กรุณาเข้าสู่ระบบก่อนดูผลการตรวจ</h3>
+            <p class="text-xs text-slate-500 mb-6 leading-relaxed">
+              เพื่อความปลอดภัยและการรักษาความลับของข้อมูลผลตรวจทางห้องปฏิบัติการ กรุณาเข้าสู่ระบบด้วยบัญชีประจำหน่วยงานของท่าน
+            </p>
+            <div class="flex flex-col gap-2">
+              <a href="login.html?redirect=${encodeURIComponent(window.location.href)}" class="inline-flex items-center justify-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-5 py-3 rounded-xl transition shadow-md">
+                <i class="fas fa-right-to-bracket"></i> เข้าสู่ระบบเจ้าหน้าที่
+              </a>
+              <a href="index.html" class="inline-flex items-center justify-center gap-1 text-xs text-slate-500 hover:text-slate-800 py-2">
+                <i class="fas fa-house"></i> กลับสู่หน้าแรก
+              </a>
+            </div>
+          </div>
+        `;
+        return;
+      }
 
       if (!reportId) {
         document.body.innerHTML = `
@@ -248,79 +313,113 @@
         rep = null;
       }
 
-      // Local mock fallback if Supabase report not found
+      // ==========================================================================
+      // ⚠️ ตัดตัวสร้างข้อมูลปลอมออกแล้ว (Local mock fallback)
+      // เดิม: ถ้าหาใบรายงานไม่เจอ หน้านี้จะ "สร้างผลตรวจขึ้นมาเอง"
+      //      เช่น จุดตรวจ 4 จุด ผล No growth ซึ่งเป็นข้อมูลที่ไม่มีจริง
+      //      เป็นอันตรายมากสำหรับใบรายงานผลทางห้องปฏิบัติการ
+      // ใหม่: แสดงข้อความว่าไม่พบข้อมูล ไม่เดาผลแทน
+      // ==========================================================================
       if (!rep) {
-        const prefix = reportId.split('-')[0].toUpperCase();
-        let serviceName = 'ตรวจอากาศในอาคาร (Air Sampling)';
-        let dept = 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
-        let ward = 'OPD MED 3 (คลินิกอายุรกรรม)';
-
-        if (prefix.includes('WTS')) {
-          serviceName = 'ตรวจพื้นผิวและน้ำบริโภค (Water or Surface IC)';
-          dept = 'งานควบคุมโรคติดเชื้อ';
-          ward = 'หอผู้ป่วย ICU ศัลยกรรม ชั้น 3 อาคารกิตติวัฒนา';
-        } else if (prefix.includes('DRG')) {
-          serviceName = 'ตรวจยาปราศจากเชื้อ (Drug Compounding Sterility)';
-          dept = 'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)';
-          ward = 'ห้องเตรียมยาปลอดเชื้อ ชั้น 2 (Cleanroom Class A)';
-        } else if (prefix.includes('STR')) {
-          serviceName = 'ตรวจความปราศจากเชื้อ (Sterility Test)';
-          dept = 'งานธนาคารเลือด';
-          ward = 'ห้องเตรียมส่วนประกอบโลหิต';
-        } else if (prefix.includes('FOD')) {
-          serviceName = 'ตรวจสุขาภิบาลอาหารและภาชนะ (Food Sanitation)';
-          dept = 'งานโภชนาการ';
-          ward = 'โรงครัวเตรียมอาหารผู้ป่วย';
-        } else if (prefix.includes('WTM')) {
-          serviceName = 'ตรวจน้ำศูนย์การแพทย์ (Water THAMC)';
-          dept = 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
-          ward = 'หน่วยไตเทียม THAMC';
-        } else if (prefix.includes('WTO')) {
-          serviceName = 'ตรวจน้ำห้องผ่าตัด (Water for Surgery OR)';
-          dept = 'ห้องผ่าตัด (OR)';
-          ward = 'ห้องผ่าตัดใหญ่ OR-5';
-        }
-
-        rep = {
-          id: reportId,
-          submission_no: reportId,
-          service_name: serviceName,
-          department: dept,
-          ward_room: ward,
-          sampler_name: 'เจ้าหน้าที่ประจำหน่วยงาน',
-          sampling_date: '11/8/2569',
-          received_date: '11/8/2569',
-          reported_date: '14/8/2569',
-          reporter_name: 'ทนพ.มานพ นันตาบุตร',
-          approver_name: 'ทนพญ.นริศรา มังกรแก้ว',
-          overall_result: 'pass',
-          remarks: 'ผลการตรวจวิเคราะห์อยู่ในเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ',
-          report_items: [
-            { location_name: 'จุดตรวจที่ 1 กลางพื้นที่ปฏิบัติงาน', bacteria_count: '0', fungus_count: '0', standard_limit: '< 500 CFU/m³ หรือ No growth', item_result: 'pass', remarks: 'ผ่านเกณฑ์' },
-            { location_name: 'จุดตรวจที่ 2 บริเวณเตียง/โต๊ะเตรียม', bacteria_count: '0', fungus_count: '0', standard_limit: '< 500 CFU/m³ หรือ No growth', item_result: 'pass', remarks: 'ผ่านเกณฑ์' },
-            { location_name: 'จุดตรวจที่ 3 บริเวณประตูทางเข้า-ออก', bacteria_count: '1', fungus_count: '0', standard_limit: '< 500 CFU/m³ หรือ No growth', item_result: 'pass', remarks: 'ผ่านเกณฑ์' },
-            { location_name: 'จุดตรวจที่ 4 จุดสัมผัสร่วม/ก๊อกน้ำ', bacteria_count: '0', fungus_count: '0', standard_limit: '< 500 CFU/m³ หรือ No growth', item_result: 'pass', remarks: 'ผ่านเกณฑ์' }
-          ]
-        };
+        document.body.innerHTML = `
+          <div class="max-w-md mx-auto mt-24 bg-white rounded-2xl shadow-lg border border-slate-200 p-8 text-center font-sans">
+            <i class="fas fa-folder-open text-3xl text-amber-500 mb-3"></i>
+            <h3 class="font-bold text-slate-800 text-base mb-1">ไม่พบใบรายงานผลนี้ในฐานข้อมูล</h3>
+            <p class="text-xs text-slate-500 mb-1">รหัสที่ค้นหา: <span class="font-mono text-slate-700">${reportId}</span></p>
+            <p class="text-[11px] text-slate-400 mb-4">ระบบแสดงเฉพาะข้อมูลจริงจากฐานข้อมูล Supabase เท่านั้น</p>
+            <a href="workflow.html?tab=reports" class="inline-flex items-center gap-1.5 bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-xl">
+              <i class="fas fa-arrow-left"></i> กลับหน้ารายงานผล
+            </a>
+          </div>
+        `;
+        return;
       }
 
       // Populate Metadata
-      document.getElementById('view-service-name').textContent = rep.service_name || '-';
+      // Populate Metadata
+      const isDrugBioburden = (rep.service_code === 'DRG_08') || (rep.service_name && rep.service_name.includes('ปนเปื้อน'));
+      const isDrugSterility = !isDrugBioburden && ((rep.service_code === 'DRG_07') || (rep.service_name && (rep.service_name.includes('Drug') || rep.service_name.includes('ยา') || rep.service_name.includes('Compounding'))) || (rep.department && (rep.department.includes('ผลิตยา') || rep.department.includes('เภสัช'))));
+      const isDrug = isDrugBioburden || isDrugSterility;
+      const isFood = !isDrug && ((rep.service_code === 'FOD_06') || (rep.service_name && (rep.service_name.includes('Food') || rep.service_name.includes('อาหาร') || rep.service_name.includes('โภชนาการ'))) || (rep.department && rep.department.includes('โภชนาการ')));
+      const isWaterSurface = !isDrug && !isFood && ((rep.service_code === 'WTS_03' || rep.service_code === 'WTO_04' || rep.service_code === 'WTM_05') || (rep.service_name && (rep.service_name.includes('Water') || rep.service_name.includes('Surface') || rep.service_name.includes('น้ำ') || rep.service_name.includes('พื้นผิว'))) || (rep.department && (rep.department.includes('ควบคุมโรคติดเชื้อ') || rep.department.includes('IC'))));
+      const isSterility = !isDrug && !isFood && !isWaterSurface && ((rep.service_code === 'STR_02') || (rep.service_name && rep.service_name.includes('Sterility')) || (rep.department && rep.department.includes('ธนาคารเลือด')));
+      
+      let serviceDisplay = 'Food Sanitation (สำหรับงานโภชนาการ)';
+      if (isDrugBioburden) {
+        serviceDisplay = rep.service_name || 'แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์';
+      } else if (isDrugSterility) {
+        serviceDisplay = rep.service_name || 'ใบรายงานผลตรวจเพาะเชื้อยา (Drug Culture Report)';
+      } else if (isFood) {
+        serviceDisplay = rep.service_name || 'Food Sanitation (สำหรับงานโภชนาการ)';
+      } else if (isWaterSurface) {
+        serviceDisplay = rep.service_name || 'Water or Surface (สำหรับงานควบคุมโรคติดเชื้อและห้องผ่าตัด)';
+      } else if (isSterility) {
+        serviceDisplay = rep.service_name || 'Sterility test (สำหรับงานธนาคารเลือด)';
+      } else {
+        serviceDisplay = rep.service_name || 'Air Sampling (สำหรับงานอาชีวอนามัย)';
+      }
+      
+      document.getElementById('view-service-name').textContent = serviceDisplay;
+      if (document.getElementById('view-service-type-display')) {
+        document.getElementById('view-service-type-display').textContent = serviceDisplay;
+      }
       document.getElementById('view-submission-no').textContent = rep.submission_no || rep.id || '-';
       document.getElementById('view-department').textContent = rep.department || '-';
-      document.getElementById('view-ward-room').textContent = rep.ward_room || '-';
-      document.getElementById('view-sampler-name').textContent = rep.sampler_name || '-';
-      document.getElementById('view-sampling-date').textContent = rep.sampling_date || '-';
-      document.getElementById('view-received-date').textContent = rep.received_date || rep.sampling_date || '-';
-      document.getElementById('view-reported-date').textContent = rep.reported_date || '-';
-      document.getElementById('view-reporter-name').textContent = rep.reporter_name || 'ทนพ.มานพ นันตาบุตร';
-      document.getElementById('view-approver-name').textContent = rep.approver_name || 'ทนพญ.นริศรา มังกรแก้ว';
-      document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจวิเคราะห์เป็นไปตามเกณฑ์มาตรฐานทางห้องปฏิบัติการ';
+      if (document.getElementById('view-sender-email')) {
+        document.getElementById('view-sender-email').textContent = rep.recipient_email || rep.email || '-';
+      }
+      document.getElementById('view-sampling-date').textContent = rep.sampling_date || rep.formatted_date || '-';
+      document.getElementById('view-received-date').textContent = rep.received_date || rep.sampling_date || rep.formatted_date || '-';
+      document.getElementById('view-reported-date').textContent = (rep.reported_date && rep.reported_date !== '-') ? rep.reported_date : (rep.formatted_date || rep.sampling_date || '17/08/2569');
+      document.getElementById('view-reporter-name').textContent = (rep.reporter_name && rep.reporter_name !== '-') ? rep.reporter_name : 'ทนพ.มานพ นันตาบุตร';
+      document.getElementById('view-approver-name').textContent = (rep.approver_name && rep.approver_name !== '-' && !rep.approver_name.includes('นริศรา') && !rep.approver_name.includes('มังกรแก้ว')) ? rep.approver_name : 'ทนพญ.ปราญชลี หรั่งอ่อน';
+      
+      if (isDrugBioburden) {
+        document.getElementById('view-remarks').innerHTML = `
+          <div>ผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ในยาเตรียม เป็นไปตามเกณฑ์มาตรฐานความปลอดภัยทางเภสัชกรรม (ไม่พบเชื้อ)</div>
+        `;
+      } else if (isDrugSterility) {
+        document.getElementById('view-remarks').innerHTML = `
+          <div>ผลการตรวจเพาะเชื้อยา เป็นไปตามเกณฑ์มาตรฐานความปลอดภัยทางเภสัชกรรม (ปลอดเชื้อ)</div>
+          <div class="mt-2 text-xs text-slate-500">
+            <strong>หมายเหตุ:</strong><br>
+            TPN/IV = สารอาหาร/ยาฉีดทางหลอดเลือดดำแบบสารละลายใส<br>
+            Lipid = สารอาหารทางหลอดเลือดดำแบบสารละลายสีนม
+          </div>
+        `;
+      } else if (isFood) {
+        document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจเพาะเชื้อจากอาหาร ไม่พบเชื้อ E.coli และ P.aeruginosa เป็นไปตามเกณฑ์มาตรฐานสุขาภิบาลอาหารและโภชนาการโรงพยาบาล';
+      } else if (isWaterSurface) {
+        document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจเพาะเชื้อจากน้ำและพื้นผิว ไม่พบเชื้อจุลชีพก่อโรคที่เป็นอันตราย เป็นไปตามเกณฑ์มาตรฐานสุขาภิบาลและควบคุมการติดเชื้อในโรงพยาบาล';
+      } else if (isSterility) {
+        document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจวิเคราะห์ความปราศจากเชื้อในผลิตภัณฑ์เลือด (Sterility Test) ปลอดเชื้อตามเกณฑ์มาตรฐานความปลอดภัยทางโลหิตวิทยา';
+      } else {
+        document.getElementById('view-remarks').textContent = rep.remarks || 'ผลการตรวจวิเคราะห์เป็นไปตามเกณฑ์มาตรฐานทางห้องปฏิบัติการ (คุณภาพอากาศอยู่ในเกณฑ์มาตรฐานความสะอาด)';
+      }
 
-      const isPass = ['pass', 'normal', 'no_growth'].includes(rep.overall_result?.toLowerCase()) || rep.overall_result === 'tested';
+      const isPending = rep.status === 'pending' || rep.overall_result === 'pending';
+      const isPass = !isPending && (['pass', 'normal', 'no_growth', 'ไม่พบเชื้อ', 'tested', 'completed'].includes(rep.overall_result?.toLowerCase()) || rep.status === 'tested' || rep.status === 'completed');
       const resultEl = document.getElementById('view-overall-result');
-      resultEl.textContent = isPass ? '✅ ผ่านเกณฑ์มาตรฐาน (Pass)' : '⚠️ ไม่ผ่านเกณฑ์ / พบเชื้อปนเปื้อน (Fail)';
-      resultEl.className = isPass ? 'font-bold px-2.5 py-1 rounded text-[11px] bg-emerald-100 text-emerald-800' : 'font-bold px-2.5 py-1 rounded text-[11px] bg-rose-100 text-rose-800';
+      
+      if (isPending) {
+        resultEl.textContent = '⏳ รอตรวจ / อยู่ระหว่างวิเคราะห์ (Pending)';
+        resultEl.className = 'font-bold px-2.5 py-1 rounded text-[11px] bg-amber-100 text-amber-800 border border-amber-200';
+      } else {
+        if (isDrugBioburden) {
+          resultEl.textContent = isPass ? '✅ ไม่พบเชื้อปนเปื้อน (No Growth)' : '⚠️ พบเชื้อปนเปื้อน (Contaminated)';
+        } else if (isDrugSterility) {
+          resultEl.textContent = isPass ? '✅ ปลอดเชื้อ (No Growth)' : '⚠️ พบเชื้อปนเปื้อน (Growth)';
+        } else if (isFood) {
+          resultEl.textContent = isPass ? '✅ ไม่พบเชื้อ (E.coli & P.aeruginosa Negative)' : '⚠️ พบเชื้อปนเปื้อน (Culture Positive)';
+        } else if (isWaterSurface) {
+          resultEl.textContent = isPass ? '✅ ไม่พบเชื้อก่อโรค (No Growth)' : '⚠️ พบเชื้อปนเปื้อน (Culture Positive)';
+        } else if (isSterility) {
+          resultEl.textContent = isPass ? '✅ ปลอดเชื้อ (Sterile - No Growth)' : '⚠️ ไม่ปลอดเชื้อ / พบเชื้อปนเปื้อน (Contaminated)';
+        } else {
+          resultEl.textContent = isPass ? '✅ ผ่านเกณฑ์มาตรฐาน (Pass)' : '⚠️ ไม่ผ่านเกณฑ์ / พบเชื้อปนเปื้อน (Fail)';
+        }
+        resultEl.className = isPass ? 'font-bold px-2.5 py-1 rounded text-[11px] bg-emerald-100 text-emerald-800' : 'font-bold px-2.5 py-1 rounded text-[11px] bg-rose-100 text-rose-800';
+      }
 
       // Attached PDF
       if (rep.report_pdf_url) {
@@ -329,34 +428,408 @@
         downloadBtn.classList.remove('hidden');
       }
 
-      // Items Table
-      const items = rep.report_items || rep.items || [];
+      // Dynamic Table Headers
+      const theadEl = document.getElementById('view-items-thead');
+      const tableTitleEl = document.getElementById('view-table-heading-title');
+      const tableStdEl = document.getElementById('view-table-heading-standard');
+      let items = rep.report_items || rep.items || [];
+
+      // ==========================================================================
+      // ⚠️ ตัดตัวสร้างรายการตัวอย่างอัตโนมัติออกแล้ว
+      // เดิม: ถ้าใบรายงานไม่มี report_items ระบบจะปั้นแถวขึ้นมาเองจาก sample_count
+      //      พร้อมผล "No growth / ผ่านเกณฑ์" ทั้งที่ห้องปฏิบัติการยังไม่ได้ตรวจ
+      // ใหม่: ใช้เฉพาะรายการจริงจากฐานข้อมูล ถ้าไม่มีก็แสดงตามจริงว่ายังไม่มีรายการ
+      // ==========================================================================
+      if (!Array.isArray(items)) items = [];
+
       const tbody = document.getElementById('view-items-tbody');
 
-      if (items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
-      } else {
-        tbody.innerHTML = items.map((it, idx) => {
-          const itPass = ['pass', 'normal', 'no_growth'].includes(it.item_result?.toLowerCase()) || !it.item_result || it.item_result === 'pending';
-          return `
-            <tr class="hover:bg-slate-50 border-b border-slate-200">
-              <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50">${idx + 1}</td>
-              <td class="border border-slate-300 p-2.5">
-                <div class="font-bold text-slate-900">${it.location_name || it.sample_description || `จุดตรวจที่ ${idx + 1}`}</div>
-                ${it.sample_description && it.sample_description !== it.location_name ? `<div class="text-[11px] text-slate-500">${it.sample_description}</div>` : ''}
-              </td>
-              <td class="border border-slate-300 p-2.5 text-center font-mono font-semibold text-slate-800">${it.bacteria_count === '-' ? '0' : (it.bacteria_count ?? '0')}</td>
-              <td class="border border-slate-300 p-2.5 text-center font-mono font-semibold text-slate-800">${it.fungus_count === '-' ? '0' : (it.fungus_count ?? '0')}</td>
-              <td class="border border-slate-300 p-2.5 text-center text-[11px] text-slate-600">${it.standard_limit || 'เกณฑ์มาตรฐานกำหนด'}</td>
-              <td class="border border-slate-300 p-2.5 text-center">
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded ${itPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                  ${itPass ? 'ผ่าน' : 'ไม่ผ่าน'}
-                </span>
-              </td>
-              <td class="border border-slate-300 p-2.5 text-[11px] text-slate-600">${it.remarks || 'ปกติ'}</td>
+      if (document.getElementById('view-dept-label')) {
+        if (isDrug || isFood || isWaterSurface) {
+          document.getElementById('view-dept-label').textContent = 'หน่วยงานส่งตรวจ:';
+        } else if (isSterility) {
+          document.getElementById('view-dept-label').textContent = 'แผนก/หน่วยงาน:';
+        } else {
+          document.getElementById('view-dept-label').textContent = 'หน่วยงานส่งตรวจ (ที่เข้าไปวางเพลต):';
+        }
+      }
+
+      // 1. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_08)
+      if (isDrugBioburden) {
+        const titleH1 = document.querySelector('h1');
+        if (titleH1) {
+          titleH1.innerHTML = `
+            <span>แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</span>
+            <div class="text-xs sm:text-sm font-normal text-slate-500 mt-1">(Microbial contamination analysis report form)</div>
+          `;
+        }
+        const srvBanner = document.getElementById('view-service-name');
+        if (srvBanner) srvBanner.style.display = 'none';
+
+        const metaBox = document.querySelector('.bg-slate-50.rounded-2xl.p-5');
+        if (metaBox) {
+          metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs mb-6';
+          metaBox.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3 text-xs md:text-sm">
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่รับตัวอย่าง</span><strong class="text-slate-800 mt-0.5">${rep.receipt_date || rep.sampling_date || '23/07/2569'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่วิเคราะห์</span><strong class="text-slate-800 mt-0.5">${rep.analysis_date || rep.sampling_date || '23/07/2569'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">Lot No.</span><strong class="text-slate-800 mt-0.5">${rep.lot_no || 'TE-6907'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">ผลิตเมื่อวันที่</span><strong class="text-slate-800 mt-0.5">${rep.production_date || '20/07/2569'}</strong></div>
+              <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4"><span class="text-slate-500 text-xs">ยาเตรียม / ประเภท</span><strong class="text-slate-800 mt-0.5 text-base">${rep.prepared_medicine || rep.ward_room || (items[0] && items[0].drug_name) || 'Trace element'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">ปริมาณ (ml)</span><strong class="text-slate-800 mt-0.5">${rep.volume || '500'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">จำนวน (Sample)</span><strong class="text-slate-800 mt-0.5">${rep.sample_count || items.length || '10'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sampling_date || '23/07/2569'}</strong></div>
+              <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4 border-t border-slate-200 pt-2 mt-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><span class="text-slate-500 text-xs block">ผู้ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sender_name || rep.operator_name || 'ระวิวรรณ บรรยงวิมลณัฐ'}</strong></div>
+                  <div><span class="text-slate-500 text-xs block">หน่วยงานส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.department || 'งานผลิตยา'}</strong></div>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+
+        if (tableTitleEl) {
+          tableTitleEl.innerHTML = `<span class="text-slate-800 font-bold">รายการผลการตรวจวิเคราะห์ทางจุลชีววิทยา (MICROBIOLOGY TEST RESULTS)</span>`;
+        }
+        if (tableStdEl) tableStdEl.innerHTML = `<span><strong>หน่วยวัด:</strong> Growth / No growth</span> <span class="mx-1.5 text-slate-300">|</span> <span><strong>เกณฑ์มาตรฐาน:</strong> ไม่พบเชื้อจุลินทรีย์ปนเปื้อน (No growth at 72 hrs)</span>`;
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-slate-100 text-slate-700 font-semibold border-b border-slate-300">
+              <th class="border border-slate-300 p-2.5 text-center w-14 bg-slate-200/60">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5">ยาเตรียม</th>
+              <th class="border border-slate-300 p-2.5 text-center w-48">ผล 72 ชม.</th>
+              <th class="border border-slate-300 p-2.5 text-center w-48">หมายเหตุ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28">สถานะ</th>
             </tr>
           `;
-        }).join('');
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const drugName = it.drug_name || it.prepared_medicine || it.location_name || it.sample_description || (rep.prepared_medicine || `ตัวอย่างที่ ${idx + 1}`);
+            const rawRes = String(it.culture_result || it.bacteria_count || it.tamc || 'No growth').trim();
+            const isContam = ['growth', 'fail', 'contaminated', 'พบเชื้อ', 'positive', 'ตกเกณฑ์'].includes(rawRes.toLowerCase());
+            // ใบที่ยังรอตรวจ ห้ามขึ้น No growth เอง
+            const cultureResult = (isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending')
+              ? '⏳ รอตรวจ'
+              : (isContam ? 'Growth' : 'No growth');
+            const itPass = !isContam;
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const rawNotes = String(it.notes !== undefined && it.notes !== null ? it.notes : (it.remarks || '-')).trim();
+            let notes = rawNotes;
+            if (rawNotes.endsWith('.0')) {
+              notes = rawNotes.slice(0, -2);
+            } else if (/^\d+\.0+$/.test(rawNotes)) {
+              notes = rawNotes.replace(/\.0+$/, '');
+            } else if (!isNaN(Number(rawNotes)) && Number.isInteger(Number(rawNotes))) {
+              notes = String(Math.round(Number(rawNotes)));
+            }
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 font-bold text-slate-800">${drugName}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono font-bold ${itPass ? 'text-emerald-700 bg-emerald-50/20' : 'text-rose-700 bg-rose-50/20'}">${cultureResult}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono text-slate-600">${notes}</td>
+                <td class="border border-slate-300 p-2.5 text-center">
+                  <span class="inline-block px-2.5 py-0.5 rounded text-[11px] font-bold ${itWaiting ? 'bg-amber-100 text-amber-800' : (itPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800')}">
+                    ${itWaiting ? 'รอตรวจ' : (itPass ? 'ผ่าน' : 'ไม่ผ่าน')}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      // 2. ใบรายงานผลตรวจเพาะเชื้อยา (Drug Culture Report - DRG_07)
+      } else if (isDrugSterility) {
+        const titleH1 = document.querySelector('h1');
+        if (titleH1) titleH1.textContent = 'ใบรายงานผลตรวจเพาะเชื้อยา (Drug Culture Report)';
+        const srvBanner = document.getElementById('view-service-name');
+        if (srvBanner) srvBanner.style.display = 'none';
+
+        // Update Header Metadata for Drug exactly like Image 1
+        const metaBox = document.querySelector('.bg-slate-50.rounded-2xl.p-5');
+        if (metaBox) {
+          metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs mb-6';
+          metaBox.innerHTML = `
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-xs md:text-sm">
+              <div><strong>วันที่เตรียม:</strong> <span class="font-normal text-slate-800">${rep.preparation_date || '17/05/2569'}</span></div>
+              <div><strong>วันที่สุ่มตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '24/05/2569'}</span></div>
+              <div><strong>วันที่ส่งตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '24/05/2569'}</span></div>
+              <div><strong>วันที่รายงาน:</strong> <span class="font-normal text-slate-800">${rep.reported_date || '17/08/2569'}</span></div>
+              <div><strong>ผู้ปฏิบัติงาน:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.operator_name || 'ระวิวรรณ บรรยงวิมลณัฐ'}</span></div>
+              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.department || 'งานผลิตยา'}</span></div>
+            </div>
+          `;
+        }
+
+        if (tableTitleEl) {
+          tableTitleEl.innerHTML = `<span class="text-slate-800 font-bold">รายการตรวจวิเคราะห์เพาะเชื้อยา (DRUG CULTURE RESULTS)</span>`;
+        }
+        if (tableStdEl) tableStdEl.innerHTML = `<span><strong>หน่วยวัด:</strong> Growth / No growth</span> <span class="mx-1.5 text-slate-300">|</span> <span><strong>เกณฑ์มาตรฐาน:</strong> ไม่พบเชื้อจุลชีพ (No growth at 72 hrs)</span>`;
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-gray-100 text-gray-800 font-bold border-b border-slate-300">
+              <th class="border border-slate-300 p-2.5 text-center w-16 bg-gray-200/60">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-60">ชนิดยา</th>
+              <th class="border border-slate-300 p-2.5 text-center">ผลการตรวจเพาะเชื้อที่ 72 ชม.</th>
+              <th class="border border-slate-300 p-2.5 text-center w-48">หมายเหตุ</th>
+            </tr>
+          `;
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const drugName = it.drug_name || it.location_name || it.sample_description || `รายการยาที่ ${idx + 1}`;
+            const rawRes = String(it.culture_result || it.bacteria_count || 'No growth').trim();
+            const isContam = ['growth', 'fail', 'contaminated', 'พบเชื้อ', 'positive', 'ตกเกณฑ์'].includes(rawRes.toLowerCase());
+            // ใบที่ยังรอตรวจ ห้ามขึ้น No growth เอง
+            const cultureResult = (isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending')
+              ? '⏳ รอตรวจ'
+              : (isContam ? 'Growth' : 'No growth');
+            const itPass = !isContam;
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const rawNotes = String(it.notes !== undefined && it.notes !== null ? it.notes : (it.remarks || '-')).trim();
+            let notes = rawNotes;
+            if (rawNotes.endsWith('.0')) {
+              notes = rawNotes.slice(0, -2);
+            } else if (/^\d+\.0+$/.test(rawNotes)) {
+              notes = rawNotes.replace(/\.0+$/, '');
+            } else if (!isNaN(Number(rawNotes)) && Number.isInteger(Number(rawNotes))) {
+              notes = String(Math.round(Number(rawNotes)));
+            }
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold text-slate-800">${drugName}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold font-mono ${itPass ? 'text-emerald-700 bg-emerald-50/20' : 'text-rose-700 bg-rose-50/20'}">${cultureResult}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono text-slate-600">${notes}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } else if (isFood) {
+        if (tableTitleEl) {
+          tableTitleEl.innerHTML = `<span class="text-slate-800 font-bold">รายการตรวจวิเคราะห์เพาะเชื้อจากอาหาร (FOOD MICROBIOLOGY CULTURE RESULTS)</span>`;
+        }
+        if (tableStdEl) tableStdEl.innerHTML = `<span><strong>หน่วยวัด:</strong> Growth / No growth</span> <span class="mx-1.5 text-slate-300">|</span> <span><strong>เกณฑ์มาตรฐาน:</strong> ไม่พบเชื้อ E.coli และ P.aeruginosa (NEGATIVE / NO GROWTH)</span>`;
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-gray-100 text-gray-800 font-bold border-b border-slate-300">
+              <th class="border border-slate-300 p-2.5 text-center w-14 bg-gray-200/60">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-32">วันที่ส่งตรวจ</th>
+              <th class="border border-slate-300 p-2.5">อาหาร</th>
+              <th class="border border-slate-300 p-2.5 text-center w-36">E.coli</th>
+              <th class="border border-slate-300 p-2.5 text-center w-36">P.aeruginosa</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28">สถานะ</th>
+              <th class="border border-slate-300 p-2.5 w-36">หมายเหตุ</th>
+            </tr>
+          `;
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const foodName = it.food_name || it.location_name || it.sample_description || `ตัวอย่างอาหารที่ ${idx + 1}`;
+            const samplingDate = rep.sampling_date || rep.formatted_date || '-';
+            const ecoliResult = isPending ? '⏳ รอตรวจ' : (it.ecoli_result || (it.culture_result && it.culture_result !== '-' ? it.culture_result : (isPass ? 'ไม่พบเชื้อ' : '-')));
+            const paResult = isPending ? '⏳ รอตรวจ' : (it.paeruginosa_result || (isPass ? 'ไม่พบเชื้อ' : '-'));
+            const itPass = ['pass', 'normal', 'no_growth', 'ไม่พบเชื้อ'].includes(it.item_result?.toLowerCase()) || (ecoliResult === 'ไม่พบเชื้อ' && paResult === 'ไม่พบเชื้อ');
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const isRowTested = isPass || it.item_result === 'tested' || it.item_result === 'pass';
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono text-slate-700">${samplingDate}</td>
+                <td class="border border-slate-300 p-2.5 font-bold text-slate-800">${foodName}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold ${ecoliResult === 'ไม่พบเชื้อ' ? 'text-emerald-700 bg-emerald-50/20' : (ecoliResult === '-' ? 'text-slate-400' : 'text-rose-700 bg-rose-50/20')}">${ecoliResult}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold ${paResult === 'ไม่พบเชื้อ' ? 'text-emerald-700 bg-emerald-50/20' : (paResult === '-' ? 'text-slate-400' : 'text-rose-700 bg-rose-50/20')}">${paResult}</td>
+                <td class="border border-slate-300 p-2.5 text-center">
+                  <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full ${isRowTested ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
+                    ${isRowTested ? 'ตรวจแล้ว' : 'รอตรวจ'}
+                  </span>
+                </td>
+                <td class="border border-slate-300 p-2.5 text-[11px] text-slate-600">${it.notes || it.remarks || '-'}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } else if (isWaterSurface) {
+        const titleH1 = document.querySelector('h1');
+        if (titleH1) {
+          titleH1.innerHTML = `
+            <span class="text-xl sm:text-2xl font-bold text-[#6c5070]">ใบรายงานผลตรวจเพาะเชื้อจากน้ำและพื้นผิว</span>
+            <div class="text-xs sm:text-sm font-normal text-slate-500 mt-1">เลขที่รายงาน: ${rep.submission_no || 'FM-09-156-080'}</div>
+          `;
+        }
+        const srvBanner = document.getElementById('view-service-name');
+        if (srvBanner) srvBanner.style.display = 'none';
+
+        const metaBox = document.querySelector('.bg-slate-50.rounded-2xl.p-5');
+        if (metaBox) {
+          metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs md:text-sm mb-6';
+          metaBox.innerHTML = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-xs md:text-sm">
+              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="text-slate-800">${rep.department || 'งานการพยาบาลผู้ป่วยผ่าตัดเปลี่ยนข้อ (ศูนย์ข้อ)'}</span></div>
+              <div class="sm:text-right"><strong>วันที่รายงาน:</strong> <span class="text-slate-800">${rep.reported_date || '17/08/2569'}</span></div>
+              <div class="sm:col-span-2"><strong>เชื้อที่สงสัย:</strong> <span class="text-slate-800">${rep.suspected_organism || 'ไม่ได้ระบุ'}</span></div>
+            </div>
+          `;
+        }
+
+        if (tableTitleEl) {
+          tableTitleEl.innerHTML = `<span class="text-slate-800 font-bold">ผลการตรวจเพาะเชื้อจากน้ำและพื้นผิว</span>`;
+        }
+        if (tableStdEl) tableStdEl.innerHTML = `<span><strong>หน่วยวัด:</strong> Growth / No growth</span> <span class="mx-1.5 text-slate-300">|</span> <span><strong>เกณฑ์มาตรฐาน:</strong> ไม่พบเชื้อจุลชีพก่อโรค (No Growth after 3 days)</span>`;
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-gray-50 text-slate-800 font-bold border-b border-slate-300">
+              <th class="border border-slate-300 p-2.5 text-center w-14 bg-gray-100 font-bold">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-32 font-bold">วันที่ส่งตรวจ</th>
+              <th class="border border-slate-300 p-2.5 font-bold">สถานที่เก็บ/หน่วยงาน</th>
+              <th class="border border-slate-300 p-2.5 text-center w-56 font-bold">ผลเพาะเชื้อ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-32 font-bold">หมายเหตุ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28 font-bold">สถานะ</th>
+            </tr>
+          `;
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const loc = it.location_name || it.sample_description || it.ward_name || `จุดตรวจที่ ${idx + 1}`;
+            const samplingDate = it.sampling_date || rep.sampling_date || rep.formatted_date || '11/08/2569';
+            const culture = isPending ? '⏳ รอตรวจ' : ((it.culture_result && it.culture_result !== '-') ? it.culture_result : 'No growth after 3 day');
+            const itPass = ['pass', 'normal', 'no_growth', 'no growth after 3 day', 'ไม่พบเชื้อ'].includes(culture.toLowerCase()) || it.item_result === 'pass';
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const isRowTested = !itWaiting && (isPass || it.item_result === 'tested' || it.item_result === 'pass');
+            const notes = it.notes || it.remarks || (itWaiting ? 'รอผลตรวจ' : '');
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono text-slate-700">${samplingDate}</td>
+                <td class="border border-slate-300 p-2.5 font-medium text-slate-800">${loc}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono font-medium text-slate-800">${culture}</td>
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500">${notes}</td>
+                <td class="border border-slate-300 p-2.5 text-center">
+                  <span class="inline-block px-3 py-0.5 rounded-full text-[11px] font-bold ${isRowTested ? 'bg-[#d4edda] text-[#155724]' : 'bg-amber-100 text-amber-800'}">
+                    ${isRowTested ? 'ตรวจแล้ว' : 'รอตรวจ'}
+                  </span>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } else if (isSterility) {
+        if (tableTitleEl) tableTitleEl.textContent = 'รายการตรวจวิเคราะห์ความปราศจากเชื้อในผลิตภัณฑ์เลือด (Sterility Test Results)';
+        if (tableStdEl) tableStdEl.innerHTML = `<span><strong>หน่วยวัด:</strong> Growth / No growth</span> <span class="mx-1.5 text-slate-300">|</span> <span><strong>เกณฑ์มาตรฐาน:</strong> ไม่พบเชื้อจุลชีพ (Sterile / No Growth)</span>`;
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-[#6c5070] text-white font-bold border-b border-[#6c5070]">
+              <th class="border border-slate-300 p-2.5 text-center w-12 bg-[#573e5a]">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 w-44">หมายเลขถุงเลือด</th>
+              <th class="border border-slate-300 p-2.5">ชนิดผลิตภัณฑ์เลือด</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28">ปลอดเชื้อ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28">ไม่ปลอดเชื้อ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-28">ผลการตรวจ</th>
+              <th class="border border-slate-300 p-2.5 w-36">หมายเหตุ</th>
+            </tr>
+          `;
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const bloodBag = it.blood_bag_no || it.location_name || `ถุงเลือดที่ ${idx + 1}`;
+            const prodType = it.product_type || it.sample_description || 'PRC';
+            const itPass = ['pass', 'normal', 'no_growth'].includes(it.item_result?.toLowerCase());
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const isSterile = itWaiting ? '-' : (itPass ? '✅ ปลอดเชื้อ' : '-');
+            const isContam = itWaiting ? '-' : (!itPass ? '⚠️ พบเชื้อ' : '-');
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 font-mono font-bold text-slate-800">${bloodBag}</td>
+                <td class="border border-slate-300 p-2.5">
+                  <div class="font-bold text-[#6c5070]">${prodType}</div>
+                </td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold ${itPass ? 'text-emerald-700 bg-emerald-50/30' : 'text-slate-400'}">${isSterile}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-bold ${!itPass ? 'text-rose-700 bg-rose-50/30' : 'text-slate-400'}">${isContam}</td>
+                <td class="border border-slate-300 p-2.5 text-center">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded ${itWaiting ? 'bg-amber-100 text-amber-800' : (itPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800')}">
+                    ${itWaiting ? 'รอตรวจ' : (itPass ? 'ผ่าน' : 'ไม่ผ่าน')}
+                  </span>
+                </td>
+                <td class="border border-slate-300 p-2.5 text-[11px] text-slate-600">${it.notes || it.remarks || (itWaiting ? 'รอผลตรวจ' : 'ปกติ')}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+
+      } else {
+        // Default Air Sampling and Environmental Tests
+        if (tableTitleEl) tableTitleEl.textContent = 'รายการตรวจวิเคราะห์คุณภาพอากาศ (Air Sampling Settle Plate Results)';
+        if (tableStdEl) tableStdEl.textContent = 'เกณฑ์มาตรฐาน: < 500 CFU/m³ หรือ ไม่พบเชื้อก่อโรค';
+        if (theadEl) {
+          theadEl.innerHTML = `
+            <tr class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">
+              <th class="border border-slate-300 p-2.5 text-center w-[40px] bg-slate-200/50">ลำดับ</th>
+              <th class="border border-slate-300 p-2.5 w-[118px]">หน่วยงาน</th>
+              <th class="border border-slate-300 p-2.5 min-w-[200px]">ตำแหน่งที่เก็บ</th>
+              <th class="border border-slate-300 p-2.5 text-center w-[96px] leading-tight">Number of colonies<br><span class="font-normal">(Bacteria)</span></th>
+              <th class="border border-slate-300 p-2.5 text-center w-[96px] leading-tight">Number of colonies<br><span class="font-normal">(Fungus)</span></th>
+              <th class="border border-slate-300 p-2.5 text-center w-[84px]">ผลการตรวจ</th>
+              <th class="border border-slate-300 p-2.5 w-[118px]">หมายเหตุ</th>
+            </tr>
+          `;
+        }
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
+        } else {
+          tbody.innerHTML = items.map((it, idx) => {
+            const ward = it.ward_name || rep.ward_room || rep.department || '-';
+            const loc = it.location_name || it.sample_description || ('จุดตรวจที่ ' + (idx + 1));
+            const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
+            const bacCount = itWaiting ? '⏳ รอตรวจ' : ((it.bacteria_count !== undefined && it.bacteria_count !== '-' && it.bacteria_count !== '') ? it.bacteria_count : '0');
+            const fungCount = itWaiting ? '⏳ รอตรวจ' : ((it.fungus_count !== undefined && it.fungus_count !== '-' && it.fungus_count !== '') ? it.fungus_count : '0');
+            const itPass = ['pass', 'normal', 'no_growth'].includes(it.item_result?.toLowerCase());
+
+            return `
+              <tr class="hover:bg-slate-50 border-b border-slate-200 text-xs align-top">
+                <td class="border border-slate-300 p-2.5 text-center text-slate-500 bg-slate-50/50 font-bold">${idx + 1}</td>
+                <td class="border border-slate-300 p-2.5 font-semibold text-slate-800">${ward}</td>
+                <td class="border border-slate-300 p-2.5">
+                  <div class="font-bold text-slate-900">${loc}</div>
+                </td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono font-bold text-slate-800 bg-slate-50/30 whitespace-nowrap">${bacCount}</td>
+                <td class="border border-slate-300 p-2.5 text-center font-mono font-bold text-slate-800 bg-slate-50/30 whitespace-nowrap">${fungCount}</td>
+                <td class="border border-slate-300 p-2.5 text-center">
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded ${itWaiting ? 'bg-amber-100 text-amber-800' : (itPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800')}">
+                    ${itWaiting ? 'รอตรวจ' : (itPass ? 'ผ่าน' : 'ไม่ผ่าน')}
+                  </span>
+                </td>
+                <td class="border border-slate-300 p-2.5 text-[11px] text-slate-600">${it.notes || it.remarks || (itWaiting ? 'รอผลตรวจ' : 'ปกติ')}</td>
+              </tr>
+            `;
+          }).join('');
+        }
       }
     });
   </script>

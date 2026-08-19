@@ -141,15 +141,16 @@ async function renderCalendar(year, month) {
     const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dayOfWeek = new Date(year, month - 1, d).getDay(); // 0:Sun, 1:Mon, 2:Tue, 3:Wed, 4:Thu, 5:Fri, 6:Sat
     const isToday = dateStr === todayStr;
+    const isPast = dateStr < todayStr;
 
     // ตรวจสอบวันหยุดนักขัตฤกษ์
     const holiday = cachedHolidays.find(h => h.holiday_date === dateStr);
     const isHoliday = !!holiday;
 
-    // 🎯 กฎสำคัญ: เปิดรับส่งตรวจเฉพาะ วันจันทร์ (1), อังคาร (2), พุธ (3) ที่ไม่ใช่วันหยุดนักขัตฤกษ์
-    const isOpenDay = (dayOfWeek === 1 || dayOfWeek === 2 || dayOfWeek === 3) && !isHoliday;
-    const isLocked = !isOpenDay;
-
+    // 🎯 เปิดรับส่งตรวจวันจันทร์ - ศุกร์ ที่ไม่ใช่วันหยุดนักขัตฤกษ์และไม่ใช่วันในอดีต
+    // เปิดรับส่งตรวจเฉพาะ วันจันทร์ - พุธ (งดรับ พฤหัส-ศุกร์ และเสาร์-อาทิตย์ รวมถึงวันหยุดนักขัตฤกษ์)
+    const isOpenDay = (dayOfWeek >= 1 && dayOfWeek <= 3) && !isHoliday && !isPast;
+    
     // รายการจองของวันนี้
     const dayBookings = cachedBookings.filter(b => b.booking_date === dateStr && b.status !== 'cancelled');
     const totalSamples = dayBookings.reduce((sum, b) => sum + (parseInt(b.sample_count, 10) || 1), 0);
@@ -157,22 +158,22 @@ async function renderCalendar(year, month) {
     // กำหนดรูปแบบและการจัดสไตล์ของกล่องแต่ละวัน
     let cellClass = '';
     let statusBadge = '';
-    let cursorClass = 'cursor-pointer';
+    let cursorClass = isPast ? 'cursor-not-allowed opacity-60' : 'cursor-pointer';
 
-    if (isHoliday) {
+    if (isPast) {
+      // วันที่ผ่านไปแล้ว (ล็อคอัตโนมัติ)
+      cellClass = 'bg-slate-100/80 border-slate-200';
+      statusBadge = `
+        <div class="text-[9px] text-slate-500 bg-slate-200 font-medium px-1.5 py-0.5 rounded mb-1 truncate">
+          <i class="fas fa-lock text-slate-400 mr-0.5"></i> ผ่านแล้ว (ล็อค)
+        </div>
+      `;
+    } else if (isHoliday) {
       // วันหยุดนักขัตฤกษ์ (ล็อค)
       cellClass = 'bg-rose-50/60 border-rose-200 hover:border-rose-400';
       statusBadge = `
         <div class="text-[10px] text-rose-700 bg-rose-100 font-semibold px-1.5 py-0.5 rounded mb-1 truncate border border-rose-200" title="${holiday.holiday_name}">
           <i class="fas fa-ban text-rose-500 mr-0.5"></i> วันหยุด: ${holiday.holiday_name}
-        </div>
-      `;
-    } else if (dayOfWeek === 4 || dayOfWeek === 5) {
-      // วันพฤหัสบดี / วันศุกร์ (ล็อค)
-      cellClass = 'bg-slate-100/70 border-slate-200 hover:border-slate-300';
-      statusBadge = `
-        <div class="text-[9px] text-slate-500 bg-slate-200/80 font-medium px-1.5 py-0.5 rounded mb-1 truncate">
-          <i class="fas fa-lock text-slate-400 mr-0.5"></i> งดรับ (ส่งได้ จ.-พ.)
         </div>
       `;
     } else if (dayOfWeek === 0 || dayOfWeek === 6) {
@@ -183,13 +184,21 @@ async function renderCalendar(year, month) {
           <i class="fas fa-lock text-slate-400 mr-0.5"></i> ปิดทำการ
         </div>
       `;
+    } else if (dayOfWeek === 4 || dayOfWeek === 5) {
+      // วันพฤหัสบดี / ศุกร์ (งดรับส่งตรวจ - ล็อค)
+      cellClass = 'bg-slate-100/90 border-slate-200/80 hover:border-slate-300';
+      statusBadge = `
+        <div class="text-[9px] text-slate-500 bg-slate-200/80 font-medium px-1.5 py-0.5 rounded mb-1 truncate">
+          <i class="fas fa-ban text-slate-400 mr-0.5"></i> งดรับส่งตรวจ (จ.-พ. เท่านั้น)
+        </div>
+      `;
     } else if (isOpenDay) {
-      // วันจันทร์ - พุธ (เปิดรับส่งตรวจ - จองซ้ำได้ไม่จำกัด)
+      // วันจันทร์ - พุธ (เปิดรับส่งตรวจ - จองได้)
       cellClass = 'bg-white border-emerald-300/80 hover:border-emerald-500 hover:shadow-md ring-1 ring-emerald-500/20';
       statusBadge = `
         <div class="text-[9px] text-emerald-700 bg-emerald-50 font-bold px-1.5 py-0.5 rounded mb-1 border border-emerald-200 truncate flex items-center justify-between">
           <span><i class="fas fa-circle-check text-emerald-500 mr-0.5"></i> เปิดรับส่งตรวจ</span>
-          <span class="text-[8px] bg-emerald-600 text-white px-1 rounded">ไม่จำกัด</span>
+          <span class="text-[8px] bg-emerald-600 text-white px-1 rounded">จองได้</span>
         </div>
       `;
     }
@@ -205,7 +214,7 @@ async function renderCalendar(year, month) {
         <div>
           <div class="flex items-center justify-between mb-1">
             <div class="flex items-center gap-1">
-              <span class="text-xs font-bold ${isHoliday ? 'text-rose-600' : (dayOfWeek === 0 || dayOfWeek === 6) ? 'text-slate-400' : isOpenDay ? 'text-emerald-800' : 'text-slate-600'} ${isToday ? 'bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-extrabold' : ''}">
+              <span class="text-xs font-bold ${isPast ? 'text-slate-400' : (isHoliday ? 'text-rose-600' : (dayOfWeek === 0 || dayOfWeek === 6) ? 'text-slate-400' : isOpenDay ? 'text-emerald-800' : 'text-slate-600')} ${isToday ? 'bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded-full font-extrabold' : ''}">
                 ${d}
               </span>
               <span class="text-[10px] text-slate-400">(${THAI_DAYS[dayOfWeek].replace('วัน', '')})</span>
@@ -259,6 +268,16 @@ async function renderCalendar(year, month) {
  * จัดการเมื่อผู้ใช้คลิกเลือกวันที่บนปฏิทิน
  */
 function handleDayClick(dateStr, isHoliday, holidayName, isOpenDay, dayOfWeek) {
+  const todayStr = new Date().toISOString().split('T')[0];
+  if (dateStr < todayStr) {
+    Swal.fire({
+      icon: 'info',
+      title: 'วันที่ผ่านไปแล้ว',
+      text: 'ไม่สามารถจองคิวหรือแก้ไขวันส่งตรวจในอดีตได้ เนื่องจากวันดังกล่าวได้ผ่านไปแล้ว'
+    });
+    return;
+  }
+
   const [year, month, day] = dateStr.split('-');
   const dayName = THAI_DAYS[dayOfWeek];
   const thaiDateStr = `${dayName}ที่ ${parseInt(day, 10)} ${THAI_MONTHS[parseInt(month, 10) - 1]} ${parseInt(year, 10) + 543}`;
@@ -386,9 +405,54 @@ async function showBookingFormModal(dateStr, thaiDateStr) {
   const wards = window.MasterDB.getWards();
   const user = window.AuthManager ? await window.AuthManager.getCurrentUser() : null;
 
-  const defaultSender = user?.displayName || '';
-  const defaultDept = user?.department || '';
-  const defaultService = user?.serviceCode || 'AIR_01';
+  let defaultSender = user?.displayName || user?.name || '';
+  let defaultDept = user?.department || '';
+  let defaultService = user?.serviceCode || 'AIR_01';
+  let defaultPhone = user?.contactNumber || user?.phone || '02-926-9460';
+
+  if (user) {
+    if (user.username === 'thamc') {
+      defaultService = 'WTM_05';
+      defaultDept = defaultDept || 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ศูนย์การแพทย์ (THAMC)';
+      defaultPhone = defaultPhone || '9510';
+    } else if (user.username === 'or') {
+      defaultService = 'WTO_04';
+      defaultDept = defaultDept || 'ห้องผ่าตัด (OR)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ห้องผ่าตัด';
+      defaultPhone = defaultPhone || '9420';
+    } else if (user.username === 'nutrition') {
+      defaultService = 'FOD_06';
+      defaultDept = defaultDept || 'งานโภชนาการ';
+      defaultSender = defaultSender || 'เจ้าหน้าที่โภชนาการ';
+      defaultPhone = defaultPhone || '8406';
+    } else if (user.username === 'compounding') {
+      defaultService = 'DRG_07';
+      defaultDept = defaultDept || 'งานผลิตยา (ปลอดเชื้อ)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 1';
+      defaultPhone = defaultPhone || '9907';
+    } else if (user.username === 'pharma') {
+      defaultService = 'DRG_08';
+      defaultDept = defaultDept || 'งานผลิตยา';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 2';
+      defaultPhone = defaultPhone || '9907';
+    } else if (user.username === 'bloodbank') {
+      defaultService = 'STR_02';
+      defaultDept = defaultDept || 'งานธนาคารเลือด';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ธนาคารเลือด';
+      defaultPhone = defaultPhone || '9863';
+    } else if (user.username === 'icn') {
+      defaultService = 'WTS_03';
+      defaultDept = defaultDept || 'งานควบคุมโรคติดเชื้อ (IC)';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ควบคุมโรคติดเชื้อ';
+      defaultPhone = defaultPhone || '9341';
+    } else if (user.username === 'occ') {
+      defaultService = 'AIR_01';
+      defaultDept = defaultDept || 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
+      defaultSender = defaultSender || 'เจ้าหน้าที่อาชีวอนามัย';
+      defaultPhone = defaultPhone || '02-926-9460';
+    }
+  }
 
   const servicesOptions = services.map(s => `<option value="${s.code}" ${s.code === defaultService ? 'selected' : ''}>${s.name}</option>`).join('');
   const wardsOptions = wards.map(w => `<option value="${w}">${w}</option>`).join('');
@@ -418,8 +482,8 @@ async function showBookingFormModal(dateStr, thaiDateStr) {
           </div>
 
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ <span class="text-rose-500">*</span></label>
-            <input type="tel" id="bk-contact" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="เช่น 081-234-5678 หรือ เบอร์ภายใน" required>
+            <label class="block font-semibold text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อ</label>
+            <input type="tel" id="bk-contact" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-hidden" placeholder="เช่น 02-926-9460 หรือ เบอร์ภายใน" value="${defaultPhone}">
           </div>
         </div>
 
@@ -484,7 +548,13 @@ async function showBookingFormModal(dateStr, thaiDateStr) {
         didOpen: () => Swal.showLoading()
       });
 
-      const { data, error } = await window.BookingDB.createBooking(result.value);
+      const bookingData = result.value;
+      const { data, error } = await window.BookingDB.createBooking(bookingData);
+
+      // ส่งแจ้งเตือน LINE และ Telegram
+      if (window.NotifyService) {
+        window.NotifyService.sendBookingNotification(bookingData).catch(e => console.warn(e));
+      }
 
       if (error) {
         Swal.fire({
@@ -496,8 +566,24 @@ async function showBookingFormModal(dateStr, thaiDateStr) {
         Swal.fire({
           icon: 'success',
           title: 'จองคิวส่งตรวจสำเร็จ!',
-          html: `<div class="text-xs text-slate-600">บันทึกคิวส่งตรวจวันที่ <strong>${thaiDateStr}</strong> เรียบร้อยแล้ว สามารถส่งตัวอย่างได้ตามวันนัดหมาย</div>`,
-          confirmButtonColor: '#059669'
+          html: `
+            <div class="text-xs text-slate-600 space-y-1.5 text-left bg-slate-50 p-3 rounded-xl border border-slate-200 mt-2">
+              <div>วันที่นัดหมาย: <strong>${thaiDateStr}</strong></div>
+              <div>หน่วยงาน: <strong>${bookingData.department}</strong></div>
+              <div>บริการ: <strong>${bookingData.service_name}</strong> (${bookingData.sample_count} ชิ้น)</div>
+            </div>
+            <p class="text-xs text-emerald-700 font-semibold mt-3">ท่านต้องการกรอกแบบฟอร์มส่งตรวจต่อทันทีเลยหรือไม่?</p>
+          `,
+          confirmButtonText: '<i class="fas fa-file-pen mr-1"></i> ไปกรอกแบบฟอร์มส่งตรวจ ➔',
+          confirmButtonColor: '#059669',
+          showCancelButton: true,
+          cancelButtonText: 'ปิด',
+          cancelButtonColor: '#64748b'
+        }).then((res) => {
+          if (res.isConfirmed) {
+            window.location.href = `workflow.html?tab=submission&service=${bookingData.service_code}&date=${dateStr}&dept=${encodeURIComponent(bookingData.department)}`;
+          }
+          renderCalendar(currentYear, currentMonth);
         });
 
         // รีเฟรชปฏิทินทันที

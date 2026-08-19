@@ -855,3 +855,31 @@ function toggleMobileMenu() {
   }
 }
 window.toggleMobileMenu = toggleMobileMenu;
+
+/**
+ * ดูตัวอย่างใบรายงานผลตรวจแบบ Modal บนหน้า Admin
+ */
+async function previewReportModal(reportId) {
+  if (typeof window.previewReportModal === 'function' && window.previewReportModal !== previewReportModal) {
+    return window.previewReportModal(reportId);
+  }
+
+  Swal.fire({
+    title: 'กำลังโหลดข้อมูลรายงาน...',
+    allowOutsideClick: false,
+    customClass: { popup: 'k-swal' },
+    didOpen: () => Swal.showLoading()
+  });
+
+  const res = await window.ReportDB.getReportById(reportId);
+  const rep = res?.data || res;
+  Swal.close();
+
+  if (!rep) {
+    Swal.fire({ icon: 'error', title: 'ไม่พบรายงาน', text: 'ไม่สามารถดึงข้อมูลรายงานตรวจนี้ได้' });
+    return;
+  }
+
+  window.open(`report_view.html?id=${encodeURIComponent(rep.id || rep.submission_no)}`, '_blank');
+}
+window.previewReportModal = previewReportModal;

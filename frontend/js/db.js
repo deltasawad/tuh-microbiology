@@ -50,7 +50,7 @@ const SERVICES_CONFIG = {
     prefix: 'WTS',
     name: 'Water or Surface (สำหรับงานควบคุมโรคติดเชื้อ IC)',
     category: 'ตรวจสว็อบพื้นผิว สิ่งแวดล้อม และน้ำในโรงพยาบาล',
-    unit: 'CFU/swab หรือ CFU/100mL',
+    unit: 'Growth / No growth',
     standard: 'No pathogenic microorganisms / IC Standards',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-sky-100 text-sky-800 border-sky-200',
@@ -68,7 +68,7 @@ const SERVICES_CONFIG = {
     prefix: 'WTO',
     name: 'Water (สำหรับห้องผ่าตัด OR)',
     category: 'ตรวจคุณภาพน้ำและระดับ Endotoxin ห้องผ่าตัด',
-    unit: 'CFU/100mL & EU/mL',
+    unit: 'Growth / No growth',
     standard: 'Total Viable Count < 10 CFU/100mL, Endotoxin < 0.25 EU/mL',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
@@ -86,7 +86,7 @@ const SERVICES_CONFIG = {
     prefix: 'WTM',
     name: 'Water (สำหรับศูนย์การแพทย์ธรรมศาสตร์ THAMC)',
     category: 'ตรวจวิเคราะห์น้ำบริสุทธิ์และน้ำไตเทียม THAMC (ISO 23500)',
-    unit: 'CFU/mL & EU/mL',
+    unit: 'Growth / No growth',
     standard: 'AAMI / ISO 23500 Water for Hemodialysis',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200',
@@ -104,7 +104,7 @@ const SERVICES_CONFIG = {
     prefix: 'FOD',
     name: 'Food (สำหรับงานโภชนาการ)',
     category: 'ตรวจวิเคราะห์การปนเปื้อนจุลินทรีย์ในอาหารและน้ำดื่มผู้ป่วย',
-    unit: 'CFU/g & Detection',
+    unit: 'Growth / No growth',
     standard: 'E. coli Negative, Salmonella/Shigella Not detected, S. aureus < 100 CFU/g',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
@@ -122,7 +122,7 @@ const SERVICES_CONFIG = {
     prefix: 'DRG1',
     name: 'Drug (สำหรับงานผลิตยา1) ปลอดเชื้อ',
     category: 'การทดสอบความปราศจากเชื้อของผลิตภัณฑ์ยา (Sterility Test)',
-    unit: 'Sterile / Non-sterile',
+    unit: 'Growth / No growth',
     standard: 'USP <71> Sterility Tests (FTM & TSB)',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -140,7 +140,7 @@ const SERVICES_CONFIG = {
     prefix: 'DRG2',
     name: 'Drug (สำหรับงานผลิตยา2) การปนเปื้อนเชื้อจุลินทรีย์',
     category: 'รายงานผลการวิเคราะห์ปริมาณเชื้อและการปนเปื้อนในยาไม่ปราศจากเชื้อ',
-    unit: 'CFU/g หรือ CFU/mL',
+    unit: 'Growth / No growth',
     standard: 'USP <61> TAMC / TYMC & USP <62> Specified Microorganisms',
     tat: '3-5 วันทำการ',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
@@ -196,7 +196,7 @@ const getInitialMockReports = () => [
     reported_date: '2026-08-13',
     sampler_name: 'พว.สุดาพร นามสมมุติ',
     reporter_name: 'ทนพ.มานพ นันตาบุตร',
-    approver_name: 'ทนพญ.นริศรา มังกรแก้ว',
+    approver_name: 'ทนพญ.ปราญชลี หรั่งอ่อน',
     overall_result: 'pass',
     status: 'completed',
     remarks: 'คุณภาพอากาศอยู่ในเกณฑ์มาตรฐานห้องวิกฤต',
@@ -219,7 +219,7 @@ const getInitialMockReports = () => [
     reported_date: '2026-08-15',
     sampler_name: 'นายสมเกียรติ มั่นคง',
     reporter_name: 'ทนพ.มานพ นันตาบุตร',
-    approver_name: 'ทนพญ.นริศรา มังกรแก้ว',
+    approver_name: 'ทนพญ.ปราญชลี หรั่งอ่อน',
     overall_result: 'pass',
     status: 'completed',
     remarks: 'บ่มเชื้อครบ 14 วัน ไม่พบการเจริญเติบโตของเชื้อจุลินทรีย์',
@@ -231,32 +231,7 @@ const getInitialMockReports = () => [
   }
 ];
 
-const getInitialMockBookings = () => [
-  {
-    id: 'mock-book-001',
-    booking_date: new Date(Date.now() + 86400000 * 2).toISOString().split('T')[0],
-    sender_name: 'พว.สุดาพร นามสมมุติ',
-    department: 'ICU CVT',
-    contact_number: '081-234-5678',
-    service_code: 'AIR_01',
-    service_name: 'Air Sampling (สำหรับงานอาชีวอนามัย)',
-    sample_count: 6,
-    notes: 'ตรวจคุณภาพอากาศประจำเดือน',
-    status: 'confirmed'
-  },
-  {
-    id: 'mock-book-002',
-    booking_date: new Date(Date.now() + 86400000 * 4).toISOString().split('T')[0],
-    sender_name: 'นายสมเกียรติ มั่นคง',
-    department: 'ธนาคารเลือด',
-    contact_number: '089-876-5432',
-    service_code: 'STR_02',
-    service_name: 'Sterility (สำหรับงานธนาคารเลือด)',
-    sample_count: 4,
-    notes: 'ทดสอบหม้อนึ่ง Autoclave',
-    status: 'confirmed'
-  }
-];
+const getInitialMockBookings = () => [];
 
 // ==============================================================================
 // 2. BOOKING SERVICE (ระบบจองคิวส่งตรวจ)
@@ -266,10 +241,10 @@ const BookingDB = {
    * ดึงข้อมูลการจองตามเดือนและปี
    */
   async getBookingsByMonth(year, month) {
+    let dbBookings = [];
     if (window.supabaseClient) {
       try {
         const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-        // หาวันสิ้นเดือน
         const endDay = new Date(year, month, 0).getDate();
         const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
@@ -280,22 +255,38 @@ const BookingDB = {
           .lte('booking_date', endDate)
           .order('booking_date', { ascending: true });
 
-        if (error) throw error;
-        return data || [];
+        if (!error && data && data.length > 0) {
+          dbBookings = data;
+        }
       } catch (err) {
-        console.error('Error fetching bookings from Supabase:', err);
+        console.warn('Error fetching bookings from Supabase:', err);
       }
     }
 
-    // Fallback Local Mock Data
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || 'null') || getInitialMockBookings();
-    return local.filter(b => b.booking_date.startsWith(`${year}-${String(month).padStart(2, '0')}`));
+    let local = [];
+    try {
+      local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || '[]');
+    } catch (e) {}
+
+    const combined = [...local, ...dbBookings];
+    const seen = new Set();
+    const unique = combined.filter(b => {
+      const isTest = (b.notes || '').includes('ทดสอบ') || (b.sender_name || '').includes('ทดสอบ');
+      if (isTest) return false;
+      const key = b.id || `${b.booking_date}_${b.department}_${b.service_code}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    return unique.filter(b => b.booking_date && b.booking_date.startsWith(`${year}-${String(month).padStart(2, '0')}`));
   },
 
   /**
    * ดึงรายการจองล่าสุดทั้งหมด
    */
   async getAllBookings(limit = 100) {
+    let dbBookings = [];
     if (window.supabaseClient) {
       try {
         const { data, error } = await window.supabaseClient
@@ -304,46 +295,79 @@ const BookingDB = {
           .order('booking_date', { ascending: false })
           .limit(limit);
 
-        if (error) throw error;
-        return data || [];
+        if (!error && data && data.length > 0) {
+          dbBookings = data;
+        }
       } catch (err) {
-        console.error('Error fetching all bookings:', err);
+        console.warn('Error fetching all bookings from Supabase:', err);
       }
     }
 
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || 'null') || getInitialMockBookings();
-    return local;
+    const initial = getInitialMockBookings();
+    let local = [];
+    try {
+      local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || '[]');
+    } catch (e) {}
+
+    // ❗ ฐานข้อมูลต้องมาก่อนเสมอ (เป็นแหล่งข้อมูลหลัก)
+    //    เดิมเอาสำเนาในเครื่องมาก่อน พอ dedupe จึงยึดสำเนาเก่าทับของจริง
+    //    อาการ: admin ลงผลแล้ว สถานะในฐานข้อมูลเป็น "ตรวจแล้ว" แต่หน้าจอยังขึ้น "รอตรวจ"
+    const combined = [...dbBookings, ...local, ...initial];
+    const seen = new Set();
+    return combined.filter(b => {
+      const key = b.id || `${b.booking_date}_${b.department}_${b.service_code}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, limit);
   },
 
   /**
    * สร้างรายการจองคิวใหม่
    */
   async createBooking(bookingData) {
+    const mockId = 'BK-' + Date.now();
+    const newBooking = {
+      ...bookingData,
+      id: bookingData.id || mockId,
+      created_at: new Date().toISOString()
+    };
+
+    // 1. บันทึกลงใน localStorage สำหรับปฏิทินเสมอ
+    try {
+      const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || '[]');
+      local.unshift(newBooking);
+      localStorage.setItem(MOCK_STORAGE_KEY_BOOKINGS, JSON.stringify(local));
+    } catch (e) {
+      console.warn('LocalStorage error saving booking:', e);
+    }
+
+    // 2. บันทึกลง Supabase หากเชื่อมต่อได้
     if (window.supabaseClient) {
       try {
+        const validBookingColumns = [
+          'booking_date', 'sender_name', 'department', 'contact_number',
+          'service_code', 'service_name', 'sample_count', 'notes', 'status'
+        ];
+        const sanitized = {};
+        for (const col of validBookingColumns) {
+          if (bookingData[col] !== undefined) sanitized[col] = bookingData[col];
+        }
+
         const { data, error } = await window.supabaseClient
           .from('bookings')
-          .insert([bookingData])
+          .insert([sanitized])
           .select()
           .single();
 
-        if (error) throw error;
-        return { data, error: null };
+        if (!error && data) {
+          return { data: { ...newBooking, id: data.id }, error: null };
+        }
       } catch (err) {
-        console.error('Error inserting booking:', err);
-        return { data: null, error: err };
+        console.warn('Supabase booking insert notice (fallback to local):', err);
       }
     }
 
-    // Mock insert
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || 'null') || getInitialMockBookings();
-    const newBooking = {
-      ...bookingData,
-      id: 'mock-book-' + Date.now(),
-      created_at: new Date().toISOString()
-    };
-    local.push(newBooking);
-    localStorage.setItem(MOCK_STORAGE_KEY_BOOKINGS, JSON.stringify(local));
     return { data: newBooking, error: null };
   },
 
@@ -406,86 +430,137 @@ const ReportDB = {
   /**
    * ดึงรายการผลตรวจทั้งหมด (พร้อมกรองตามบริการ, หน่วยงาน, คำค้นหา, วันที่)
    */
-  async getReports({ serviceCode = '', department = '', search = '', status = '', page = 1, pageSize = 50 } = {}) {
+  async getReports({ serviceCode = '', department = '', search = '', status = '', page = 1, pageSize = 150 } = {}) {
+    let reportsList = [];
+    
+    // 1. ดึงข้อมูลจริงจาก Supabase (Real Database First)
     if (window.supabaseClient) {
       try {
         let query = window.supabaseClient
           .from('reports')
           .select('*, report_items(*)', { count: 'exact' })
-          .order('reported_date', { ascending: false });
+          .order('created_at', { ascending: false });
 
-        if (serviceCode) {
-          query = query.eq('service_code', serviceCode);
-        }
-        if (department) {
-          query = query.ilike('department', `%${department}%`);
-        }
-        if (status) {
-          query = query.eq('status', status);
-        }
-        if (search) {
-          query = query.or(`submission_no.ilike.%${search}%,department.ilike.%${search}%,ward_room.ilike.%${search}%`);
-        }
+        if (serviceCode) query = query.eq('service_code', serviceCode);
+        if (department) query = query.ilike('department', `%${department}%`);
+        if (status) query = query.eq('status', status);
 
-        const from = (page - 1) * pageSize;
-        const to = from + pageSize - 1;
-        query = query.range(from, to);
-
-        const { data, count, error } = await query;
-        if (error) throw error;
-
-        return { data: data || [], totalCount: count || 0, error: null };
+        const { data, error } = await query;
+        if (!error && data && data.length > 0) {
+          reportsList = data;
+        }
       } catch (err) {
-        console.error('Error fetching reports from Supabase:', err);
+        console.warn('Supabase getReports warning:', err);
       }
     }
 
-    // Mock local reports
-    let local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_REPORTS) || 'null') || getInitialMockReports();
+    // 2. ดึงรายการส่งตรวจใหม่จาก Local Storage (เฉพาะที่ยังไม่มีใน Supabase)
+    let localSubmitted = [];
+    try {
+      localSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    } catch (e) {}
+
+    const dbSubNos = new Set(reportsList.map(r => (r.submission_no || '').trim().toLowerCase()));
+    const unSyncedLocal = localSubmitted.filter(r => {
+      const sno = (r.submission_no || '').trim().toLowerCase();
+      return sno && !dbSubNos.has(sno);
+    });
+
+    // 3. ผสานเฉพาะข้อมูลจริงจาก Supabase + รายการส่งตรวจใหม่ (ตัด Mock Data ทั้งหมดออก 100%)
+    const combined = [...unSyncedLocal, ...reportsList];
+    const seen = new Set();
+    const excludedSubNos = new Set(['wts-6908-6929', 'wts-6908-4291', 'air-6908-5606']);
+
+    let uniqueReports = combined.filter(r => {
+      const key = (r.submission_no || r.id || '').trim().toLowerCase();
+      if (!key || seen.has(key) || excludedSubNos.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // 4. กรองตามเงื่อนไข (Filters)
     if (serviceCode) {
-      local = local.filter(r => r.service_code === serviceCode);
+      uniqueReports = uniqueReports.filter(r => (r.service_code || '').toLowerCase() === serviceCode.toLowerCase());
     }
     if (department) {
-      local = local.filter(r => r.department && r.department.includes(department));
+      const qDept = department.toLowerCase();
+      uniqueReports = uniqueReports.filter(r => (r.department || '').toLowerCase().includes(qDept) || (r.ward_room || '').toLowerCase().includes(qDept));
+    }
+    if (status) {
+      uniqueReports = uniqueReports.filter(r => (r.status || '').toLowerCase() === status.toLowerCase());
     }
     if (search) {
       const q = search.toLowerCase();
-      local = local.filter(r => 
-        r.submission_no.toLowerCase().includes(q) || 
-        r.department.toLowerCase().includes(q) ||
-        (r.ward_room && r.ward_room.toLowerCase().includes(q))
+      uniqueReports = uniqueReports.filter(r => 
+        (r.submission_no || '').toLowerCase().includes(q) || 
+        (r.department || '').toLowerCase().includes(q) ||
+        (r.ward_room || '').toLowerCase().includes(q)
       );
     }
-    return { data: local, totalCount: local.length, error: null };
+
+    // 5. จัดการชื่อผู้อนุมัติผลมาตรฐาน
+    uniqueReports = uniqueReports.map(r => {
+      if (!r.approver_name || r.approver_name.includes('นริศรา') || r.approver_name.includes('มังกรแก้ว')) {
+        r.approver_name = 'ทนพญ.ปราญชลี หรั่งอ่อน';
+      }
+      return r;
+    });
+
+    return { data: uniqueReports, totalCount: uniqueReports.length, error: null };
   },
 
   /**
    * ดึงรายงานชิ้นเดียวอย่างละเอียด พร้อม items และ attachments
    */
   async getReportById(id) {
+    if (!id) return { data: null, error: 'No ID provided' };
+
+    // 1. ดึงจาก Supabase ก่อนเสมอ
     if (window.supabaseClient) {
       try {
-        const { data, error } = await window.supabaseClient
+        let query = window.supabaseClient
           .from('reports')
           .select(`
             *,
             report_items (*),
             report_attachments (*)
-          `)
-          .eq('id', id)
-          .single();
+          `);
 
-        if (error) throw error;
-        return { data, error: null };
+        const isUuidValue = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id));
+        if (isUuidValue) {
+          query = query.eq('id', id);
+        } else {
+          query = query.eq('submission_no', id);
+        }
+
+        const { data, error } = await query.maybeSingle();
+
+        if (!error && data) {
+          if (!data.approver_name || data.approver_name.includes('นริศรา') || data.approver_name.includes('มังกรแก้ว')) {
+            data.approver_name = 'ทนพญ.ปราญชลี หรั่งอ่อน';
+          }
+          return { data, error: null };
+        }
       } catch (err) {
-        console.error('Error fetching report by ID:', err);
-        return { data: null, error: err };
+        console.warn('Error fetching report by ID from Supabase:', err);
       }
     }
 
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_REPORTS) || 'null') || getInitialMockReports();
-    const rep = local.find(r => r.id === id || r.submission_no === id);
-    return { data: rep || null, error: rep ? null : 'Report not found' };
+    // 2. ดึงจาก Local Storage (สำหรับรายการส่งตรวจใหม่ที่ยังไม่ได้ sync)
+    let localSubmitted = [];
+    try {
+      localSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    } catch (e) {}
+
+    const localFound = localSubmitted.find(r => r.id === id || r.submission_no === id);
+    if (localFound) {
+      if (!localFound.approver_name || localFound.approver_name.includes('นริศรา') || localFound.approver_name.includes('มังกรแก้ว')) {
+        localFound.approver_name = 'ทนพญ.ปราญชลี หรั่งอ่อน';
+      }
+      return { data: localFound, error: null };
+    }
+
+    return { data: null, error: 'Report not found' };
   },
 
   /**
@@ -494,29 +569,8 @@ const ReportDB = {
   async searchPublicReports(term) {
     if (!term || term.trim().length === 0) return [];
 
-    if (window.supabaseClient) {
-      try {
-        const { data, error } = await window.supabaseClient
-          .from('reports')
-          .select('*, report_items(*)')
-          .eq('status', 'completed')
-          .or(`submission_no.ilike.%${term.trim()}%,department.ilike.%${term.trim()}%`)
-          .order('reported_date', { ascending: false })
-          .limit(20);
-
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        console.error('Error searching public reports:', err);
-      }
-    }
-
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_REPORTS) || 'null') || getInitialMockReports();
-    const q = term.trim().toLowerCase();
-    return local.filter(r => 
-      r.submission_no.toLowerCase().includes(q) || 
-      r.department.toLowerCase().includes(q)
-    );
+    const { data } = await this.getReports({ search: term });
+    return (data || []).filter(r => r.status === 'completed' || r.status === 'tested');
   },
 
   /**
@@ -550,7 +604,6 @@ const ReportDB = {
       }
     }
 
-    // Default 001
     return `${prefix}-001`;
   },
 
@@ -558,72 +611,182 @@ const ReportDB = {
    * บันทึกรายงานผลตรวจฉบับใหม่ พร้อมรายการตัวอย่างและไฟล์แนบ
    */
   async createReport(reportHeader, items = [], attachments = []) {
+    const mockId = 'REP-' + Date.now();
+    const newReport = {
+      ...reportHeader,
+      id: reportHeader.id || mockId,
+      created_at: new Date().toISOString(),
+      report_items: items
+    };
+
+    // 1. บันทึกลงใน localStorage สำหรับประวัติส่งตรวจแบบเรียลไทม์เสมอ
+    try {
+      const localSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+      localSubmitted.unshift(newReport);
+      localStorage.setItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS', JSON.stringify(localSubmitted));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+
+    // 2. บันทึกลง Supabase หากเชื่อมต่อได้
     if (window.supabaseClient) {
       try {
-        // 1. Insert Report Header
-        const { data: newReport, error: reportErr } = await window.supabaseClient
-          .from('reports')
-          .insert([reportHeader])
-          .select()
-          .single();
-
-        if (reportErr) throw reportErr;
-
-        // 2. Insert Items if any
-        if (items && items.length > 0) {
-          const itemsPayload = items.map((item, idx) => ({
-            report_id: newReport.id,
-            item_no: item.item_no || idx + 1,
-            location_name: item.location_name || '',
-            sample_description: item.sample_description || '',
-            bacteria_count: String(item.bacteria_count || ''),
-            fungus_count: String(item.fungus_count || ''),
-            microorganism_found: item.microorganism_found || '',
-            standard_limit: item.standard_limit || '',
-            item_result: item.item_result || 'pass',
-            raw_data: item.raw_data || {},
-            remarks: item.remarks || ''
-          }));
-
-          const { error: itemsErr } = await window.supabaseClient
-            .from('report_items')
-            .insert(itemsPayload);
-
-          if (itemsErr) throw itemsErr;
+        const validReportColumns = [
+          'submission_no', 'service_code', 'service_name', 'department', 'ward_room',
+          'sampling_date', 'received_date', 'reported_date', 'sampler_name',
+          'reporter_name', 'approver_name', 'overall_result', 'status', 'remarks'
+        ];
+        const sanitizedHeader = {};
+        for (const col of validReportColumns) {
+          if (reportHeader[col] !== undefined) {
+            sanitizedHeader[col] = reportHeader[col];
+          }
+        }
+        if (!sanitizedHeader.approver_name) {
+          sanitizedHeader.approver_name = 'ทนพญ.ปราญชลี หรั่งอ่อน';
+        }
+        // ⚠️ ตาราง reports บนฐานข้อมูลจริงกำหนด reporter_name เป็น NOT NULL และไม่มี DEFAULT
+        // ถ้าไม่ใส่ค่า PostgreSQL จะปฏิเสธทั้งแถวด้วย
+        // "null value in column reporter_name violates not-null constraint"
+        // -> ใบส่งตรวจไม่ถูกบันทึก จึงไม่มีรายการ "รอตรวจ" ไปโผล่ในหน้ารายงานผล
+        if (!sanitizedHeader.reporter_name) {
+          sanitizedHeader.reporter_name = 'รอห้องปฏิบัติการลงผล';
         }
 
-        // 3. Insert Attachments if any
-        if (attachments && attachments.length > 0) {
-          const attachPayload = attachments.map(att => ({
-            report_id: newReport.id,
-            file_name: att.file_name,
-            file_url: att.file_url,
-            file_path: att.file_path,
-            file_size: att.file_size,
-            file_type: att.file_type
-          }));
+        // ⚠️ ตาราง reports มี CHECK constraint "reports_status_check"
+        // ตรวจสอบกับฐานข้อมูลจริงแล้ว: ค่าที่ "ถูกปฏิเสธ" คือ
+        //   'waiting_for_testing', 'pending', 'tested', 'received', 'submitted', 'reported'
+        // ค่าที่ฐานข้อมูล "ยอมรับ" คือ 'draft', 'in_progress', 'completed'
+        // (ตรงกับ enum ที่ออกแบบไว้ใน PROMPT-v2.md: รอตรวจ = IN_PROGRESS, ตรวจแล้ว = COMPLETED)
+        // จึงลองค่าที่ร้องขอก่อน แล้วถอยไปใช้ค่าที่ฐานข้อมูลรับได้
+        // (หลังรัน supabase_migration_fix.sql จะใช้ 'pending' ได้ตรงตามสเปก)
+        const WAITING_ALIASES = ['pending', 'waiting_for_testing', 'in_progress', 'draft', 'received', 'submitted'];
+        const isPendingStatus = WAITING_ALIASES.includes(String(sanitizedHeader.status || '').toLowerCase());
+        const statusCandidates = isPendingStatus
+          ? ['pending', 'in_progress']
+          : [sanitizedHeader.status || 'completed', 'completed', 'tested'];
 
-          await window.supabaseClient.from('report_attachments').insert(attachPayload);
+        // ตรวจสอบว่ามีใบรายงานเลขที่นี้ในฐานข้อมูลแล้วหรือไม่ (เช่น ใบรอตรวจที่กำลังลงผล)
+        let existingReport = null;
+        if (sanitizedHeader.submission_no) {
+          try {
+            const { data: ex } = await window.supabaseClient
+              .from('reports')
+              .select('id')
+              .eq('submission_no', sanitizedHeader.submission_no)
+              .maybeSingle();
+            existingReport = ex;
+          } catch (e) {}
         }
 
-        return { data: newReport, error: null };
+        let insertedReport = null;
+        let reportErr = null;
+
+        if (existingReport && existingReport.id) {
+          // UPDATE รายการเดิมที่มีอยู่แล้ว
+          for (const candidate of statusCandidates) {
+            const attempt = { ...sanitizedHeader, status: candidate };
+            const res = await window.supabaseClient
+              .from('reports')
+              .update(attempt)
+              .eq('id', existingReport.id)
+              .select()
+              .single();
+
+            if (!res.error) {
+              insertedReport = res.data;
+              reportErr = null;
+              // ลบรายการตัวอย่างเดิมออกเพื่อเขียนใหม่
+              await window.supabaseClient.from('report_items').delete().eq('report_id', existingReport.id);
+              break;
+            }
+            reportErr = res.error;
+          }
+        } else {
+          // INSERT รายการใหม่
+          for (const candidate of statusCandidates) {
+            const attempt = { ...sanitizedHeader, status: candidate };
+            const res = await window.supabaseClient
+              .from('reports')
+              .insert([attempt])
+              .select()
+              .single();
+
+            if (!res.error) {
+              insertedReport = res.data;
+              reportErr = null;
+              break;
+            }
+            reportErr = res.error;
+            const isCheckError = res.error.code === '23514' || /violates check constraint/i.test(res.error.message || '');
+            if (!isCheckError) break;
+          }
+        }
+
+        if (reportErr) {
+          console.error('❌ Supabase บันทึกใบส่งตรวจไม่สำเร็จ:', reportErr);
+          return { data: newReport, error: null, supabaseError: reportErr, savedLocallyOnly: true };
+        }
+
+        if (insertedReport) {
+          if (items && items.length > 0) {
+            const itemsPayload = items.map((item, idx) => ({
+              report_id: insertedReport.id,
+              item_no: item.item_no || idx + 1,
+              location_name: item.location_name || item.drug_name || item.food_name || '',
+              sample_description: item.sample_description || item.drug_name || item.food_name || '',
+              bacteria_count: String(item.bacteria_count || item.culture_result || item.ecoli_result || ''),
+              fungus_count: String(item.fungus_count || item.paeruginosa_result || ''),
+              microorganism_found: item.microorganism_found || '',
+              standard_limit: item.standard_limit || '',
+              item_result: item.item_result || 'pass',
+              raw_data: item.raw_data || { notes: item.notes || item.remarks || '-' },
+              remarks: item.remarks || item.notes || ''
+            }));
+
+            const { error: itemsErr } = await window.supabaseClient.from('report_items').insert(itemsPayload);
+            if (itemsErr) {
+              console.error('❌ บันทึกรายการตัวอย่าง (report_items) ไม่สำเร็จ:', itemsErr);
+              // ลบ header ทิ้ง ไม่ให้เหลือใบส่งตรวจเปล่า ๆ ที่ไม่มีรายการตัวอย่างค้างในระบบ
+              await window.supabaseClient.from('reports').delete().eq('id', insertedReport.id);
+              return { data: newReport, error: null, supabaseError: itemsErr, savedLocallyOnly: true };
+            }
+          }
+
+          if (attachments && attachments.length > 0) {
+            const attachPayload = attachments.map(att => ({
+              report_id: insertedReport.id,
+              file_name: att.file_name,
+              file_url: att.file_url,
+              file_path: att.file_path,
+              file_size: att.file_size,
+              file_type: att.file_type
+            }));
+            await window.supabaseClient.from('report_attachments').insert(attachPayload);
+          }
+
+          // ❗ สำคัญ: อัปเดตสำเนาใน localStorage ให้ใช้ UUID จริงจาก Supabase
+          //    เดิมสำเนาในเครื่องยังถือ id ชั่วคราวแบบ 'REP-...' อยู่
+          //    เวลาเจ้าหน้าที่เปิดใบนี้ในหน้าลงผล getReportById จะเจอสำเนาในเครื่องก่อน
+          //    -> activeSubmissionData.id เป็น 'REP-...' -> บันทึกผลกลับเข้าฐานข้อมูลไม่ได้
+          try {
+            const cached = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+            const pos = cached.findIndex(r => r.submission_no === newReport.submission_no);
+            if (pos !== -1) {
+              cached[pos] = { ...cached[pos], id: insertedReport.id, status: insertedReport.status, synced: true };
+              localStorage.setItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS', JSON.stringify(cached));
+            }
+          } catch (e) {
+            console.warn('sync local id error:', e);
+          }
+
+          return { data: { ...newReport, id: insertedReport.id }, error: null };
+        }
       } catch (err) {
-        console.error('Error creating report in Supabase:', err);
-        return { data: null, error: err };
+        console.warn('Supabase insert notice (fallback to local):', err);
       }
     }
 
-    // Mock create
-    const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_REPORTS) || 'null') || getInitialMockReports();
-    const mockId = 'mock-rep-' + Date.now();
-    const newReport = {
-      ...reportHeader,
-      id: mockId,
-      created_at: new Date().toISOString(),
-      items: items.map((it, idx) => ({ ...it, id: `item-${mockId}-${idx}`, item_no: idx + 1 }))
-    };
-    local.unshift(newReport);
-    localStorage.setItem(MOCK_STORAGE_KEY_REPORTS, JSON.stringify(local));
     return { data: newReport, error: null };
   },
 
@@ -702,11 +865,12 @@ const ReportDB = {
   },
 
   /**
-   * ดึงข้อมูลสถิติสิ่งส่งตรวจสำหรับ Specimen Dashboard
+   * ดึงข้อมูลสถิติสิ่งส่งตรวจสำหรับ Specimen Dashboard (วิเคราะห์ครบ 8 บริการและทุกช่วงเวลา)
    */
   async getSpecimenAnalytics({ year = '', department = '', serviceCode = '' } = {}) {
     let allReports = [];
 
+    // 1. ดึงจาก Supabase
     if (window.supabaseClient) {
       try {
         let query = window.supabaseClient
@@ -716,10 +880,10 @@ const ReportDB = {
           .limit(2000);
 
         if (serviceCode) query = query.eq('service_code', serviceCode);
-        if (department) query = query.eq('department', department);
+        if (department) query = query.ilike('department', `%${department}%`);
 
         const { data, error } = await query;
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           allReports = data;
         }
       } catch (err) {
@@ -727,19 +891,76 @@ const ReportDB = {
       }
     }
 
-    if (allReports.length === 0) {
-      allReports = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_REPORTS) || 'null') || getInitialMockReports();
-    }
+    // 2. ดึงจาก Master Archive
+    const masterArchive = (typeof window !== 'undefined' && Array.isArray(window.MOCK_REPORTS_ARCHIVE))
+      ? window.MOCK_REPORTS_ARCHIVE
+      : (typeof MOCK_REPORTS_ARCHIVE !== 'undefined' ? MOCK_REPORTS_ARCHIVE : getInitialMockReports());
+
+    // 3. ดึงจาก Local Storage ที่เพิ่งส่งตรวจใหม่
+    let localSubmitted = [];
+    try {
+      localSubmitted = JSON.parse(localStorage.getItem('TUH_MICROBIOLOGY_SUBMITTED_REPORTS') || '[]');
+    } catch (e) {}
+
+    // ❗ ฐานข้อมูลต้องมาก่อนเสมอ (เป็นแหล่งข้อมูลหลัก)
+    //    เดิมเอาสำเนาในเครื่องมาก่อน พอ dedupe จึงยึดสำเนาเก่าทับของจริง
+    //    อาการ: admin ลงผลแล้ว สถานะในฐานข้อมูลเป็น "ตรวจแล้ว" แต่หน้าจอยังขึ้น "รอตรวจ"
+    const combined = [...allReports, ...localSubmitted, ...masterArchive];
+    const seen = new Set();
+    allReports = combined.filter(r => {
+      // ❗ dedupe ต้องยึด "เลขที่ใบส่งตรวจ" เป็นหลัก
+      //    เดิมใช้ r.id ก่อน — สำเนาในเครื่องมี id แบบ 'REP-...'
+      //    แต่แถวใน Supabase มี id เป็น UUID → คนละคีย์
+      //    ใบส่งตรวจใบเดียวจึงโผล่สองแถว (บันทึกครั้งเดียวแต่ขึ้น 2 รายการ)
+      const key = r.submission_no || r.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Helper: Parse any date format (CE/BE/Slash/Dash) — ใช้ตัวเดียวกันกับทั้งระบบ
+    const parseDateObj = parseDateObjGlobal;
+    const __unusedParseDateObj = (dateStr) => {
+      if (!dateStr || typeof dateStr !== 'string') return null;
+      const s = dateStr.trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+        let y = parseInt(s.substring(0, 4), 10);
+        const m = parseInt(s.substring(5, 7), 10);
+        const d = parseInt(s.substring(8, 10), 10);
+        if (y > 2400) y -= 543;
+        return { year: y, month: m, day: d };
+      }
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+        const parts = s.split('/');
+        const d = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        let y = parseInt(parts[2].substring(0, 4), 10);
+        if (y > 2400) y -= 543;
+        return { year: y, month: m, day: d };
+      }
+      const parsed = new Date(s);
+      if (!isNaN(parsed.getTime())) {
+        let y = parsed.getFullYear();
+        if (y > 2400) y -= 543;
+        return { year: y, month: parsed.getMonth() + 1, day: parsed.getDate() };
+      }
+      return null;
+    };
 
     if (department) {
-      allReports = allReports.filter(r => r.department && r.department.includes(department));
+      allReports = allReports.filter(r => (r.department || '').toLowerCase().includes(department.toLowerCase()) || (r.ward_room || '').toLowerCase().includes(department.toLowerCase()));
+    }
+
+    if (serviceCode) {
+      allReports = allReports.filter(r => (r.service_code || '').toLowerCase() === serviceCode.toLowerCase());
     }
 
     // Apply Year Filter if provided
     if (year) {
+      const targetY = parseInt(year, 10) > 2400 ? parseInt(year, 10) - 543 : parseInt(year, 10);
       allReports = allReports.filter(r => {
-        const d = r.sampling_date || r.reported_date || '';
-        return d.startsWith(year);
+        const dObj = parseDateObj(r.sampling_date || r.reported_date || r.formatted_date || '');
+        return dObj ? dObj.year === targetY : true;
       });
     }
 
@@ -756,76 +977,87 @@ const ReportDB = {
     const normalizeDepartment = (deptStr) => {
       const d = (deptStr || 'ไม่ระบุหน่วยงาน').trim();
       if (d.includes('อาชีวอนามัย')) return 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
-      if (d.includes('ผลิตยา') || d.includes('เตรียมยา')) return 'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)';
-      if (d.includes('ควบคุมโรค') || d.includes('IC')) return 'งานควบคุมโรคติดเชื้อ (IC)';
+      if (d.includes('ผลิตยา') || d.includes('เตรียมยา') || d.includes('pharma') || d.includes('compounding')) return 'งานผลิตยา (หน่วยเตรียมยาและผลิตยา)';
+      if (d.includes('ควบคุมโรค') || d.includes('IC') || d.includes('icn')) return 'งานควบคุมโรคติดเชื้อ (IC)';
       if (d.includes('ธนาคารเลือด') || d.includes('Blood')) return 'งานธนาคารเลือด';
       if (d.includes('โภชนาการ') || d.includes('อาหาร')) return 'งานโภชนาการ';
       if (d.includes('ผ่าตัด') || d.includes('OR')) return 'ห้องผ่าตัด (OR)';
+      if (d.includes('ศูนย์การแพทย์') || d.includes('THAMC') || d.includes('thamc')) return 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
       if (d.includes('เจริญพันธุ์') || d.includes('ผู้มีบุตรยาก') || d.includes('IUI')) return 'หน่วยเวชศาสตร์การเจริญพันธุ์ (ผู้มีบุตรยาก)';
       return d;
     };
 
-    // Helper: Standardize Specimen Types into Clean Professional Categories
+    // Helper: Standardize Specimen Types into Clean Professional Categories (8 Services)
     const normalizeSpecimenType = (srvCode, descStr) => {
+      const s = (srvCode || '').toUpperCase();
       const desc = (descStr || '').trim();
-      if (srvCode === 'AIR_01' || desc.includes('อากาศ') || desc.includes('Air')) {
+      if (s === 'AIR_01' || desc.includes('อากาศ') || desc.includes('Air')) {
         return 'อากาศ (Air Sampling)';
       }
-      if (['DRG_07', 'DRG_08'].includes(srvCode) || desc.includes('ยา') || desc.includes('Drug') || desc.includes('Volume')) {
-        return 'ยาและผลิตภัณฑ์ยา (Pharmaceuticals)';
+      if (s === 'DRG_08' || desc.includes('ปนเปื้อน')) {
+        return 'การปนเปื้อนเชื้อในยา (Drug Bioburden)';
       }
-      if (['WTO_04', 'WTM_05'].includes(srvCode) || desc.includes('น้ำ') || desc.includes('Water')) {
-        return 'น้ำเพื่อการแพทย์และห้องผ่าตัด (Medical Water)';
+      if (s === 'DRG_07' || desc.includes('ยา') || desc.includes('Drug')) {
+        return 'ยาเตรียมปราศจากเชื้อ (Drug Compounding)';
       }
-      if (srvCode === 'STR_02' || desc.includes('เลือด') || desc.includes('PRC') || desc.includes('Autoclave')) {
+      if (s === 'WTO_04' || desc.includes('ห้องผ่าตัด')) {
+        return 'น้ำห้องผ่าตัด (Water for Surgery OR)';
+      }
+      if (s === 'WTM_05' || desc.includes('ศูนย์การแพทย์')) {
+        return 'น้ำศูนย์การแพทย์ (Medical Water THAMC)';
+      }
+      if (s === 'WTS_03' || desc.includes('พื้นผิว') || desc.includes('Surface') || desc.includes('Swab')) {
+        return 'พื้นผิวสิ่งแวดล้อมและ Swab (Surfaces)';
+      }
+      if (s === 'STR_02' || desc.includes('เลือด') || desc.includes('PRC') || desc.includes('Autoclave')) {
         return 'ผลิตภัณฑ์เลือดและตัวบ่งชี้ชีวภาพ (Sterility)';
       }
-      if (srvCode === 'FOD_06' || desc.includes('อาหาร') || desc.includes('Food')) {
+      if (s === 'FOD_06' || desc.includes('อาหาร') || desc.includes('Food')) {
         return 'อาหารและสุขาภิบาล (Food & Nutrition)';
-      }
-      if (srvCode === 'WTS_03' || desc.includes('พื้นผิว') || desc.includes('Surface') || desc.includes('Swab')) {
-        return 'พื้นผิวสิ่งแวดล้อมและ Swab (Surfaces)';
       }
       return 'สิ่งส่งตรวจสิ่งแวดล้อมทั่วไป';
     };
 
     allReports.forEach(r => {
       const items = r.report_items || r.items || [];
-      const count = items.length > 0 ? items.length : 1;
+      const count = items.length > 0 ? items.length : (parseInt(r.sample_count, 10) || 1);
       totalSpecimens += count;
 
       // Pass / Fail statistics
-      const overall = (r.overall_result || 'pass').toLowerCase();
-      if (overall === 'pass' || overall === 'normal' || overall === 'no_growth') {
+      const overall = (r.overall_result || r.status || 'pass').toLowerCase();
+      if (['pass', 'normal', 'no_growth', 'ไม่พบเชื้อ', 'tested', 'completed'].includes(overall)) {
         passCount += count;
       } else {
         failCount += count;
       }
 
       // 1. Clean Department Aggregate
-      const cleanDept = normalizeDepartment(r.department);
+      const cleanDept = normalizeDepartment(r.department || r.ward_room);
       deptMap[cleanDept] = (deptMap[cleanDept] || 0) + count;
 
       // 2. Month Aggregate (Sorted chronologically)
-      const sdate = r.sampling_date || r.reported_date || '';
-      if (sdate && sdate.length >= 7) {
-        const y = parseInt(sdate.substring(0, 4), 10);
-        const m = parseInt(sdate.substring(5, 7), 10);
-        const thaiY = (y + 543) % 100;
-        const monthKey = `${y}-${String(m).padStart(2, '0')}`;
-        const monthLabel = `${THAI_MONTHS_SHORT[m]} ${thaiY}`;
+      const dObj = parseDateObj(r.sampling_date || r.reported_date || r.formatted_date || '');
+      if (dObj) {
+        const thaiY = (dObj.year + 543) % 100;
+        const monthKey = `${dObj.year}-${String(dObj.month).padStart(2, '0')}`;
+        const monthLabel = `${THAI_MONTHS_SHORT[dObj.month]} ${thaiY}`;
         
         if (!monthlyMap[monthKey]) {
-          monthlyMap[monthKey] = { key: monthKey, label: monthLabel, count: 0, year: y, month: m };
+          monthlyMap[monthKey] = { key: monthKey, label: monthLabel, count: 0, year: dObj.year, month: dObj.month };
         }
         monthlyMap[monthKey].count += count;
       }
 
       // 3. Clean Specimen Type Aggregate
-      items.forEach(it => {
-        const cleanType = normalizeSpecimenType(r.service_code, it.sample_description);
-        typeMap[cleanType] = (typeMap[cleanType] || 0) + 1;
-      });
+      if (items.length > 0) {
+        items.forEach(it => {
+          const cleanType = normalizeSpecimenType(r.service_code, it.sample_description || it.location_name || it.drug_name || it.food_name);
+          typeMap[cleanType] = (typeMap[cleanType] || 0) + 1;
+        });
+      } else {
+        const cleanType = normalizeSpecimenType(r.service_code, r.service_name || r.specimen_type);
+        typeMap[cleanType] = (typeMap[cleanType] || 0) + count;
+      }
     });
 
     // Sort Departments by volume descending
@@ -874,13 +1106,13 @@ const ReportDB = {
       passCount,
       failCount,
       passRate,
-      topSpecimenType,
       topDepartment,
+      topSpecimenType,
       peakMonth,
       peakCount,
-      monthlyTrends,
-      specimenTypeRankings,
       departmentRankings,
+      specimenTypeRankings,
+      monthlyTrends,
       rawReports: allReports
     };
   }
@@ -931,6 +1163,82 @@ const MasterDB = {
 };
 
 // Export to Global window object
+
+// ==============================================================================
+// SHARED HELPERS — ใช้ร่วมกันทั้ง dashboard / workflow / สคริปต์ตรวจสอบ
+// ==============================================================================
+
+/**
+ * แปลงวันที่อัจฉริยะ — รองรับทั้งปี พ.ศ. และ ค.ศ. หลายรูปแบบ
+ *   '2026-08-11' / '2569-08-11' / '11/08/2569' / '11/8/2026'
+ * คืนค่า { year, month, day } เป็นปี ค.ศ. เสมอ (หรือ null ถ้าแปลงไม่ได้)
+ */
+function parseDateObjGlobal(dateStr) {
+  if (!dateStr) return null;
+
+  if (dateStr instanceof Date && !isNaN(dateStr)) {
+    return { year: dateStr.getFullYear(), month: dateStr.getMonth() + 1, day: dateStr.getDate() };
+  }
+
+  const s = String(dateStr).trim();
+  if (!s) return null;
+
+  let y, m, d;
+  let match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (match) {
+    y = parseInt(match[1], 10); m = parseInt(match[2], 10); d = parseInt(match[3], 10);
+  } else {
+    match = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+    if (match) {
+      d = parseInt(match[1], 10); m = parseInt(match[2], 10); y = parseInt(match[3], 10);
+    } else {
+      const parsed = new Date(s);
+      if (isNaN(parsed.getTime())) return null;
+      y = parsed.getFullYear(); m = parsed.getMonth() + 1; d = parsed.getDate();
+    }
+  }
+
+  if (!y || !m || m < 1 || m > 12) return null;
+  if (y >= 2400) y -= 543;   // ปี พ.ศ. -> ค.ศ.
+  return { year: y, month: m, day: d || 1 };
+}
+
+/** ชุดสถานะที่ถือว่า "รอตรวจ" */
+const WAITING_STATUS_LIST = ['pending', 'waiting_for_testing', 'in_progress', 'draft', 'received', 'submitted'];
+function isWaitingStatusGlobal(status) {
+  return WAITING_STATUS_LIST.includes(String(status || '').toLowerCase());
+}
+
+/** รวมข้อมูลหลายแหล่งโดยไม่ให้ข้อมูลเก่าหาย และไม่เกิดรายการซ้ำ */
+function mergeDedupeGlobal(sources, keyFn) {
+  const seen = new Map();
+  (sources || []).forEach(list => {
+    (list || []).forEach(row => {
+      if (!row) return;
+      const key = keyFn(row);
+      if (key && !seen.has(key)) seen.set(key, row);
+    });
+  });
+  return Array.from(seen.values());
+}
+
+/** เรียงลำดับ: รายการ "รอตรวจ" อยู่บนสุดเสมอ */
+function sortReportsWaitingFirstGlobal(list) {
+  return [...(list || [])].sort((a, b) => {
+    const wa = isWaitingStatusGlobal(a.status) ? 0 : 1;
+    const wb = isWaitingStatusGlobal(b.status) ? 0 : 1;
+    if (wa !== wb) return wa - wb;
+    const da = new Date(a.created_at || a.sampling_date || a.reported_date || 0);
+    const db = new Date(b.created_at || b.sampling_date || b.reported_date || 0);
+    return db - da;
+  });
+}
+
+window.parseDateObj = parseDateObjGlobal;
+window.isWaitingStatus = isWaitingStatusGlobal;
+window.mergeDedupe = mergeDedupeGlobal;
+window.sortReportsWaitingFirst = sortReportsWaitingFirstGlobal;
+
 window.SERVICES_CONFIG = SERVICES_CONFIG;
 window.WARDS_LIST = WARDS_LIST;
 window.BookingDB = BookingDB;
