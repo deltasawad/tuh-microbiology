@@ -1,0 +1,1658 @@
+{
+  "occ": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "💨 งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "AIR-01 · Air Sampling",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "AIR-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=occ"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "icn": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานควบคุมโรคติดเชื้อ",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧼 งานควบคุมโรคติดเชื้อ",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTS-03 · Water or Surface",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTS-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=icn"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "bloodbank": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานธนาคารเลือด",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🩸 งานธนาคารเลือด",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "STR-02 · Sterility Test",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "STR-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=bloodbank"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "compounding": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "💊 งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "DRG-07 · Drug ปลอดเชื้อ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "DR1-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=compounding"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "pharma": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานผลิตยา",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧪 งานผลิตยา",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "DRG-08 · Drug การปนเปื้อน",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "DR2-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=pharma"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "thamc": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "💧 ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTM-05 · Water THAMC",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTM-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=thamc"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "or": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — ห้องผ่าตัด (OR)",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🚿 ห้องผ่าตัด (OR)",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTO-04 · Water ห้องผ่าตัด",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "WTO-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=or"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "nutrition": {
+    "type": "flex",
+    "altText": "เริ่มใช้ระบบส่งตรวจสิ่งแวดล้อมผ่าน LINE — งานโภชนาการ",
+    "contents": {
+      "type": "bubble",
+      "size": "mega",
+      "header": {
+        "type": "box",
+        "layout": "vertical",
+        "backgroundColor": "#6c5070",
+        "paddingAll": "18px",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🧫 ส่งตรวจสิ่งแวดล้อมผ่าน LINE",
+            "color": "#ffffff",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true
+          },
+          {
+            "type": "text",
+            "text": "งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ",
+            "color": "#ffffffcc",
+            "size": "xxs",
+            "wrap": true,
+            "margin": "xs"
+          }
+        ]
+      },
+      "body": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "md",
+        "contents": [
+          {
+            "type": "text",
+            "text": "🍲 งานโภชนาการ",
+            "weight": "bold",
+            "size": "md",
+            "wrap": true,
+            "color": "#111111"
+          },
+          {
+            "type": "text",
+            "size": "sm",
+            "wrap": true,
+            "color": "#555555",
+            "text": "จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร"
+          },
+          {
+            "type": "separator",
+            "margin": "md"
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "spacing": "sm",
+            "contents": [
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "บริการ",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "FOD-06 · Food Sanitation",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "เลขที่เอกสาร",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "FOD-2026-08-19-01",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "ผลออกภายใน",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "3–5 วันทำการ",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              },
+              {
+                "type": "box",
+                "layout": "baseline",
+                "spacing": "sm",
+                "contents": [
+                  {
+                    "type": "text",
+                    "text": "แก้ไข/ยกเลิก",
+                    "color": "#9aa0a6",
+                    "size": "sm",
+                    "flex": 4
+                  },
+                  {
+                    "type": "text",
+                    "text": "ทำเองได้จนกว่าผลจะออก",
+                    "wrap": true,
+                    "size": "sm",
+                    "flex": 7,
+                    "color": "#333333"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "box",
+            "layout": "vertical",
+            "margin": "md",
+            "backgroundColor": "#f7f2f8",
+            "cornerRadius": "md",
+            "paddingAll": "12px",
+            "contents": [
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#6c5070",
+                "weight": "bold",
+                "text": "เริ่มยังไง"
+              },
+              {
+                "type": "text",
+                "size": "xs",
+                "color": "#342838",
+                "wrap": true,
+                "margin": "sm",
+                "text": "1. แตะ \"เพิ่มเพื่อน\" ด้านล่าง\n2. เปิดห้องแชท จะเห็นเมนู 6 ปุ่ม\n3. แตะปุ่มที่ต้องการได้เลย"
+              }
+            ]
+          }
+        ]
+      },
+      "footer": {
+        "type": "box",
+        "layout": "vertical",
+        "spacing": "sm",
+        "contents": [
+          {
+            "type": "button",
+            "style": "primary",
+            "height": "sm",
+            "color": "#06c755",
+            "action": {
+              "type": "uri",
+              "label": "เพิ่มเพื่อน @569knxox",
+              "uri": "https://line.me/R/ti/p/@569knxox"
+            }
+          },
+          {
+            "type": "button",
+            "style": "secondary",
+            "height": "sm",
+            "action": {
+              "type": "uri",
+              "label": "อ่านวิธีใช้ทั้งหมด",
+              "uri": "https://tuh-microbiology.vercel.app/guide?dept=nutrition"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

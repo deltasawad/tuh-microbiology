@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เริ่มใช้งานระบบส่งตรวจสิ่งแวดล้อม | งานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</title>
+  <link rel="icon" href="/favicon.png">
+
+  <meta name="description" content="วิธีเริ่มใช้ระบบจองคิวและส่งตรวจสิ่งแวดล้อมผ่าน LINE สำหรับหน่วยงานผู้ส่งตรวจ">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --ink: #342838;        /* ม่วงเข้มเกือบดำ ใช้กับตัวอักษรหลัก */
+      --plum: #6c5070;       /* สีประจำระบบ */
+      --plum-soft: #f7f2f8;
+      --gold: #f9d56e;
+      --rose: #df6a6a;
+      --line: #06c755;       /* สีประจำ LINE ใช้เฉพาะจุดที่พูดถึง LINE */
+      --paper: #faf7fb;
+    }
+    body { font-family: 'Sarabun', sans-serif; background: var(--paper); color: var(--ink); }
+
+    /* หน้านี้ถูกออกแบบมาให้พิมพ์ลงกระดาษ A4 แล้วติดบอร์ดได้ด้วย
+       จึงต้องซ่อนส่วนที่กดไม่ได้บนกระดาษ และบังคับให้สีพิมพ์ออกจริง */
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .print-break { break-before: page; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    .step-num {
+      width: 2.25rem; height: 2.25rem; flex: 0 0 2.25rem;
+      display: grid; place-items: center;
+      border-radius: 9999px; font-weight: 800; font-size: 0.95rem;
+      background: var(--plum); color: #fff;
+    }
+  </style>
+</head>
+<body class="text-[15px] leading-relaxed">
+
+<div class="max-w-3xl mx-auto px-5 py-8 sm:py-12">
+
+  <!-- ── หัวเรื่อง ─────────────────────────────────────────────────── -->
+  <header class="text-center mb-9">
+    <div class="inline-flex items-center gap-2 text-[11px] font-bold tracking-wide
+                bg-[var(--plum-soft)] text-[var(--plum)] px-3.5 py-1.5 rounded-full border border-[var(--plum)]/15">
+      <i class="fas fa-microscope"></i>
+      งานจุลชีววิทยา · รพ.ธรรมศาสตร์เฉลิมพระเกียรติ
+    </div>
+    <h1 class="text-2xl sm:text-3xl font-extrabold mt-4 leading-snug">
+      ส่งตรวจสิ่งแวดล้อม<br class="sm:hidden"> ทำผ่าน LINE ได้แล้ว
+    </h1>
+    <p class="text-sm text-slate-500 mt-2.5 max-w-md mx-auto">
+      จองคิว ส่งแบบฟอร์ม ติดตามสถานะ และดูผลตรวจ ครบในที่เดียว
+      ไม่ต้องโทรถาม ไม่ต้องเดินเอกสาร
+    </p>
+  </header>
+
+  <!-- ── ขั้นแรก: เพิ่มเพื่อน ──────────────────────────────────────── -->
+  <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+    <div class="bg-[var(--plum)] text-white px-6 py-3.5 flex items-center gap-2.5">
+      <span class="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-xs font-extrabold">1</span>
+      <div>
+        <div class="font-bold text-sm">เพิ่มเพื่อนใน LINE</div>
+        <div class="text-[11px] text-white/70">ทำครั้งเดียว ใช้ได้ตลอด</div>
+      </div>
+    </div>
+
+    <div class="p-6 sm:flex sm:items-center sm:gap-7">
+      <div class="text-center shrink-0">
+        <img src="/assets/qr_line_oa.png" alt="QR สำหรับเพิ่มเพื่อน LINE Official Account"
+             class="w-44 h-44 mx-auto rounded-2xl border border-slate-200 p-2 bg-white">
+        <div class="mt-2 font-mono text-sm font-bold text-[var(--plum)]">@569knxox</div>
+      </div>
+
+      <div class="mt-6 sm:mt-0 flex-1 space-y-3">
+        <p class="text-sm">
+          เปิดแอป LINE แตะ <b>เพิ่มเพื่อน</b> เลือก <b>คิวอาร์โค้ด</b> แล้วสแกนภาพนี้
+          หรือค้นหาไอดี <b class="font-mono">@569knxox</b> ก็ได้
+        </p>
+        <a href="https://line.me/R/ti/p/@569knxox" target="_blank" rel="noopener"
+           class="no-print inline-flex items-center gap-2 bg-[var(--line)] hover:brightness-95 text-white
+                  font-bold text-sm px-5 py-3 rounded-2xl transition shadow-sm">
+          <i class="fab fa-line text-lg"></i> เพิ่มเพื่อนเลย
+        </a>
+        <p class="text-xs text-slate-500">
+          ถ้าเปิดหน้านี้จากมือถืออยู่แล้ว แตะปุ่มเขียวได้เลย ไม่ต้องสแกน
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ขั้นที่สอง: ใช้เมนู ───────────────────────────────────────── -->
+  <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+    <div class="bg-[var(--plum)] text-white px-6 py-3.5 flex items-center gap-2.5">
+      <span class="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-xs font-extrabold">2</span>
+      <div>
+        <div class="font-bold text-sm">ใช้เมนูใต้ห้องแชท</div>
+        <div class="text-[11px] text-white/70">แตะปุ่มเดียวเข้าถึงได้ทันที</div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <p class="text-sm mb-5">
+        หลังเพิ่มเพื่อนแล้ว เปิดห้องแชทจะเห็นเมนู 6 ปุ่มอยู่ด้านล่าง แตะปุ่มที่ต้องการได้เลย
+      </p>
+
+      <div class="grid grid-cols-3 gap-2.5 text-center">
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">📅</div>
+          <div class="text-[11px] font-bold mt-1.5">จองคิว</div>
+        </div>
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">📝</div>
+          <div class="text-[11px] font-bold mt-1.5">ส่งแบบฟอร์ม</div>
+        </div>
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">⏳</div>
+          <div class="text-[11px] font-bold mt-1.5">ติดตามสถานะ</div>
+        </div>
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">📄</div>
+          <div class="text-[11px] font-bold mt-1.5">ผลตรวจของฉัน</div>
+        </div>
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">🔬</div>
+          <div class="text-[11px] font-bold mt-1.5">สำหรับเจ้าหน้าที่</div>
+        </div>
+        <div class="bg-[var(--plum-soft)] rounded-2xl py-4 px-2 border border-[var(--plum)]/12">
+          <div class="text-xl">☎️</div>
+          <div class="text-[11px] font-bold mt-1.5">ติดต่อห้องแล็บ</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ขั้นที่สาม: ขั้นตอนใช้งาน ─────────────────────────────────── -->
+  <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+    <div class="bg-[var(--plum)] text-white px-6 py-3.5 flex items-center gap-2.5">
+      <span class="w-7 h-7 rounded-full bg-white/20 grid place-items-center text-xs font-extrabold">3</span>
+      <div>
+        <div class="font-bold text-sm">ขั้นตอนส่งตรวจ</div>
+        <div class="text-[11px] text-white/70">ทำตามลำดับ 1 ถึง 4</div>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-5">
+      <div class="flex gap-4">
+        <div class="step-num">1</div>
+        <div>
+          <div class="font-bold text-sm">จองคิววันส่งตรวจ</div>
+          <p class="text-[13px] text-slate-600 mt-0.5">
+            เลือกวันในปฏิทิน กรอกชื่อผู้ส่ง เบอร์ติดต่อ และจำนวนตัวอย่าง
+            ระบบจะแจ้งห้องแล็บให้อัตโนมัติ · <b>แก้ไขหรือยกเลิกคิวเองได้</b>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <div class="step-num">2</div>
+        <div>
+          <div class="font-bold text-sm">กรอกแบบฟอร์มส่งตรวจ</div>
+          <p class="text-[13px] text-slate-600 mt-0.5">
+            ระบุจุดเก็บตัวอย่างทีละรายการ ระบบออกเลขที่เอกสารให้เอง
+            เช่น <span class="font-mono text-[var(--plum)] font-bold">AIR-2026-08-19-77</span>
+            · <b>แก้ไขหรือยกเลิกได้จนกว่าห้องแล็บจะลงผล</b>
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <div class="step-num">3</div>
+        <div>
+          <div class="font-bold text-sm">ติดตามสถานะ</div>
+          <p class="text-[13px] text-slate-600 mt-0.5">
+            ดูได้ว่าใบไหนยังรอตรวจ ทั้งของตัวเองและของทั้งหน่วยงาน
+            ไม่ต้องโทรถามห้องแล็บ
+          </p>
+        </div>
+      </div>
+
+      <div class="flex gap-4">
+        <div class="step-num">4</div>
+        <div>
+          <div class="font-bold text-sm">ดูผลตรวจ</div>
+          <p class="text-[13px] text-slate-600 mt-0.5">
+            ผลออกภายใน <b>3–5 วันทำการ</b> ระบบแจ้งกลับทาง LINE ทันทีที่ลงผลเสร็จ
+            เปิดดูใบรายงานย้อนหลังได้ทุกใบ
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── หน่วยงานของคุณ ────────────────────────────────────────────── -->
+  <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden mb-6">
+    <div class="px-6 py-3.5 border-b border-slate-100 bg-[#fdfbfd] flex items-center gap-2.5">
+      <i class="fas fa-building text-[var(--rose)]"></i>
+      <div>
+        <div class="font-bold text-sm">หน่วยงานของคุณ</div>
+        <div class="text-[11px] text-slate-500">เลือกเพื่อดูบริการและลิงก์ลัดเฉพาะหน่วยงาน</div>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <label class="block text-[11px] font-bold text-slate-600 mb-1.5">เลือกหน่วยงาน</label>
+      <select id="dept-select" onchange="pickDept()"
+              class="no-print w-full px-3.5 py-3 border border-slate-300 rounded-2xl text-sm bg-white
+                     outline-none focus:ring-2 focus:ring-[var(--plum)]/30"></select>
+
+      <div id="dept-card" class="mt-5"></div>
+    </div>
+  </section>
+
+  <!-- ── ช่องทางอื่น ───────────────────────────────────────────────── -->
+  <section class="grid sm:grid-cols-2 gap-4 mb-6">
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
+      <img src="/assets/qr_liff.png" alt="QR เปิดหน้าส่งตรวจบนมือถือ"
+           class="w-32 h-32 mx-auto rounded-xl border border-slate-200 p-1.5 bg-white">
+      <div class="font-bold text-sm mt-3">เปิดหน้าส่งตรวจบนมือถือ</div>
+      <p class="text-xs text-slate-500 mt-1">สำหรับปักหมุดไว้ในกลุ่ม LINE ของหน่วยงาน</p>
+    </div>
+
+    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 text-center">
+      <img src="/assets/qr_webapp.png" alt="QR เปิดเว็บแอปบนคอมพิวเตอร์"
+           class="w-32 h-32 mx-auto rounded-xl border border-slate-200 p-1.5 bg-white">
+      <div class="font-bold text-sm mt-3">เว็บแอปบนคอมพิวเตอร์</div>
+      <p class="text-xs text-slate-500 mt-1">ใช้เมื่อต้องคีย์ข้อมูลจำนวนมาก ต้องเข้าสู่ระบบ</p>
+    </div>
+  </section>
+
+  <!-- ── สิทธิ์การใช้งาน ───────────────────────────────────────────── -->
+  <section class="bg-[#fffdf6] border border-[var(--gold)]/50 rounded-3xl p-6 mb-6">
+    <div class="font-bold text-sm mb-3">
+      <i class="fas fa-shield-halved text-[#b8860b] mr-1.5"></i>สิทธิ์ของหน่วยงานผู้ส่งตรวจ
+    </div>
+    <ul class="text-[13px] space-y-2 text-slate-700">
+      <li class="flex gap-2.5">
+        <i class="fas fa-circle-check text-emerald-600 mt-1 text-xs"></i>
+        <span><b>คิวจอง</b> — สร้าง แก้ไข และยกเลิกของหน่วยงานตนเองได้</span>
+      </li>
+      <li class="flex gap-2.5">
+        <i class="fas fa-circle-check text-emerald-600 mt-1 text-xs"></i>
+        <span><b>แบบฟอร์มส่งตรวจ</b> — แก้ไขและยกเลิกได้ ตราบใดที่ห้องแล็บยังไม่ลงผล</span>
+      </li>
+      <li class="flex gap-2.5">
+        <i class="fas fa-circle-xmark text-slate-400 mt-1 text-xs"></i>
+        <span><b>ผลตรวจ</b> — ดูได้อย่างเดียว การลงผลและแก้ไขทำโดยงานจุลชีววิทยาเท่านั้น
+        เพื่อให้ผลที่ออกไปแล้วตรวจสอบย้อนกลับได้ตามมาตรฐาน ISO 15189</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ── ติดต่อ ────────────────────────────────────────────────────── -->
+  <section class="text-center text-sm text-slate-600 mb-8">
+    <div class="font-bold text-[var(--ink)]">ติดปัญหาการใช้งาน</div>
+    <p class="mt-1">
+      ทักในห้องแชท LINE <b class="font-mono">@569knxox</b> ได้ตลอด
+      หรือโทร <b>02-926-9460</b> ในเวลาราชการ
+    </p>
+  </section>
+
+  <div class="no-print text-center">
+    <button onclick="window.print()"
+            class="inline-flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50
+                   text-slate-700 text-sm font-bold px-5 py-3 rounded-2xl transition">
+      <i class="fas fa-print"></i> พิมพ์การ์ดนี้ (A4)
+    </button>
+  </div>
+
+  <footer class="text-center text-[11px] text-slate-400 mt-8">
+    งานจุลชีววิทยา กลุ่มงานเทคนิคการแพทย์ · โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ
+  </footer>
+</div>
+
+<script>
+// ==============================================================================
+// รายชื่อหน่วยงาน — ตรงกับ DEPARTMENT_ACCOUNTS ใน js/auth.js
+// ตั้งใจไม่ใส่รหัสผ่านไว้ในหน้านี้ เพราะเป็นหน้าเปิดสาธารณะ
+// รหัสผ่านให้ส่งแยกเป็นรายหน่วยงาน
+// ==============================================================================
+const DEPTS = [
+  { key:'occ',         user:'occ',         code:'AIR_01', pre:'AIR', icon:'💨', short:'AIR-01', name:'Air Sampling (ตรวจเชื้อในอากาศ)',        dept:'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร' },
+  { key:'icn',         user:'icn',         code:'WTS_03', pre:'WTS', icon:'🧼', short:'WTS-03', name:'Water or Surface (งานควบคุมโรคติดเชื้อ)', dept:'งานควบคุมโรคติดเชื้อ' },
+  { key:'bloodbank',   user:'bloodbank',   code:'STR_02', pre:'STR', icon:'🩸', short:'STR-02', name:'Sterility Test (ความปลอดเชื้อ)',        dept:'งานธนาคารเลือด' },
+  { key:'compounding', user:'compounding', code:'DRG_07', pre:'DR1', icon:'💊', short:'DRG-07', name:'Drug — ยาปลอดเชื้อ (งานผลิตยา 1)',      dept:'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)' },
+  { key:'pharma',      user:'pharma',      code:'DRG_08', pre:'DR2', icon:'🧪', short:'DRG-08', name:'Drug — การปนเปื้อน (งานผลิตยา 2)',      dept:'งานผลิตยา' },
+  { key:'thamc',       user:'THAMC',       code:'WTM_05', pre:'WTM', icon:'💧', short:'WTM-05', name:'Water (ศูนย์การแพทย์ธรรมศาสตร์)',       dept:'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)' },
+  { key:'or',          user:'or',          code:'WTO_04', pre:'WTO', icon:'🚿', short:'WTO-04', name:'Water (ห้องผ่าตัด OR)',                 dept:'ห้องผ่าตัด (OR)' },
+  { key:'nutrition',   user:'nutrition',   code:'FOD_06', pre:'FOD', icon:'🍲', short:'FOD-06', name:'Food Sanitation (สุขาภิบาลอาหาร)',      dept:'งานโภชนาการ' }
+];
+
+const LIFF_URL = 'https://liff.line.me/2011162657-GE5HlbQR';
+
+const sel = document.getElementById('dept-select');
+sel.innerHTML = DEPTS.map(d => `<option value="${d.key}">${d.icon} ${d.dept}</option>`).join('');
+
+function pickDept() {
+  const d = DEPTS.find(x => x.key === sel.value) || DEPTS[0];
+  const submitUrl = `/workflow.html?tab=submission&service=${d.code}`;
+
+  document.getElementById('dept-card').innerHTML = `
+    <div class="rounded-2xl border border-[var(--plum)]/20 bg-[var(--plum-soft)] p-5">
+      <div class="text-2xl">${d.icon}</div>
+      <div class="font-extrabold text-base mt-1">${d.dept}</div>
+      <div class="text-[13px] text-slate-600 mt-0.5">
+        บริการที่ใช้: <b class="font-mono text-[var(--plum)]">${d.short}</b> · ${d.name}
+      </div>
+
+      <div class="mt-4 grid gap-2.5 text-[13px]">
+        <div class="bg-white rounded-xl px-4 py-3 border border-slate-200">
+          <span class="text-slate-500 text-[11px] block">ชื่อผู้ใช้สำหรับเข้าเว็บแอป</span>
+          <b class="font-mono text-[var(--plum)] text-sm">${d.user}</b>
+          <span class="text-[11px] text-slate-400 block mt-1">
+            รหัสผ่านขอรับจากงานจุลชีววิทยา ไม่ได้แสดงในหน้านี้
+          </span>
+        </div>
+
+        <div class="bg-white rounded-xl px-4 py-3 border border-slate-200">
+          <span class="text-slate-500 text-[11px] block">เลขที่เอกสารของหน่วยงานนี้</span>
+          <b class="font-mono text-[var(--plum)] text-sm">${d.pre}-2026-08-19-01</b>
+          <span class="text-[11px] text-slate-400 block mt-1">
+            รูปแบบ ${d.pre}-ปี ค.ศ.-เดือน-วัน-ลำดับ ระบบออกให้อัตโนมัติ
+          </span>
+        </div>
+      </div>
+
+      <div class="no-print flex flex-col sm:flex-row gap-2.5 mt-4">
+        <a href="${LIFF_URL}" target="_blank" rel="noopener"
+           class="flex-1 text-center bg-[var(--plum)] hover:bg-[#573e5a] text-white font-bold text-sm px-4 py-3 rounded-2xl transition">
+          <i class="fab fa-line mr-1.5"></i> เปิดจากมือถือ
+        </a>
+        <a href="${submitUrl}"
+           class="flex-1 text-center bg-white border border-[var(--plum)]/40 hover:bg-white text-[var(--plum)] font-bold text-sm px-4 py-3 rounded-2xl transition">
+          <i class="fas fa-desktop mr-1.5"></i> เปิดบนคอมพิวเตอร์
+        </a>
+      </div>
+    </div>`;
+}
+
+// เปิดหน้าด้วย ?dept=icn เพื่อส่งลิงก์เฉพาะหน่วยงานได้
+const wanted = new URLSearchParams(location.search).get('dept');
+if (wanted && DEPTS.some(d => d.key === wanted.toLowerCase())) sel.value = wanted.toLowerCase();
+pickDept();
+</script>
+</body>
+</html>
