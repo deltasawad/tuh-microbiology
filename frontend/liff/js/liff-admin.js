@@ -571,7 +571,11 @@ async function saveResults() {
   //     ⚠️ CHECK constraint บนฐานข้อมูลจริงรับ 'completed' แต่ปฏิเสธ 'tested'
   //        (ก่อนรัน supabase_migration_fix.sql) จึงลองเรียงตามลำดับ
   let ok = false, lastErr = null;
-  for (const status of ['tested', 'completed']) {
+  // ลำดับสำคัญ: 194 ใบเดิมในระบบใช้ 'completed' ทั้งหมด และนโยบาย RLS
+  // "Public can view completed reports" ผูกกับค่านี้ตรง ๆ
+  // ก่อนรัน migration ฐานข้อมูลไม่รับ 'tested' จึงตกมาที่ 'completed' เองโดยบังเอิญ
+  // หลัง migration 'tested' ผ่านได้ ถ้าไม่สลับลำดับข้อมูลจะแตกเป็นสองมาตรฐาน
+  for (const status of ['completed', 'tested']) {
     const { error } = await window.supabaseClient.from('reports').update({
       status,
       overall_result: hasFail ? 'fail' : 'pass',

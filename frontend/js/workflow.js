@@ -2429,7 +2429,7 @@ async function adminEditReport(reportId) {
   }
 
   // สถานะที่ฐานข้อมูลยอมรับ: ลองค่าที่เลือกก่อน แล้วถอยไปค่าที่ CHECK constraint รับได้
-  const candidates = form.status === 'pending' ? ['pending', 'in_progress'] : ['tested', 'completed'];
+  const candidates = form.status === 'pending' ? ['pending', 'in_progress'] : ['completed', 'tested'];
   let saved = false, lastErr = null;
 
   for (const st of candidates) {
@@ -2878,7 +2878,7 @@ async function handleAdminSaveResults() {
 
     const overallResult = hasFail ? 'fail' : 'pass';
     const updatePayload = {
-      status: 'tested',
+      status: 'completed',
       overall_result: overallResult,
       reported_date: new Date().toISOString().split('T')[0],
       reporter_name: document.getElementById('grid-reporter-name')?.value || 'ทนพ.มานพ นันตาบุตร',
@@ -2913,7 +2913,8 @@ async function handleAdminSaveResults() {
     if (window.supabaseClient && activeSubmissionData.id && !String(activeSubmissionData.id).startsWith('REP-')) {
       let headerSaved = false, lastErr = null;
 
-      for (const candidate of ['tested', 'completed']) {
+      // ใช้ 'completed' เป็นค่าหลัก ให้ตรงกับใบเดิมทั้งหมดและนโยบาย RLS
+      for (const candidate of ['completed', 'tested']) {
         const { error } = await window.supabaseClient
           .from('reports')
           .update({ ...updatePayload, status: candidate })
