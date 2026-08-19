@@ -1,0 +1,106 @@
+{
+  "note": "พิกัดพื้นที่กดสำหรับตั้งค่าใน LINE Official Account Manager (ภาพขนาด 1040x1040)",
+  "liff": "https://liff.line.me/2011162657-GE5HlbQR",
+  "areas_8": [
+    {
+      "service": "AIR-01",
+      "x": 28,
+      "y": 196,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "STR-02",
+      "x": 531,
+      "y": 196,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "WTS-03",
+      "x": 28,
+      "y": 406,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "WTO-04",
+      "x": 531,
+      "y": 406,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "WTM-05",
+      "x": 28,
+      "y": 615,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "FOD-06",
+      "x": 531,
+      "y": 615,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "DRG-07",
+      "x": 28,
+      "y": 825,
+      "width": 481,
+      "height": 188
+    },
+    {
+      "service": "DRG-08",
+      "x": 531,
+      "y": 825,
+      "width": 481,
+      "height": 188
+    }
+  ],
+  "areas_6": [
+    {
+      "service": "AIR-01",
+      "x": 28,
+      "y": 196,
+      "width": 481,
+      "height": 257
+    },
+    {
+      "service": "STR-02",
+      "x": 531,
+      "y": 196,
+      "width": 481,
+      "height": 257
+    },
+    {
+      "service": "WTS-03",
+      "x": 28,
+      "y": 475,
+      "width": 481,
+      "height": 257
+    },
+    {
+      "service": "WTO-04",
+      "x": 531,
+      "y": 475,
+      "width": 481,
+      "height": 257
+    },
+    {
+      "service": "WTM-05",
+      "x": 28,
+      "y": 755,
+      "width": 481,
+      "height": 257
+    },
+    {
+      "service": "FOD-06",
+      "x": 531,
+      "y": 755,
+      "width": 481,
+      "height": 257
+    }
+  ]
+}

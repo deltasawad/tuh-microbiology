@@ -18,6 +18,10 @@
  */
 
 const crypto = require('crypto');
+const {
+  buildServicesCarousel, buildWelcomeCard, buildContactCard,
+  serviceBubble, SERVICES, LIFF, SITE
+} = require('./services');
 
 const LIFF_URL = 'https://liff.line.me/2011162657-GE5HlbQR';
 
@@ -41,51 +45,6 @@ const row = (label, value, color) => ({
   ]
 });
 
-function welcomeCard(userId) {
-  return {
-    type: 'flex',
-    altText: 'ระบบส่งตรวจสิ่งแวดล้อมพร้อมใช้งานแล้ว',
-    contents: {
-      type: 'bubble', size: 'mega',
-      header: {
-        type: 'box', layout: 'vertical', backgroundColor: '#6c5070', paddingAll: '16px',
-        contents: [
-          { type: 'text', text: '🧫 ระบบพร้อมใช้งานแล้ว', color: '#ffffff', weight: 'bold', size: 'md' },
-          { type: 'text', text: 'งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ',
-            color: '#ffffffcc', size: 'xxs', wrap: true }
-        ]
-      },
-      body: {
-        type: 'box', layout: 'vertical', spacing: 'md',
-        contents: [
-          { type: 'text', size: 'sm', wrap: true, color: '#555555',
-            text: 'ข้อความนี้ตอบกลับอัตโนมัติ เพื่อยืนยันว่าการ์ดแสดงผลถูกต้องและช่องทาง LINE ใช้งานได้' },
-          { type: 'separator', margin: 'md' },
-          { type: 'box', layout: 'vertical', margin: 'md', spacing: 'sm', contents: [
-            row('เมนูลัด', 'ติดตั้งแล้ว 6 ปุ่ม', '#6c5070'),
-            row('ลิงก์ลัด', 'เข้าตรงขั้นตอนได้'),
-            row('บัญชีเจ้าหน้าที่', 'แยก 9 หน่วยงาน'),
-            row('ใบรายงานในระบบ', '194 ใบ')
-          ]},
-          { type: 'box', layout: 'vertical', margin: 'md', backgroundColor: '#f7f2f8',
-            cornerRadius: 'md', paddingAll: '10px', contents: [
-              { type: 'text', size: 'xxs', color: '#6c5070', wrap: true,
-                text: 'LINE userId ของคุณสำหรับ channel นี้' },
-              { type: 'text', size: 'xxs', color: '#342838', wrap: true, margin: 'sm',
-                text: userId || '(ไม่ทราบ)' }
-            ]}
-        ]
-      },
-      footer: {
-        type: 'box', layout: 'vertical',
-        contents: [{
-          type: 'button', style: 'primary', height: 'sm', color: '#6c5070',
-          action: { type: 'uri', label: 'เปิดระบบส่งตรวจ', uri: LIFF_URL }
-        }]
-      }
-    }
-  };
-}
 
 async function reply(replyToken, messages, token) {
   const res = await fetch('https://api.line.me/v2/bot/message/reply', {
@@ -95,6 +54,35 @@ async function reply(replyToken, messages, token) {
   });
   const body = await res.text();
   return { status: res.status, body };
+}
+
+/**
+ * คำสั่งลัดที่พิมพ์เข้ามาในแชท
+ * ------------------------------------------------------------------------------
+ * ตอบด้วย replyToken ซึ่งไม่กินโควตา จึงรับคำได้กว้างโดยไม่ต้องกลัวเปลืองข้อความ
+ * ถ้าไม่ตรงคำไหนเลย จะส่งการ์ดต้อนรับกลับไป เพื่อไม่ให้ผู้ใช้เจอความเงียบ
+ */
+function routeText(raw, displayName) {
+  const t = String(raw || '').trim().toLowerCase();
+  const hit = (words) => words.some(w => t.includes(w));
+  const link = (label, url) => [{ type: 'text', text: label + '\n' + url }];
+
+  if (hit(['บริการ', 'รายการตรวจ', 'service', 'menu', 'เมนู'])) return [buildServicesCarousel()];
+  if (hit(['จอง', 'คิว', 'booking']))            return link('จองคิวส่งตรวจได้ที่นี่', LIFF + '?step=1');
+  if (hit(['ฟอร์ม', 'ส่งตัวอย่าง', 'form']))      return link('กรอกแบบฟอร์มส่งตรวจได้ที่นี่', LIFF + '?step=2');
+  if (hit(['สถานะ', 'ติดตาม', 'ถึงไหน', 'status'])) return link('ติดตามสถานะใบส่งตรวจได้ที่นี่', LIFF + '?step=3');
+  if (hit(['ผล', 'รายงาน', 'result']))            return link('ดูผลตรวจย้อนหลังได้ที่นี่', LIFF + '?step=4');
+  if (hit(['ติดต่อ', 'เบอร์', 'โทร', 'contact'])) return [buildContactCard()];
+  if (hit(['คู่มือ', 'วิธีใช้', 'ช่วย', 'help', 'guide'])) return link('คู่มือใช้งานฉบับเต็ม', SITE + '/guide');
+
+  // พิมพ์รหัสบริการตรง ๆ ก็ได้ เช่น "AIR" หรือ "air-01"
+  // ต้องหารหัสเต็มให้ครบทุกบริการก่อน แล้วค่อยถอยมาที่คำนำหน้า
+  // ไม่งั้น "drg-08" จะไปเข้า DRG-07 เพราะคำนำหน้า "drg" ตรงทั้งคู่
+  const svc = SERVICES.find(x => t.includes(x.label.toLowerCase()) || t.includes(x.code.toLowerCase()))
+           || SERVICES.find(x => t.includes(x.label.split('-')[0].toLowerCase()));
+  if (svc) return [{ type: 'flex', altText: svc.label + ' ' + svc.name, contents: serviceBubble(svc) }];
+
+  return [buildWelcomeCard(displayName)];
 }
 
 module.exports = async function handler(req, res) {
@@ -151,21 +139,40 @@ module.exports = async function handler(req, res) {
       continue;
     }
 
-    // ตอบกลับเมื่อเพิ่งเพิ่มเพื่อน หรือส่งข้อความมา (เฉพาะแชท 1:1 ไม่ตอบในกลุ่ม)
-    if (ev.replyToken && isDirect && (ev.type === 'follow' || ev.type === 'message')) {
-      const r = await reply(ev.replyToken, [welcomeCard(userId)], token);
-      console.log('[webhook] reply ->', r.status, r.body ? r.body.slice(0, 300) : '(ว่าง = สำเร็จ)');
+    // เพิ่มเพื่อนใหม่ -> ทักทาย แล้วตามด้วยรายการบริการทั้งหมด
+    // แยกเป็นสองข้อความโดยตั้งใจ ข้อความแรกบอกว่าที่นี่คือที่ไหนทำอะไรได้
+    // ถ้ารวมเป็นใบเดียวจะยาวจนไม่มีใครอ่าน
+    if (ev.type === 'follow' && ev.replyToken && isDirect) {
+      let name = null;
+      try {
+        const p = await fetch('https://api.line.me/v2/bot/profile/' + userId,
+          { headers: { Authorization: 'Bearer ' + token } });
+        if (p.ok) name = (await p.json()).displayName;
+      } catch (e) { /* ไม่รู้ชื่อก็ทักทายแบบกลาง ๆ ได้ */ }
 
-      // ถ้าการ์ดถูกปฏิเสธ ลองส่งข้อความธรรมดาแทน จะได้รู้ว่าเป็นที่การ์ดหรือที่สิทธิ์
+      const r = await reply(ev.replyToken, [buildWelcomeCard(name), buildServicesCarousel()], token);
+      console.log('[webhook] ต้อนรับเพื่อนใหม่ ->', r.status, r.body ? r.body.slice(0, 200) : '(ว่าง = สำเร็จ)');
+
       if (r.status !== 200) {
-        const r2 = await reply(ev.replyToken,
-          [{ type: 'text', text: 'ระบบส่งตรวจสิ่งแวดล้อมพร้อมใช้งานแล้ว\nuserId ของคุณ: ' + (userId || '-') }],
-          token);
-        console.log('[webhook] reply ข้อความธรรมดา ->', r2.status, r2.body ? r2.body.slice(0, 300) : '(ว่าง = สำเร็จ)');
+        await reply(ev.replyToken, [{ type: 'text',
+          text: 'ยินดีต้อนรับสู่ระบบส่งตรวจสิ่งแวดล้อม\nงานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ\n\nเริ่มที่นี่ ' + LIFF }], token);
       }
-    } else {
-      console.log('[webhook] ไม่เข้าเงื่อนไขตอบกลับ');
+      continue;
     }
+
+    // ข้อความในแชท 1:1 -> ตอบตามคำสั่งลัด (ไม่ตอบในกลุ่ม จะกวนคนอื่น)
+    if (ev.type === 'message' && ev.replyToken && isDirect) {
+      const text = (ev.message && ev.message.type === 'text') ? ev.message.text : '';
+      const r = await reply(ev.replyToken, routeText(text, null), token);
+      console.log('[webhook] ตอบคำสั่งลัด ->', r.status, r.body ? r.body.slice(0, 200) : '(ว่าง = สำเร็จ)');
+
+      if (r.status !== 200) {
+        await reply(ev.replyToken, [{ type: 'text', text: 'เปิดระบบส่งตรวจได้ที่นี่\n' + LIFF }], token);
+      }
+      continue;
+    }
+
+    console.log('[webhook] ไม่เข้าเงื่อนไขตอบกลับ');
   }
 
   // LINE ต้องการ 200 เสมอ ไม่งั้นจะ retry และปิด webhook ในที่สุด
