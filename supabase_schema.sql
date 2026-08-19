@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS public.reports (
     received_date DATE DEFAULT CURRENT_DATE,
     reported_date DATE,
     reporter_name VARCHAR(255) DEFAULT 'ทนพ.มานพ นันตาบุตร',
-    approver_name VARCHAR(255) DEFAULT 'ทนพญ.นริศรา มังกรแก้ว',
+    approver_name VARCHAR(255) DEFAULT 'ทนพญ.ปราญชลี หรั่งอ่อน',
     status VARCHAR(50) DEFAULT 'waiting_for_testing', -- 'waiting_for_testing' (รอตรวจ), 'tested' (ตรวจแล้ว), 'completed' (สมบูรณ์)
     overall_result VARCHAR(50) DEFAULT 'pending', -- 'pending', 'pass', 'fail', 'normal', 'no_growth'
     remarks TEXT,
