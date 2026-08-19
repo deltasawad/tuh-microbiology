@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <!-- หน้านี้อยู่ใต้ /liff/ แต่สคริปต์ส่วนกลาง (auth.js) ใช้ลิงก์แบบ relative เช่น login.html
+       ถ้าไม่กำหนด base มันจะกลายเป็น /liff/login.html ซึ่งไม่มีจริง -> 404 -->
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- 🔄 Cache busting (ดูคำอธิบายเต็มใน index.html) -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>ลงผลตรวจ (Med Tech) | งานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</title>
+  <link rel="icon" href="/favicon.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{font-family:'Sarabun',sans-serif;background:#f4f1f5}
+    /* หน้านี้เป็นงานคีย์ข้อมูล ออกแบบให้ใช้จอกว้าง — ต่ำกว่านี้จะเลื่อนแนวนอน */
+    .workbench{min-width:1100px}
+  </style>
+</head>
+<body class="text-[#342838]">
+
+<!-- ==========================================================================
+     ประตูล็อกอิน — หน้านี้เข้าได้เฉพาะเจ้าหน้าที่
+     ========================================================================== -->
+<div id="gate" class="hidden fixed inset-0 grid place-items-center bg-[#f4f1f5] z-50 px-6">
+  <div class="text-center max-w-sm">
+    <div class="w-16 h-16 rounded-full bg-[#f7f2f8] text-[#6c5070] grid place-items-center mx-auto mb-4 text-2xl">
+      <i class="fas fa-lock"></i>
+    </div>
+    <div class="font-bold text-[#342838] mb-1">หน้าลงผลตรวจสำหรับเจ้าหน้าที่</div>
+    <div class="text-xs text-slate-500 leading-relaxed mb-5">
+      การลงผลการตรวจวิเคราะห์ทำได้เฉพาะนักเทคนิคการแพทย์ที่ได้รับสิทธิ์<br>
+      กรุณาเข้าสู่ระบบก่อนใช้งาน
+    </div>
+    <a id="gate-link" href="/login.html"
+       class="inline-flex items-center gap-2 bg-[#6c5070] hover:bg-[#573e5a] text-white text-sm font-bold px-6 py-3 rounded-2xl shadow-sm transition">
+      <i class="fas fa-user-shield text-[#f9d56e]"></i> เข้าสู่ระบบเจ้าหน้าที่
+    </a>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     WORKBENCH (Desktop) : ซ้าย = คิวรอตรวจ / ขวา = ตารางลงผล
+     ========================================================================== -->
+<div id="app" class="hidden">
+
+  <header class="bg-[#6c5070] text-white sticky top-0 z-30 shadow-lg">
+    <div class="px-6 py-3 flex items-center gap-4">
+      <div class="w-9 h-9 rounded-xl bg-white/15 grid place-items-center">
+        <i class="fas fa-microscope text-[#f9d56e]"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm">ลงผลการตรวจวิเคราะห์สิ่งแวดล้อม</div>
+        <div class="text-[10px] text-white/70">งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ · ISO 15189</div>
+      </div>
+      <button type="button" id="btn-new" onclick="newSubmission()"
+              class="hidden text-[11px] font-bold bg-[#f9d56e] text-[#342838] hover:bg-[#f7c945] px-3 py-2 rounded-xl transition shadow-sm">
+        <i class="fas fa-plus mr-1"></i> สร้างใบส่งตรวจ
+      </button>
+      <a href="/liff" class="text-[11px] bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl transition">
+        <i class="fab fa-line mr-1"></i> หน้าผู้ส่งตรวจ (LIFF)
+      </a>
+      <a href="/workflow.html" class="text-[11px] bg-white/15 hover:bg-white/25 px-3 py-2 rounded-xl transition">
+        <i class="fas fa-table-list mr-1"></i> เว็บหลัก
+      </a>
+      <div class="text-right leading-tight pl-3 border-l border-white/20">
+        <div id="who-name" class="text-xs font-bold">—</div>
+        <div id="who-role" class="text-[10px] text-white/60">—</div>
+      </div>
+      <button onclick="doLogout()" class="text-[11px] bg-white/15 hover:bg-rose-500/70 px-3 py-2 rounded-xl transition">
+        <i class="fas fa-right-from-bracket"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- บัญชีหน่วยงานผู้ส่งตรวจ: ดูได้อย่างเดียว ลงผลไม่ได้ -->
+  <div id="readonly-bar" class="hidden bg-sky-50 border-b border-sky-200">
+    <div class="px-6 py-2.5 text-xs text-sky-900 leading-relaxed">
+      <i class="fas fa-eye mr-1.5"></i>
+      <b>โหมดดูอย่างเดียว</b> — บัญชีหน่วยงานผู้ส่งตรวจดูใบส่งตรวจและผลตรวจของหน่วยงานตนเองได้
+      แต่ไม่สามารถลงผล เพิ่ม แก้ไข หรือลบได้ การลงผลตรวจทำโดยงานจุลชีววิทยาเท่านั้น
+    </div>
+  </div>
+
+  <!-- เตือนเมื่อได้สิทธิ์อ่านอย่างเดียว (ล็อกอิน Supabase เบื้องหลังไม่สำเร็จ) -->
+  <div id="write-warning" class="hidden bg-rose-50 border-b border-rose-200">
+    <div class="px-6 py-3 text-xs text-rose-800 leading-relaxed">
+      <i class="fas fa-triangle-exclamation mr-1.5"></i>
+      <b>ตอนนี้บันทึกผลไม่ได้</b> — ระบบเชื่อมต่อสิทธิ์เขียนกับฐานข้อมูลไม่สำเร็จ
+      (ฐานข้อมูลอนุญาตให้ลงผลเฉพาะผู้ที่ผ่านการยืนยันตัวตนจริงเท่านั้น)
+      ดูรายการและเปิดใบได้ตามปกติ แต่กดบันทึกแล้วจะไม่ถูกบันทึก
+      <button onclick="retryWriteAuth()" class="ml-2 underline font-bold">ลองเชื่อมต่อใหม่</button>
+    </div>
+  </div>
+
+  <div class="workbench flex gap-4 p-4 items-start">
+
+    <!-- ── ซ้าย: คิวใบที่รอลงผล ─────────────────────────────────────────── -->
+    <aside class="w-80 shrink-0 bg-white rounded-2xl shadow-sm overflow-hidden sticky top-[72px]">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+        <div class="font-bold text-sm">
+          <i class="fas fa-hourglass-half text-amber-500 mr-1.5"></i>คิวรอลงผล
+          <span id="queue-count" class="ml-1 text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <button onclick="loadQueue()" class="text-[11px] text-[#6c5070] font-bold hover:bg-[#f7f2f8] px-2 py-1.5 rounded-lg">
+          <i class="fas fa-rotate"></i>
+        </button>
+      </div>
+      <!-- เดิมคิวกรองเฉพาะใบที่ยังรอลงผล ทำให้เปิดใบที่ออกผลแล้วไม่ได้เลย -->
+      <div class="px-3 py-2.5 border-b border-slate-100 space-y-2">
+        <div class="flex gap-1">
+          <button type="button" id="qf-waiting" onclick="setQueueFilter('waiting')" class="flex-1 text-[11px] font-bold py-1.5 rounded-lg transition">รอลงผล</button>
+          <button type="button" id="qf-done"    onclick="setQueueFilter('done')"    class="flex-1 text-[11px] font-bold py-1.5 rounded-lg transition">ออกผลแล้ว</button>
+          <button type="button" id="qf-all"     onclick="setQueueFilter('all')"     class="flex-1 text-[11px] font-bold py-1.5 rounded-lg transition">ทั้งหมด</button>
+        </div>
+        <div class="relative">
+          <i class="fas fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-400"></i>
+          <input type="text" id="queue-search" oninput="renderQueue()" placeholder="ค้นเลขที่ / หน่วยงาน / สถานที่"
+                 class="w-full pl-8 pr-3 py-2 border border-slate-200 rounded-lg text-xs outline-none focus:ring-2 focus:ring-[#6c5070]/30">
+        </div>
+      </div>
+      <div id="queue-list" class="max-h-[calc(100vh-260px)] overflow-y-auto"></div>
+    </aside>
+
+    <!-- ── ขวา: Data Grid ───────────────────────────────────────────────── -->
+    <main class="flex-1 min-w-0">
+
+      <div id="grid-empty" class="bg-white rounded-2xl shadow-sm py-24 text-center">
+        <div class="text-4xl mb-3">🧫</div>
+        <div class="font-bold text-slate-600">เลือกใบส่งตรวจจากคิวด้านซ้าย</div>
+        <div class="text-xs text-slate-400 mt-1">ตารางลงผลจะเปิดขึ้นที่นี่</div>
+      </div>
+
+      <div id="grid-wrap" class="hidden bg-white rounded-2xl shadow-sm overflow-hidden">
+
+        <div class="px-5 py-3.5 border-b border-slate-100 bg-[#faf8fb]">
+          <div id="grid-meta" class="grid grid-cols-6 gap-4 text-xs"></div>
+        </div>
+
+        <!-- แถบเครื่องมือ + คำใบ้คีย์ลัด -->
+        <div class="px-5 py-2.5 border-b border-slate-100 flex items-center gap-3 flex-wrap">
+          <button id="btn-fill-pass" onclick="fillAllPass()"
+                  class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-3 py-2 rounded-xl transition">
+            <i class="fas fa-wand-magic-sparkles mr-1"></i> เติมค่าปกติทุกแถว
+          </button>
+          <button type="button" id="btn-add-row" onclick="addGridRow()"
+                  class="hidden text-xs font-bold text-[#6c5070] bg-[#f7f2f8] border border-[#e6d9ea] hover:bg-[#f0e8f2] px-3 py-2 rounded-xl transition">
+            <i class="fas fa-plus mr-1"></i> เพิ่มแถว
+          </button>
+          <button type="button" id="btn-edit-header" onclick="editHeader()"
+                  class="hidden text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 hover:bg-sky-100 px-3 py-2 rounded-xl transition">
+            <i class="fas fa-pen mr-1"></i> แก้ไขหัวใบ
+          </button>
+          <button type="button" id="btn-delete-report" onclick="deleteSubmission()"
+                  class="hidden text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 px-3 py-2 rounded-xl transition">
+            <i class="fas fa-trash mr-1"></i> ลบใบนี้
+          </button>
+          <span class="text-[11px] text-slate-400">
+            <span id="grid-row-count">0</span> แถว
+          </span>
+          <span class="ml-auto text-[11px] text-slate-400">
+            <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-[10px]">Enter</kbd>
+            <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-[10px]">↓</kbd> แถวถัดไป ·
+            <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-[10px]">↑</kbd> แถวก่อนหน้า ·
+            <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded font-mono text-[10px]">Tab</kbd> คอลัมน์ถัดไป
+          </span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse">
+            <thead id="grid-thead" class="sticky top-0 z-10"></thead>
+            <tbody id="grid-tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="save-bar" class="px-5 py-4 border-t border-slate-100 bg-[#faf8fb] flex items-end gap-4">
+          <div class="flex-1">
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">ความเห็นทางเทคนิค / หมายเหตุท้ายใบรายงาน</label>
+            <input type="text" id="grid-remarks" placeholder="เช่น ผลอยู่ในเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ"
+                   class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#6c5070]/30">
+          </div>
+          <button onclick="saveResults()"
+                  class="bg-[#6c5070] hover:bg-[#573e5a] text-white font-bold px-8 py-3 rounded-2xl shadow-md text-sm shrink-0 transition">
+            <i class="fas fa-floppy-disk mr-1.5"></i> บันทึกผลและออกรายงาน
+          </button>
+        </div>
+      </div>
+
+      <p class="text-[10px] text-slate-400 text-center mt-4">
+        การบันทึกผลถูกจำกัดสิทธิ์ด้วย Row Level Security ที่ฐานข้อมูลอีกชั้น — ผู้ส่งตรวจ (anon) แก้ผลไม่ได้ · บัญชีหน่วยงานดูได้อย่างเดียว
+        · Admin Grid v20260819m
+      </p>
+    </main>
+  </div>
+</div>
+
+<!-- SCRIPTS (ต่อท้าย ?v= ทุกครั้งที่แก้โค้ด) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- 🔑 Supabase URL + anon key -->
+<script src="/js/supabase-config.js?v=20260819m"></script>
+<!-- ระบบล็อกอินเจ้าหน้าที่ (ใช้ร่วมกับเว็บหลัก) -->
+<script src="/js/auth.js?v=20260819m"></script>
+
+<script src="/liff/js/liff-config.js?v=20260819m"></script>
+<script src="/liff/js/liff-flex.js?v=20260819m"></script>
+<script src="/liff/js/liff-admin.js?v=20260819m"></script>
+</body>
+</html>

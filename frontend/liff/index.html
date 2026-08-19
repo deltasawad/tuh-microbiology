@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <!-- หน้านี้อยู่ใต้ /liff/ แต่สคริปต์ส่วนกลาง (auth.js) ใช้ลิงก์แบบ relative เช่น login.html
+       ถ้าไม่กำหนด base มันจะกลายเป็น /liff/login.html ซึ่งไม่มีจริง -> 404 -->
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
+  <!-- ==========================================================================
+       🔄 CACHE BUSTING — สำคัญมากสำหรับ LIFF
+       --------------------------------------------------------------------------
+       เบราว์เซอร์ในแอป LINE (LIFF Browser) แคชไฟล์แรงกว่าเบราว์เซอร์ปกติมาก
+       ถ้าไม่ใส่ meta ชุดนี้ ผู้ใช้จะยังเห็นโค้ดเวอร์ชันเก่าแม้ deploy ใหม่แล้ว
+
+       เวลาแก้โค้ด ให้ "เพิ่มเลข ?v=" ท้าย <script> ทุกไฟล์ด้านล่างด้วย
+       (เช่น ?v=20260819j -> ?v=20260819j) แล้วเลขเวอร์ชันจะโชว์ที่ท้ายจอ
+       ใช้ตรวจได้ทันทีว่า LINE โหลดเวอร์ชันใหม่แล้วหรือยัง
+       ========================================================================== -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <title>ส่งตรวจสิ่งแวดล้อม | งานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</title>
+  <link rel="icon" href="/favicon.png">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body{
+      font-family:'Sarabun',sans-serif;
+      background:#f4f1f5;
+      -webkit-tap-highlight-color:transparent;
+      overscroll-behavior-y:none;
+    }
+    /* iPhone notch / home indicator */
+    .safe-top{padding-top:env(safe-area-inset-top)}
+    .safe-bottom{padding-bottom:calc(env(safe-area-inset-bottom) + 1rem)}
+    /* iOS จะซูมหน้าจออัตโนมัติถ้า font-size ของ input < 16px */
+    input,select,textarea{font-size:16px !important}
+    ::-webkit-scrollbar{display:none}
+  </style>
+</head>
+<body class="text-[#342838]">
+
+<!-- ==========================================================================
+     หน้าจอโหลด (แสดงระหว่างรอ liff.init + liff.getProfile)
+     ========================================================================== -->
+<div id="boot" class="fixed inset-0 grid place-items-center bg-[#f4f1f5] z-50">
+  <div class="text-center px-8">
+    <div class="w-16 h-16 rounded-3xl bg-[#6c5070] grid place-items-center mx-auto mb-4 shadow-lg">
+      <i class="fas fa-microscope text-2xl text-[#f9d56e]"></i>
+    </div>
+    <div class="font-bold text-sm text-[#342838]">งานจุลชีววิทยา</div>
+    <div class="text-[11px] text-slate-500 mb-4">รพ.ธรรมศาสตร์เฉลิมพระเกียรติ</div>
+    <div id="boot-status" class="text-xs text-slate-400">
+      <i class="fas fa-spinner fa-spin mr-1"></i> กำลังเริ่มระบบ...
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     แอปหลัก (Mobile First — คอลัมน์เดียว ปุ่มใหญ่ แตะง่ายด้วยนิ้วโป้ง)
+     ========================================================================== -->
+<div id="app" class="hidden max-w-lg mx-auto min-h-screen bg-[#f4f1f5]">
+
+  <!-- ── หัวจอ: โปรไฟล์จาก LINE ─────────────────────────────────────────── -->
+  <header class="sticky top-0 z-30 bg-[#6c5070] text-white safe-top shadow-lg">
+    <div class="px-4 py-3 flex items-center gap-3">
+      <div id="profile-avatar"
+           class="w-10 h-10 rounded-full bg-white/20 grid place-items-center font-bold text-sm overflow-hidden shrink-0"></div>
+      <div class="min-w-0 flex-1">
+        <div id="profile-name" class="font-bold text-sm truncate">—</div>
+        <div id="profile-sub" class="text-[10px] text-white/70 truncate">—</div>
+      </div>
+      <button onclick="closeLiff()" class="w-9 h-9 grid place-items-center rounded-full bg-white/15 active:bg-white/25" aria-label="ปิด">
+        <i class="fas fa-xmark text-sm"></i>
+      </button>
+    </div>
+
+    <!-- ── Stepper แบบติดหนึบ: บอกว่าตอนนี้อยู่ขั้นไหนใน 4 ขั้น ───────────── -->
+    <nav class="bg-white px-2 pt-2.5 pb-2 rounded-t-2xl">
+      <div class="flex items-start justify-between relative">
+        <div class="absolute top-4 left-[12%] right-[12%] h-0.5 bg-slate-200 -z-0"></div>
+        <button data-step="1" onclick="goStep(1)" class="flex-1 flex flex-col items-center z-10">
+          <span class="step-dot"></span><span class="step-label">จองคิว</span>
+        </button>
+        <button data-step="2" onclick="goStep(2)" class="flex-1 flex flex-col items-center z-10">
+          <span class="step-dot"></span><span class="step-label">ส่งตรวจ</span>
+        </button>
+        <button data-step="3" onclick="goStep(3)" class="flex-1 flex flex-col items-center z-10">
+          <span class="step-dot"></span><span class="step-label">รอผล</span>
+        </button>
+        <button data-step="4" onclick="goStep(4)" class="flex-1 flex flex-col items-center z-10">
+          <span class="step-dot"></span><span class="step-label">ดูผล</span>
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- แถบเตือนโหมดพัฒนา (ซ่อนอยู่ จะโชว์เมื่อยังไม่ได้ใส่ LIFF ID) -->
+  <div id="mock-banner" class="hidden bg-amber-100 border-b border-amber-300 px-4 py-2 text-[11px] text-amber-800">
+    <i class="fas fa-triangle-exclamation mr-1"></i>
+    โหมดพัฒนา — ยังไม่ได้ใส่ <b>LIFF ID</b> ในไฟล์ <code>js/liff-config.js</code> ข้อมูลที่บันทึกจะใช้ผู้ใช้จำลอง
+  </div>
+
+  <main class="px-4 pt-4 safe-bottom">
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         STEP 1 : ปฏิทินจองคิว
+         ══════════════════════════════════════════════════════════════════ -->
+    <section data-panel="1" class="hidden space-y-4">
+      <div class="bg-white rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <button onclick="shiftMonth(-1)" class="w-10 h-10 grid place-items-center rounded-full active:bg-slate-100" aria-label="เดือนก่อน">
+            <i class="fas fa-chevron-left text-sm text-[#6c5070]"></i>
+          </button>
+          <div id="cal-title" class="font-bold text-sm">—</div>
+          <button onclick="shiftMonth(1)" class="w-10 h-10 grid place-items-center rounded-full active:bg-slate-100" aria-label="เดือนถัดไป">
+            <i class="fas fa-chevron-right text-sm text-[#6c5070]"></i>
+          </button>
+        </div>
+
+        <div id="cal-grid" class="grid grid-cols-7 gap-1.5"></div>
+
+        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-3 pt-3 border-t border-slate-100 text-[10px] text-slate-500">
+          <span><span class="inline-block w-2.5 h-2.5 rounded bg-white border border-slate-300 align-middle"></span> เปิดรับ (จ–พ)</span>
+          <span><span class="inline-block w-2.5 h-2.5 rounded bg-amber-100 border border-amber-300 align-middle"></span> คิวเยอะแล้ว</span>
+          <span><span class="inline-block w-2.5 h-2.5 rounded bg-slate-100 align-middle"></span> งดรับ</span>
+        </div>
+        <p class="text-[10px] text-slate-400 mt-2 leading-relaxed">
+          <i class="fas fa-circle-info mr-1"></i>
+          ห้องปฏิบัติการรับสิ่งส่งตรวจเฉพาะ <b>วันจันทร์ – วันพุธ</b> เท่านั้น
+          (พฤหัสบดี–ศุกร์ เป็นวันอ่านผลและออกรายงาน) ตัวเลขใต้วันที่คือจำนวนตัวอย่างที่มีคนจองไว้แล้ว
+        </p>
+      </div>
+
+      <!-- ฟอร์มจอง จะโผล่หลังแตะเลือกวัน -->
+      <form id="booking-form-card" onsubmit="submitBooking(event)" class="hidden bg-white rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="flex items-center gap-2 pb-3 border-b border-slate-100">
+          <i class="far fa-calendar-check text-[#6c5070]"></i>
+          <div>
+            <div class="text-[10px] text-slate-500">วันที่เลือก</div>
+            <div id="bk-date-label" class="font-bold text-sm text-[#6c5070]">—</div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">บริการที่ต้องการส่งตรวจ <span class="text-rose-500">*</span></label>
+          <select id="bk-service" class="w-full px-3 py-3 border border-slate-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-[#6c5070]/40" required>
+            <option value="AIR_01">💨 AIR-01 · Air Sampling</option>
+            <option value="STR_02">🩸 STR-02 · Sterility Test</option>
+            <option value="WTS_03">🧼 WTS-03 · Water or Surface (IC)</option>
+            <option value="WTO_04">🚿 WTO-04 · Water (ห้องผ่าตัด)</option>
+            <option value="WTM_05">💧 WTM-05 · Water (THAMC)</option>
+            <option value="FOD_06">🍲 FOD-06 · Food Sanitation</option>
+            <option value="DRG_07">💊 DRG-07 · Drug (ปลอดเชื้อ)</option>
+            <option value="DRG_08">🧪 DRG-08 · Drug (การปนเปื้อน)</option>
+          </select>
+        </div>
+
+        <div>
+          <!-- 👤 ชื่อนี้เติมอัตโนมัติจาก liff.getProfile().displayName -->
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">
+            ชื่อผู้ส่งตรวจ <span class="text-rose-500">*</span>
+            <span class="font-normal text-[10px] text-emerald-600 ml-1"><i class="fab fa-line"></i> เติมจาก LINE ให้แล้ว</span>
+          </label>
+          <input type="text" id="bk-sender" required
+                 class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">หน่วยงาน</label>
+          <input type="text" id="bk-dept" placeholder="เว้นว่างเพื่อใช้หน่วยงานตามบริการ"
+                 class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">เบอร์ติดต่อ <span class="text-rose-500">*</span></label>
+            <input type="tel" id="bk-contact" inputmode="tel" placeholder="เบอร์ภายใน" required
+                   class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">จำนวนตัวอย่าง</label>
+            <input type="number" id="bk-count" min="1" max="200" value="1" inputmode="numeric"
+                   class="w-full px-3 py-3 border border-slate-300 rounded-xl font-bold text-[#6c5070] outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">หมายเหตุ / จุดที่เข้าไปวางเพลต</label>
+          <input type="text" id="bk-notes" placeholder="เช่น หอผู้ป่วย ICU, Big Cleaning"
+                 class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+        </div>
+
+        <button type="submit"
+                class="w-full bg-[#6c5070] active:bg-[#573e5a] text-white font-bold py-4 rounded-2xl shadow-md text-sm">
+          <i class="far fa-calendar-check mr-1.5"></i> ยืนยันการจองคิว
+        </button>
+      </form>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         STEP 2 : แบบฟอร์มส่งตรวจ
+         ══════════════════════════════════════════════════════════════════ -->
+    <section data-panel="2" class="hidden space-y-4">
+      <form onsubmit="submitSamples(event)" class="space-y-4">
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">บริการ <span class="text-rose-500">*</span></label>
+            <select id="sb-service" onchange="onServiceChange()"
+                    class="w-full px-3 py-3 border border-slate-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+              <option value="AIR_01">AIR-01 · Air Sampling</option>
+              <option value="STR_02">STR-02 · Sterility Test</option>
+              <option value="WTS_03">WTS-03 · Water or Surface (IC)</option>
+              <option value="WTO_04">WTO-04 · Water (ห้องผ่าตัด)</option>
+              <option value="WTM_05">WTM-05 · Water (THAMC)</option>
+              <option value="FOD_06">FOD-06 · Food Sanitation</option>
+              <option value="DRG_07">DRG-07 · Drug (ปลอดเชื้อ)</option>
+              <option value="DRG_08">DRG-08 · Drug (การปนเปื้อน)</option>
+            </select>
+            <div id="sb-service-hint" class="text-[11px] text-slate-500 mt-1.5"></div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">หน่วยงานส่งตรวจ</label>
+            <input type="text" id="sb-dept"
+                   class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">สถานที่ / หอผู้ป่วยที่เก็บตัวอย่าง <span class="text-rose-500">*</span></label>
+            <input type="text" id="sb-ward" placeholder="เช่น หอผู้ป่วย ICU ชั้น 5" required
+                   class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">วันที่เก็บตัวอย่าง <span class="text-rose-500">*</span></label>
+            <input type="date" id="sb-sampling-date" required
+                   class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+          </div>
+        </div>
+
+        <!-- รายการตัวอย่าง -->
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div class="font-bold text-sm">
+              <i class="fas fa-vial text-[#6c5070] mr-1.5"></i>รายการตัวอย่าง
+              <span class="text-[11px] font-normal text-slate-500">(<span id="sb-item-count">1</span> รายการ)</span>
+            </div>
+            <button type="button" onclick="addItem()"
+                    class="text-[11px] font-bold text-[#6c5070] bg-[#f7f2f8] px-3 py-2 rounded-xl active:bg-[#ede4ef]">
+              <i class="fas fa-plus mr-1"></i>เพิ่ม
+            </button>
+          </div>
+          <div id="sb-items" class="space-y-3"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl p-4 shadow-sm">
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">หมายเหตุถึงห้องปฏิบัติการ</label>
+          <textarea id="sb-remarks" rows="2" placeholder="ไม่บังคับ"
+                    class="w-full px-3 py-3 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#6c5070]/40 resize-none"></textarea>
+        </div>
+
+        <div class="bg-[#fff8e6] border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-800 leading-relaxed">
+          <i class="fas fa-circle-info mr-1"></i>
+          ช่อง <b>ผลตรวจ</b> ไม่มีในฟอร์มนี้โดยตั้งใจ — เฉพาะนักเทคนิคการแพทย์เท่านั้นที่ลงผลได้
+          (บังคับด้วย RLS ที่ฐานข้อมูลอีกชั้น) ใบที่ส่งจะมีสถานะ <b>รอตรวจ</b> จนกว่าห้องแล็บจะลงผล
+        </div>
+
+        <button type="submit"
+                class="w-full bg-[#6c5070] active:bg-[#573e5a] text-white font-bold py-4 rounded-2xl shadow-md text-sm">
+          <i class="fas fa-paper-plane mr-1.5"></i> บันทึกใบส่งตรวจ
+        </button>
+      </form>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         STEP 3 : รอผล
+         ══════════════════════════════════════════════════════════════════ -->
+    <section data-panel="3" class="hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <div class="font-bold text-sm">
+          <i class="fas fa-hourglass-half text-amber-500 mr-1.5"></i>ใบที่รอผลตรวจ
+          <span id="badge-pending" class="ml-1 text-[11px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <button onclick="loadMyReports()" class="text-[11px] text-[#6c5070] font-bold px-3 py-2 active:bg-white rounded-xl">
+          <i class="fas fa-rotate mr-1"></i>รีเฟรช
+        </button>
+      </div>
+
+      <!-- ดูเฉพาะที่ตัวเองส่ง หรือดูคิวค้างของทั้งหน่วยงาน -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm space-y-2.5">
+        <div class="flex gap-2">
+          <button type="button" id="q-tab-mine" onclick="setQueueMode('mine')"
+                  class="flex-1 text-xs font-bold py-2.5 rounded-xl transition">ที่ฉันส่ง</button>
+          <button type="button" id="q-tab-dept" onclick="setQueueMode('dept')"
+                  class="flex-1 text-xs font-bold py-2.5 rounded-xl transition">ทั้งหน่วยงาน</button>
+        </div>
+        <div id="q-service-row" class="hidden">
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">เลือกบริการ</label>
+          <select id="q-service" onchange="loadMyReports()"
+                  class="w-full px-3 py-3 border border-slate-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+            <option value="AIR_01">💨 AIR-01 · Air Sampling</option>
+            <option value="STR_02">🩸 STR-02 · Sterility Test</option>
+            <option value="WTS_03">🧼 WTS-03 · Water or Surface (IC)</option>
+            <option value="WTO_04">🚿 WTO-04 · Water (ห้องผ่าตัด)</option>
+            <option value="WTM_05">💧 WTM-05 · Water (THAMC)</option>
+            <option value="FOD_06">🍲 FOD-06 · Food Sanitation</option>
+            <option value="DRG_07">💊 DRG-07 · Drug (ปลอดเชื้อ)</option>
+            <option value="DRG_08">🧪 DRG-08 · Drug (การปนเปื้อน)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="list-pending" class="space-y-2.5"></div>
+      <p class="text-[10px] text-slate-400 text-center px-6 pt-2 leading-relaxed">
+        แสดงเฉพาะใบที่ส่งด้วยบัญชี LINE นี้ · ระบบจะแจ้งกลับทาง LINE เมื่อผลออก
+      </p>
+    </section>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         STEP 4 : ดูผล
+         ══════════════════════════════════════════════════════════════════ -->
+    <section data-panel="4" class="hidden space-y-3">
+      <div class="flex items-center justify-between px-1">
+        <div class="font-bold text-sm">
+          <i class="fas fa-file-circle-check text-emerald-600 mr-1.5"></i>ผลตรวจที่ออกแล้ว
+          <span id="badge-done" class="ml-1 text-[11px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full">0</span>
+        </div>
+        <button onclick="loadHistory()" class="text-[11px] text-[#6c5070] font-bold px-3 py-2 active:bg-white rounded-xl">
+          <i class="fas fa-rotate mr-1"></i>รีเฟรช
+        </button>
+      </div>
+
+      <!-- เลือกว่าจะดูเฉพาะใบที่ตัวเองส่ง หรือดูประวัติทั้งหน่วยงาน -->
+      <div class="bg-white rounded-2xl p-3 shadow-sm space-y-2.5">
+        <div class="flex gap-2">
+          <button type="button" id="hist-tab-mine" onclick="setHistMode('mine')"
+                  class="flex-1 text-xs font-bold py-2.5 rounded-xl transition">ที่ฉันส่ง</button>
+          <button type="button" id="hist-tab-dept" onclick="setHistMode('dept')"
+                  class="flex-1 text-xs font-bold py-2.5 rounded-xl transition">ทั้งหน่วยงาน</button>
+        </div>
+        <div id="hist-service-row" class="hidden">
+          <label class="block text-[11px] font-bold text-slate-600 mb-1">เลือกบริการที่ต้องการดูย้อนหลัง</label>
+          <select id="hist-service" onchange="loadHistory()"
+                  class="w-full px-3 py-3 border border-slate-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-[#6c5070]/40">
+            <option value="AIR_01">💨 AIR-01 · Air Sampling</option>
+            <option value="STR_02">🩸 STR-02 · Sterility Test</option>
+            <option value="WTS_03">🧼 WTS-03 · Water or Surface (IC)</option>
+            <option value="WTO_04">🚿 WTO-04 · Water (ห้องผ่าตัด)</option>
+            <option value="WTM_05">💧 WTM-05 · Water (THAMC)</option>
+            <option value="FOD_06">🍲 FOD-06 · Food Sanitation</option>
+            <option value="DRG_07">💊 DRG-07 · Drug (ปลอดเชื้อ)</option>
+            <option value="DRG_08">🧪 DRG-08 · Drug (การปนเปื้อน)</option>
+          </select>
+        </div>
+      </div>
+      <div id="list-done" class="space-y-2.5"></div>
+    </section>
+
+    <!-- ท้ายจอ: เลขเวอร์ชัน ใช้เช็คว่า LINE โหลดโค้ดใหม่แล้วหรือยัง -->
+    <footer class="text-center pt-6 pb-2">
+      <div class="text-[10px] text-slate-400">
+        งานจุลชีววิทยา รพ.ธรรมศาสตร์เฉลิมพระเกียรติ · ISO 15189
+      </div>
+      <div class="text-[9px] text-slate-300 mt-1 font-mono">
+        LIFF v20260819j · LINE user: <span id="profile-uid">—</span>
+      </div>
+    </footer>
+  </main>
+</div>
+
+<!-- ==========================================================================
+     SCRIPTS
+     --------------------------------------------------------------------------
+     ⚠️ ทุกไฟล์ในโปรเจกต์ต่อท้ายด้วย ?v=YYYYMMDDx
+        แก้โค้ดเมื่อไหร่ ให้ขยับตัวอักษรท้าย (a -> b -> c) ทุกไฟล์ที่แก้
+        ไม่งั้น LIFF Browser จะเสิร์ฟไฟล์เก่าจากแคชต่อไป
+     ========================================================================== -->
+
+<!-- LIFF SDK v2 (ต้องโหลดก่อน liff-app.js) -->
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- 🔑 Supabase URL + anon key อยู่ในไฟล์นี้ (ใช้ร่วมกับเว็บหลัก) -->
+<script src="/js/supabase-config.js?v=20260819j"></script>
+
+<!-- 🔑 LIFF ID อยู่ในไฟล์นี้ -->
+<script src="/liff/js/liff-config.js?v=20260819j"></script>
+<script src="/liff/js/liff-flex.js?v=20260819j"></script>
+<script src="/liff/js/liff-app.js?v=20260819j"></script>
+</body>
+</html>

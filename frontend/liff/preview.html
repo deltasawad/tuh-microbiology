@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตัวอย่างระบบ LIFF | งานจุลชีววิทยา รพ.ธรรมศาสตร์ฯ</title>
+<link rel="icon" href="/favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Sarabun',sans-serif;background:#efe9f0}
+  /* กรอบมือถือจำลอง iPhone — ข้างในคือหน้าจริงที่รันอยู่ ไม่ใช่ภาพนิ่ง */
+  .phone{width:375px;height:760px;border:10px solid #2b2130;border-radius:36px;overflow:hidden;
+         box-shadow:0 20px 45px -12px rgba(43,33,48,.45);background:#fff;position:relative}
+  .phone iframe{width:375px;height:760px;border:0;display:block}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:20px;
+         background:#2b2130;border-radius:0 0 14px 14px;z-index:5;pointer-events:none}
+  .scaler{transform:scale(.82);transform-origin:top left;width:395px;height:780px}
+  .scaler-box{width:324px;height:640px;overflow:hidden}
+</style>
+</head>
+<body class="text-[#342838]">
+
+<header class="bg-[#6c5070] text-white">
+  <div class="max-w-[1400px] mx-auto px-6 py-5 flex items-center gap-4">
+    <div class="w-11 h-11 rounded-2xl bg-white/15 grid place-items-center">
+      <i class="fas fa-microscope text-xl text-[#f9d56e]"></i>
+    </div>
+    <div class="flex-1">
+      <h1 class="font-bold text-lg">ตัวอย่างระบบ LINE LIFF — ส่งตรวจสิ่งแวดล้อม</h1>
+      <p class="text-[11px] text-white/70">งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ · ISO 15189</p>
+    </div>
+    <div class="text-[11px] bg-emerald-400/20 border border-emerald-300/40 px-3 py-2 rounded-xl">
+      <i class="fas fa-circle-play mr-1"></i> หน้าจอในกรอบคือ<b>แอปจริงที่รันอยู่</b> กดใช้งานได้เลย
+    </div>
+  </div>
+</header>
+
+<div id="frame-notice" class="hidden bg-amber-100 border-b border-amber-300">
+  <div id="frame-notice-text" class="max-w-[1400px] mx-auto px-6 py-3 text-xs text-amber-900 leading-relaxed"></div>
+</div>
+
+<main class="max-w-[1400px] mx-auto px-6 py-8 space-y-10">
+
+  <!-- ═══════════════ ฝั่งผู้ส่งตรวจ ═══════════════ -->
+  <section>
+    <div class="flex items-baseline gap-3 mb-1">
+      <h2 class="font-bold text-xl">1 · ฝั่งผู้ส่งตรวจ <span class="text-sm font-normal text-slate-500">(ในแอป LINE — Mobile First)</span></h2>
+    </div>
+    <p class="text-xs text-slate-500 mb-5">
+      ตัวตนมาจาก <b>liff.getProfile()</b> ไม่ต้องตั้งรหัสผ่านซ้ำ · ตอนนี้แสดงเป็น
+      <span class="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">โหมดพัฒนา</span>
+      เพราะยังไม่ได้ใส่ LIFF ID
+    </p>
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div>
+        <div class="text-sm font-bold mb-2"><span class="bg-[#6c5070] text-white w-6 h-6 rounded-full inline-grid place-items-center text-xs mr-1.5">1</span> จองคิว</div>
+        <div class="phone"><div class="notch"></div><iframe id="f1" src="/liff?embed=1"></iframe></div>
+        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+          ปฏิทินเปิดเฉพาะ <b>จันทร์–พุธ</b> · ตัวเลขใต้วันที่คือจำนวนตัวอย่างที่มีคนจองแล้ว ·
+          แตะวันแล้วฟอร์มจะเลื่อนขึ้นมาพร้อมเติมชื่อจาก LINE ให้
+        </p>
+      </div>
+
+      <div>
+        <div class="text-sm font-bold mb-2"><span class="bg-[#6c5070] text-white w-6 h-6 rounded-full inline-grid place-items-center text-xs mr-1.5">2</span> แบบฟอร์มส่งตรวจ</div>
+        <div class="phone"><div class="notch"></div><iframe id="f2" src="/liff?embed=1"></iframe></div>
+        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+          ป้ายกำกับเปลี่ยนตามบริการ (WTS = สถานที่/หน่วยงาน, FOD = รายการอาหาร, STR = หมายเลขถุงเลือด) ·
+          <b>ไม่มีช่องกรอกผลตรวจ</b> โดยตั้งใจ
+        </p>
+      </div>
+
+      <div>
+        <div class="text-sm font-bold mb-2"><span class="bg-[#6c5070] text-white w-6 h-6 rounded-full inline-grid place-items-center text-xs mr-1.5">3–4</span> รอผล / ดูผล</div>
+        <div class="phone"><div class="notch"></div><iframe id="f3" src="/liff?embed=1"></iframe></div>
+        <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+          เห็นเฉพาะใบที่ส่งด้วยบัญชี LINE ตัวเอง · ใบที่ออกผลแล้วแตะเพื่อเปิดใบรายงานฉบับเต็ม
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════ Flex Message ═══════════════ -->
+  <section>
+    <h2 class="font-bold text-xl mb-1">2 · การ์ดแจ้งเตือนเข้ากลุ่ม LINE ห้องแล็บ</h2>
+    <p class="text-xs text-slate-500 mb-5">
+      วาดจาก JSON ของจริงที่ <code class="bg-white px-1.5 py-0.5 rounded border">liff-flex.js</code> สร้างขึ้น
+      (หน้าตาในแอป LINE จะใกล้เคียงนี้)
+    </p>
+    <div id="flex-preview" class="flex flex-wrap gap-5 items-start"></div>
+  </section>
+
+  <!-- ═══════════════ ฝั่ง Med Tech ═══════════════ -->
+  <section>
+    <h2 class="font-bold text-xl mb-1">3 · ฝั่งนักเทคนิคการแพทย์ <span class="text-sm font-normal text-slate-500">(คอมพิวเตอร์ จอกว้าง)</span></h2>
+    <p class="text-xs text-slate-500 mb-4">
+      หน้านี้บังคับล็อกอินก่อน — กดปุ่มด้านล่างเพื่อเข้าสู่ระบบด้วยบัญชีเจ้าหน้าที่ของท่าน แล้วหน้าตารางจะแสดงในกรอบ
+    </p>
+    <div class="flex gap-3 mb-4">
+      <button onclick="document.getElementById('fa').src='/login.html?redirect='+encodeURIComponent(location.origin+'/liff/admin.html')"
+              class="text-xs font-bold bg-[#6c5070] hover:bg-[#573e5a] text-white px-4 py-2.5 rounded-xl transition">
+        <i class="fas fa-user-shield mr-1.5 text-[#f9d56e]"></i> เข้าสู่ระบบเพื่อดูหน้าลงผล
+      </button>
+      <button onclick="document.getElementById('fa').src='/liff/admin?embed=1'"
+              class="text-xs font-bold bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2.5 rounded-xl transition">
+        <i class="fas fa-rotate mr-1.5"></i> กลับไปหน้าลงผล
+      </button>
+      <a href="/liff/admin" target="_blank"
+         class="text-xs font-bold bg-white hover:bg-slate-50 border border-slate-300 px-4 py-2.5 rounded-xl transition">
+        <i class="fas fa-up-right-from-square mr-1.5"></i> เปิดเต็มจอ
+      </a>
+    </div>
+    <div class="bg-[#2b2130] rounded-2xl p-3 shadow-xl">
+      <div class="flex gap-1.5 px-2 pb-2.5">
+        <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+      </div>
+      <iframe id="fa" src="/liff/admin?embed=1" class="w-full h-[680px] bg-white rounded-xl border-0"></iframe>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-2 leading-relaxed">
+      ซ้าย = คิวใบที่รอลงผล (ใบที่มาจาก LINE มีป้ายกำกับ) · ขวา = ตารางคีย์ผล คอลัมน์เปลี่ยนตามบริการ ·
+      <kbd class="px-1 bg-white border rounded text-[10px]">Enter</kbd>/<kbd class="px-1 bg-white border rounded text-[10px]">↓</kbd> ลงแถวถัดไปโดยไม่ต้องจับเมาส์
+    </p>
+  </section>
+
+  <footer class="text-center text-[11px] text-slate-400 pt-4 pb-8">
+    หน้านี้เป็นหน้าตัวอย่างสำหรับดูภาพรวม ไม่ได้เป็นส่วนหนึ่งของระบบที่ผู้ใช้เข้าถึง
+  </footer>
+</main>
+
+<!-- โหลดตัวสร้าง Flex Message ตัวจริงมาใช้วาดตัวอย่าง -->
+<script src="/liff/js/liff-config.js?v=20260819j"></script>
+<script src="/liff/js/liff-flex.js?v=20260819j"></script>
+<script>
+/* ---------------------------------------------------------------------------
+ * 1) พาแต่ละกรอบมือถือไปยังขั้นตอนที่ต้องการโชว์
+ *    iframe อยู่โดเมนเดียวกัน จึงเรียกฟังก์ชันข้างในได้ตรง ๆ
+ * ------------------------------------------------------------------------- */
+function driveFrame(id, fn) {
+  const f = document.getElementById(id);
+  // ห้ามรอ event 'load' อย่างเดียว — iframe มักโหลดเสร็จก่อนสคริปต์นี้ทำงาน แล้ว event จะไม่ยิงอีก
+  // จึงวนตรวจหา App ข้างในโดยตรง ครอบคลุมทั้งกรณีโหลดเสร็จแล้วและยังโหลดไม่เสร็จ
+  let tries = 0;
+  const wait = setInterval(() => {
+    let w = null;
+    try { w = f.contentWindow; } catch (e) { /* ยังเข้าถึงไม่ได้ */ }
+    // ต้องรอจน boot() ทำงานจบจริง ๆ (แอปแสดงผลแล้ว) ไม่งั้น goStep(1) ท้าย boot จะมาทับสิ่งที่เราสั่ง
+    const ready = w && w.App && w.App.profile && w.goStep
+      && w.document.getElementById('app')
+      && !w.document.getElementById('app').classList.contains('hidden');
+    if (ready) {
+      clearInterval(wait);
+      try { fn(w); } catch (e) { console.warn('driveFrame', id, e); }
+    } else if (++tries > 100) {
+      clearInterval(wait);
+      console.warn('driveFrame timeout:', id);
+    }
+  }, 150);
+}
+
+// กรอบที่ 1 : ขั้นจองคิว + เปิดฟอร์มที่วันเปิดรับวันแรก
+driveFrame('f1', (w) => {
+  w.goStep(1);
+  const d = new Date();
+  for (let i = 0; i < 30; i++) {
+    if ([1, 2, 3].includes(d.getDay()) && d >= new Date().setHours(0, 0, 0, 0)) break;
+    d.setDate(d.getDate() + 1);
+  }
+  const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  setTimeout(() => w.pickDate(iso), 400);
+});
+
+// กรอบที่ 2 : ขั้นแบบฟอร์มส่งตรวจ พร้อมตัวอย่าง 3 รายการ
+driveFrame('f2', (w) => {
+  w.goStep(2);
+  const sel = w.document.getElementById('sb-service');
+  sel.value = 'WTS_03'; w.onServiceChange();
+  w.document.getElementById('sb-ward').value = 'หอผู้ป่วยวิกฤต ICU ชั้น 5';
+  w.setItemCount(3);
+  ['อ่างล้างมือหน้าเตียง 1', 'ก๊อกน้ำห้องเตรียมยา', 'พื้นผิวรถทำแผล'].forEach((v, i) => {
+    w.App.items[i].location_name = v;
+    const box = w.document.querySelectorAll('#sb-items > div')[i];
+    if (box) box.querySelector('input').value = v;
+  });
+});
+
+// กรอบที่ 3 : ขั้นดูผล
+driveFrame('f3', (w) => w.goStep(4));
+
+/* ---------------------------------------------------------------------------
+ * 2) วาด Flex Message จาก JSON จริง
+ *    แปลง bubble -> HTML แบบตรงไปตรงมา (header / body / footer)
+ * ------------------------------------------------------------------------- */
+const SIZE = { xxs: '10px', xs: '11px', sm: '13px', md: '15px', lg: '17px' };
+
+function renderNode(n) {
+  if (!n) return '';
+  if (Array.isArray(n)) return n.map(renderNode).join('');
+
+  if (n.type === 'text') {
+    return `<div style="font-size:${SIZE[n.size] || '13px'};color:${n.color || '#333'};
+      font-weight:${n.weight === 'bold' ? 700 : 400};flex:${n.flex != null ? n.flex : 'initial'};
+      line-height:1.45;${n.wrap ? '' : 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'}">${n.text}</div>`;
+  }
+  if (n.type === 'separator') return '<div style="height:1px;background:#e8e8e8;margin:8px 0"></div>';
+  if (n.type === 'button') {
+    return `<div style="background:${n.color || '#6c5070'};color:#fff;text-align:center;padding:9px;
+      border-radius:6px;font-size:12px;font-weight:700">${n.action.label}</div>`;
+  }
+  if (n.type === 'box') {
+    const dir = n.layout === 'baseline' || n.layout === 'horizontal' ? 'row' : 'column';
+    const gap = { sm: '6px', md: '10px', lg: '14px' }[n.spacing] || '4px';
+    return `<div style="display:flex;flex-direction:${dir};gap:${gap};
+      ${n.backgroundColor ? `background:${n.backgroundColor};` : ''}
+      ${n.cornerRadius ? 'border-radius:8px;' : ''}
+      ${n.paddingAll ? `padding:${n.paddingAll};` : ''}
+      ${n.margin ? `margin-top:${{ sm: '6px', md: '10px' }[n.margin] || '4px'};` : ''}">${renderNode(n.contents)}</div>`;
+  }
+  return '';
+}
+
+function renderBubble(bubble, altText) {
+  return `<div style="width:320px;border-radius:14px;overflow:hidden;background:#fff;
+    box-shadow:0 8px 22px -8px rgba(43,33,48,.35)">
+    ${renderNode(bubble.header)}
+    <div style="padding:14px">${renderNode(bubble.body.contents)}</div>
+    ${bubble.footer ? `<div style="padding:0 14px 14px">${renderNode(bubble.footer.contents)}</div>` : ''}
+  </div>
+  <div style="font-size:10px;color:#94a3b8;margin-top:6px;max-width:320px">altText: ${altText}</div>`;
+}
+
+/* ตรวจว่ากรอบใช้งานได้จริงไหม แล้วอธิบายสาเหตุให้ตรงจุด มี 2 กรณีที่ต่างกันคนละเรื่อง
+ *   ก) เข้าถึง contentDocument ไม่ได้เลย -> ถูก X-Frame-Options / CSP บล็อก
+ *   ข) โหลดได้แต่แอปไม่ boot        -> ยังไม่ได้ใส่ LIFF ID และไม่ใช่ localhost จึงไม่มีโปรไฟล์จำลอง
+ */
+function showNotice(html) {
+  document.getElementById('frame-notice-text').innerHTML =
+    '<i class="fas fa-circle-info mr-1.5"></i>' + html;
+  document.getElementById('frame-notice').classList.remove('hidden');
+}
+
+setTimeout(() => {
+  const ids = ['f1', 'f2', 'f3', 'fa'];
+  const reach = (id) => {
+    const f = document.getElementById(id);
+    try { return !!f.contentDocument; } catch (e) { return false; }
+  };
+  const booted = (id) => {
+    try { const w = document.getElementById(id).contentWindow; return !!(w && w.App && w.App.profile); }
+    catch (e) { return false; }
+  };
+
+  if (ids.every(id => !reach(id))) {
+    return showNotice(
+      '<b>กรอบตัวอย่างแสดงไม่ได้บนโดเมนจริง</b> — สาเหตุปกติคือ '
+      + 'เปิดจากเบราว์เซอร์ที่ยังไม่ได้ล็อกอิน LINE → LIFF จึงพาไปหน้าล็อกอินของ LINE '
+      + 'ซึ่ง LINE ห้ามให้เว็บอื่นเอาไปฝัง (อีกสาเหตุคือแคช header เก่า กด Ctrl+Shift+R)<br>'
+      + 'วิธีดูงานจริง: '
+      + '<a href="https://liff.line.me/2011162657-GE5HlbQR" class="underline font-bold">เปิดในแอป LINE บนมือถือ</a>'
+      + ' · เปิดตรงที่ <a href="/liff" class="underline font-bold">/liff</a> และ '
+      + '<a href="/liff/admin" class="underline font-bold">/liff/admin</a>'
+      + ' · หรือดูแบบใช้งานได้จริงด้วย '
+      + '<code class="bg-white/70 px-1 rounded">node test_server.js</code> แล้วเปิด '
+      + '<code class="bg-white/70 px-1 rounded">localhost:4180/liff/preview.html</code>');
+  }
+
+  if (!['f1', 'f2', 'f3'].some(booted)) {
+    return showNotice(
+      '<b>กรอบมือถือแสดงหน้าแจ้งเตือน เพราะยังไม่ได้ใส่ LIFF ID</b> — '
+      + 'บนโดเมนจริง ระบบปิดโปรไฟล์จำลองไว้เพื่อความปลอดภัย จึงต้องมี LIFF ID ก่อนแอปจะเริ่มทำงาน '
+      + '(ใส่ที่ <code class="bg-white/70 px-1 rounded">/liff/js/liff-config.js</code>) · '
+      + 'อยากดูตัวอย่างแบบใช้งานได้เลยตอนนี้ ให้รัน <code class="bg-white/70 px-1 rounded">node test_server.js</code> '
+      + 'แล้วเปิด <code class="bg-white/70 px-1 rounded">localhost:4180/liff/preview.html</code>');
+  }
+}, 9000);
+
+const samples = [
+  ['จองคิว', LiffFlex.buildBookingFlex({
+    service_code: 'WTS_03', service_name: 'Water or Surface', department: 'งานควบคุมโรคติดเชื้อ',
+    sender_name: 'พว.สมหญิง ใจดี', contact_number: '9341', sample_count: 12,
+    notes: 'ตรวจประจำเดือน ICU', booking_date_th: '24 สิงหาคม 2569', line_display_name: 'Somying'
+  }), 'จองคิวส่งตรวจ WTS-03 วันที่ 24 ส.ค. 2569'],
+
+  ['รับสิ่งส่งตรวจ', LiffFlex.buildSubmissionFlex({
+    submission_no: 'WTS-6908-1204', service_code: 'WTS_03', department: 'งานควบคุมโรคติดเชื้อ',
+    ward_room: 'หอผู้ป่วยวิกฤต ICU ชั้น 5', sampling_date_th: '24 สิงหาคม 2569',
+    item_count: 12, line_display_name: 'Somying'
+  }), 'รับสิ่งส่งตรวจ WTS-6908-1204 (12 รายการ)'],
+
+  ['ผลผ่านเกณฑ์', LiffFlex.buildResultFlex({
+    submission_no: 'WTS-6908-1204', service_code: 'WTS_03', department: 'งานควบคุมโรคติดเชื้อ',
+    reported_date_th: '27 สิงหาคม 2569', item_count: 12, has_fail: false
+  }), 'ผลตรวจ WTS-6908-1204 ผ่านเกณฑ์'],
+
+  ['ผลพบเชื้อ', LiffFlex.buildResultFlex({
+    submission_no: 'AIR-6908-0871', service_code: 'AIR_01', department: 'งานอาชีวอนามัยฯ',
+    reported_date_th: '27 สิงหาคม 2569', item_count: 8, has_fail: true
+  }), 'ผลตรวจ AIR-6908-0871 พบเชื้อ']
+];
+
+document.getElementById('flex-preview').innerHTML = samples.map(([label, bubble, alt]) =>
+  `<div><div class="text-[11px] font-bold text-slate-500 mb-2">${label}</div>${renderBubble(bubble, alt)}</div>`
+).join('');
+</script>
+</body>
+</html>
