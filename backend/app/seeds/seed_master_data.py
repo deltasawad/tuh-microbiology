@@ -33,7 +33,7 @@ def seed_database():
 
         # 2. Staff (6 Medical Technologists)
         staff_data = [
-            {"title": "ทนพญ.", "first_name": "นริศรา", "last_name": "มังกรแก้ว", "license_no": "ทน.5596"},
+            {"title": "ทนพญ.", "first_name": "ปราญชลี", "last_name": "หรั่งอ่อน", "license_no": "ทน.5596"},
             {"title": "ทนพ.", "first_name": "มานพ", "last_name": "นันตาบุตร", "license_no": "ทน.17500"},
             {"title": "ทนพญ.", "first_name": "อนันตพร", "last_name": "ฉันท์ผ่อง", "license_no": "ทน.5653"},
             {"title": "ทนพญ.", "first_name": "พนารัตน์", "last_name": "เหมะธุลิน", "license_no": "ทน.5969"},
@@ -92,12 +92,12 @@ def seed_database():
 
         # 5. Default Users with Secure Argon2/Bcrypt Hashing
         staff_manop = db.query(Staff).filter(Staff.first_name == "มานพ").first()
-        staff_narisara = db.query(Staff).filter(Staff.first_name == "นริศรา").first()
+        staff_narisara = db.query(Staff).filter(Staff.first_name == "ปราญชลี").first()
         
         users_data = [
             {"username": "admin", "password_hash": get_password_hash("AdminTUH@2026!"), "full_name": "ผู้ดูแลระบบ งานจุลชีววิทยา", "role": "admin"},
             {"username": "tech_manop", "password_hash": get_password_hash("Tech@1234"), "full_name": "ทนพ.มานพ นันตาบุตร", "role": "technician", "staff_id": staff_manop.id if staff_manop else None},
-            {"username": "approver_narisara", "password_hash": get_password_hash("Approver@1234"), "full_name": "ทนพญ.นริศรา มังกรแก้ว", "role": "approver", "staff_id": staff_narisara.id if staff_narisara else None},
+            {"username": "approver_pranchalee", "password_hash": get_password_hash("Approver@1234"), "full_name": "ทนพญ.ปราญชลี หรั่งอ่อน", "role": "approver", "staff_id": staff_narisara.id if staff_narisara else None},
             {"username": "occhealth", "password_hash": get_password_hash("Occ@1234"), "full_name": "เจ้าหน้าที่ งานอาชีวอนามัย", "role": "requester"}
         ]
 
@@ -111,7 +111,7 @@ def seed_database():
         print("Default Users Created:")
         print("  - Admin: admin / AdminTUH@2026!")
         print("  - Technician (Reporter): tech_manop / Tech@1234")
-        print("  - Approver (Reviewer): approver_narisara / Approver@1234")
+        print("  - Approver (Reviewer): approver_pranchalee / Approver@1234")
         print("  - Requester: occhealth / Occ@1234")
 
     except Exception as e:

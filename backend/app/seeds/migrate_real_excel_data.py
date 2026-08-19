@@ -66,7 +66,7 @@ def migrate_real_data():
 
         admin_user = db.query(User).filter(User.role == "admin").first()
         staff_manop = db.query(Staff).filter(Staff.first_name == "มานพ").first()
-        staff_narisara = db.query(Staff).filter(Staff.first_name == "นริศรา").first()
+        staff_narisara = db.query(Staff).filter(Staff.first_name == "ปราญชลี").first()
 
         # ---------------------------------------------------------
         # 1. Migrate Air Sampling Excel Data

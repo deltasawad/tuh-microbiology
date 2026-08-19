@@ -14,6 +14,7 @@ from app.api.bookings import router as bookings_router
 from app.api.reports import router as reports_router
 from app.api.audit import router as audit_router
 from app.api.dashboard import router as dashboard_router
+from app.api.notify import router as notify_router
 from app.seeds.seed_master_data import seed_database
 from app.seeds.migrate_real_excel_data import migrate_real_data
 
@@ -21,13 +22,6 @@ from app.seeds.migrate_real_excel_data import migrate_real_data
 async def lifespan(app: FastAPI):
     os.makedirs(os.path.join(settings.STORAGE_PATH, "reports"), exist_ok=True)
     os.makedirs(os.path.join(settings.STORAGE_PATH, "signatures"), exist_ok=True)
-    
-    try:
-        Base.metadata.create_all(bind=engine)
-        seed_database()
-        migrate_real_data()
-    except Exception as e:
-        print(f"Startup notice: {e}")
     yield
 
 app = FastAPI(
@@ -60,6 +54,8 @@ app.include_router(bookings_router, prefix=api_prefix)
 app.include_router(reports_router, prefix=api_prefix)
 app.include_router(audit_router, prefix=api_prefix)
 app.include_router(dashboard_router, prefix=api_prefix)
+app.include_router(notify_router, prefix=api_prefix)
+app.include_router(notify_router, prefix="/api")
 
 @app.get("/api/health", tags=["Health"])
 def health_check():
@@ -87,6 +83,7 @@ if frontend_dir:
     css_dir = os.path.join(frontend_dir, "css")
     js_dir = os.path.join(frontend_dir, "js")
     assets_dir = os.path.join(frontend_dir, "assets")
+    images_dir = os.path.join(frontend_dir, "images")
 
     if os.path.exists(css_dir):
         app.mount("/css", StaticFiles(directory=css_dir), name="css")
@@ -94,6 +91,23 @@ if frontend_dir:
         app.mount("/js", StaticFiles(directory=js_dir), name="js")
     if os.path.exists(assets_dir):
         app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+    if os.path.exists(images_dir):
+        app.mount("/images", StaticFiles(directory=images_dir), name="images")
+
+    # Favicon & Brand Icon routes
+    @app.get("/favicon.ico", include_in_schema=False)
+    def serve_favicon_ico():
+        fav_path = os.path.join(frontend_dir, "favicon.ico")
+        if os.path.exists(fav_path):
+            return FileResponse(fav_path)
+        return FileResponse(os.path.join(frontend_dir, "images", "tuh-logo.png"))
+
+    @app.get("/favicon.png", include_in_schema=False)
+    def serve_favicon_png():
+        fav_path = os.path.join(frontend_dir, "favicon.png")
+        if os.path.exists(fav_path):
+            return FileResponse(fav_path)
+        return FileResponse(os.path.join(frontend_dir, "images", "tuh-logo.png"))
 
     # Serve index.html as default landing root
     @app.get("/", include_in_schema=False)
@@ -123,6 +137,14 @@ if frontend_dir:
     @app.get("/booking.html", include_in_schema=False)
     def serve_booking():
         return FileResponse(os.path.join(frontend_dir, "booking.html"))
+
+    @app.get("/workflow.html", include_in_schema=False)
+    def serve_workflow():
+        return FileResponse(os.path.join(frontend_dir, "workflow.html"))
+
+    @app.get("/admin.html", include_in_schema=False)
+    def serve_admin():
+        return FileResponse(os.path.join(frontend_dir, "admin.html"))
 
     @app.get("/audit.html", include_in_schema=False)
     def serve_audit():

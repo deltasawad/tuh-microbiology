@@ -23,9 +23,9 @@ def run_air_workflow_tests():
     dept = db.query(Department).first()
     wards = db.query(Ward).limit(3).all()
     tech_user = db.query(User).filter(User.username == "tech_manop").first()
-    approver_user = db.query(User).filter(User.username == "approver_narisara").first()
+    approver_user = db.query(User).filter(User.username == "approver_pranchalee").first()
     staff_manop = db.query(Staff).filter(Staff.first_name == "มานพ").first()
-    staff_narisara = db.query(Staff).filter(Staff.first_name == "นริศรา").first()
+    staff_narisara = db.query(Staff).filter(Staff.first_name == "ปราญชลี").first()
 
     assert service is not None, "AIR-01 service must exist"
     assert dept is not None, "Department must exist"
