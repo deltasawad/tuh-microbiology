@@ -1,0 +1,9 @@
+# Netlify Clean URLs & Routing
+/workflow       /workflow.html      200
+/dashboard      /dashboard.html     200
+/admin          /admin.html         200
+/login          /login.html         200
+/report_view    /report_view.html   200
+/booking        /workflow.html?tab=calendar 301
+/air            /workflow.html?service=AIR_01 301
+/audit          /admin.html         301

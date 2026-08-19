@@ -9,7 +9,9 @@
     { "source": "/dashboard", "destination": "/dashboard.html" },
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/login", "destination": "/login.html" },
-    { "source": "/report_view", "destination": "/report_view.html" }
+    { "source": "/report_view", "destination": "/report_view.html" },
+    { "source": "/liff", "destination": "/liff/index.html" },
+    { "source": "/liff/admin", "destination": "/liff/admin.html" }
   ],
   "headers": [
     {
@@ -21,7 +23,7 @@
         },
         {
           "key": "X-Frame-Options",
-          "value": "DENY"
+          "value": "SAMEORIGIN"
         },
         {
           "key": "X-XSS-Protection",

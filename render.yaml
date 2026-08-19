@@ -1,3 +1,22 @@
+# ==============================================================================
+# Render Blueprint — TUH Microbiology (FastAPI backend)
+# ==============================================================================
+#
+# ห้ามใส่รหัสผ่าน / คีย์ลับ ลงในไฟล์นี้เด็ดขาด
+# ไฟล์นี้ถูก commit เข้า git และเคยทำให้รหัสผ่านฐานข้อมูลหลุดสู่สาธารณะมาแล้ว
+#
+# ค่าที่เป็นความลับใช้ `sync: false` ทั้งหมด หมายถึง
+# "ไม่ต้องเอาค่าจากไฟล์นี้ ให้ไปตั้งใน Render Dashboard แทน"
+#   -> Dashboard > เลือก service > Environment > Add Environment Variable
+#
+# ค่าที่ต้องตั้งเองใน Dashboard:
+#   DATABASE_URL   = สายเชื่อมต่อ Supabase (คัดลอกจาก Supabase -> Project Settings -> Database)
+#   JWT_SECRET_KEY = สตริงสุ่มยาว ๆ (กด Generate ใน Render ได้)
+#
+# หมายเหตุ: ถ้าเคยตั้งค่าไว้ใน Dashboard แล้ว ค่าเดิมจะยังอยู่
+#           การเปลี่ยนมาใช้ sync: false จะไม่ลบค่าที่ตั้งไว้
+# ==============================================================================
+
 services:
   - type: web
     name: tuh-microbiology
@@ -7,14 +26,11 @@ services:
     plan: free
     autoDeploy: true
     envVars:
+      # ---------- ค่าทั่วไป (ไม่เป็นความลับ เก็บในไฟล์ได้) ----------
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: ENVIRONMENT
         value: production
-      - key: DATABASE_URL
-        value: postgresql://postgres.tgctyouhzsyizlosrmqh:REMOVED__USE_ENV_DATABASE_URL@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres
-      - key: JWT_SECRET_KEY
-        value: 9f8234ab8e76c12d3450918ef029c81726a45b9012cd34ef567890abcdef1234
       - key: JWT_ALGORITHM
         value: HS256
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
@@ -25,3 +41,22 @@ services:
         value: ./storage
       - key: CORS_ORIGINS
         value: '["*"]'
+
+      # ---------- ค่าที่เป็นความลับ: ตั้งใน Render Dashboard เท่านั้น ----------
+      # สายเชื่อมต่อฐานข้อมูล Supabase (มีรหัสผ่านอยู่ข้างใน)
+      - key: DATABASE_URL
+        sync: false
+
+      # กุญแจเซ็น JWT ของระบบล็อกอิน backend
+      - key: JWT_SECRET_KEY
+        sync: false
+
+      # ---------- แจ้งเตือน (ถ้าจะให้ backend ส่งเอง ค่อยตั้งเพิ่ม) ----------
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_GROUP_ID
+        sync: false

@@ -1,0 +1,32 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/workflow"
+  to = "/workflow.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/report_view"
+  to = "/report_view.html"
+  status = 200
+
+[[redirects]]
+  from = "/booking"
+  to = "/workflow.html?tab=calendar"
+  status = 301
