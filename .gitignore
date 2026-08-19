@@ -36,3 +36,6 @@ Desktop.ini
 _backup_*
 downloaded_raw/
 recovered/
+
+# คอนฟิก MCP แบบ project scope เก็บ token ไว้ในไฟล์ ห้ามขึ้น repo สาธารณะ
+.mcp.json
