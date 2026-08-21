@@ -514,6 +514,43 @@ async function saveResults() {
 
   const hasFail = items.some(it => it.item_result === 'fail');
 
+  // ----------------------------------------------------------------------------
+  // ค่าที่คีย์เกินเกณฑ์แต่สรุปว่า "ผ่าน" ต้องถามก่อน
+  // เจอจริงในใบ AIR-2026-08-21-79: Fungus 200 CFU/m³ (เกณฑ์ < 100) แต่สรุปผ่าน
+  // ใบรายงานจึงพิมพ์ตัวเลขที่เกินเกณฑ์คู่กับคำว่าผ่าน ซึ่งขัดกันเอง
+  // ไม่เปลี่ยนคำตัดสินให้อัตโนมัติ เพราะเป็นดุลพินิจของนักเทคนิคการแพทย์
+  // ----------------------------------------------------------------------------
+  const limits = (window.LIFF_RESULT_LIMITS || {})[Admin.active.service_code] || {};
+  const overLimit = [];
+  items.forEach(it => {
+    if (it.item_result !== 'pass') return;
+    Object.keys(limits).forEach(k => {
+      const lim = limits[k];
+      const n = parseFloat(it[k]);
+      if (Number.isFinite(n) && n >= lim.max) {
+        overLimit.push(`แถวที่ ${it.item_no}: ${lim.label} = ${n} ${lim.unit} (เกณฑ์ < ${lim.max})`);
+      }
+    });
+  });
+
+  if (overLimit.length) {
+    const go = await Swal.fire({
+      icon: 'warning',
+      title: 'ค่าเกินเกณฑ์แต่สรุปว่าผ่าน',
+      html: '<div class="text-left text-sm text-slate-600 leading-relaxed">'
+          + '<div class="mb-2">พบ <b class="text-amber-600">' + overLimit.length + ' รายการ</b> ที่ค่าถึงหรือเกินเกณฑ์มาตรฐาน แต่ช่องสรุปผลเลือกไว้ว่า <b>ผ่าน</b></div>'
+          + '<div class="text-xs bg-amber-50 border border-amber-200 rounded-lg p-2.5 font-mono">'
+          + overLimit.join('<br>') + '</div>'
+          + '<div class="mt-2 text-xs text-slate-500">ถ้ายืนยัน ใบรายงานจะพิมพ์ตัวเลขนี้คู่กับผลว่าผ่าน</div></div>',
+      showCancelButton: true,
+      confirmButtonText: 'ยืนยันตามที่คีย์',
+      cancelButtonText: 'กลับไปแก้',
+      confirmButtonColor: '#d97706',
+      cancelButtonColor: '#6c5070'
+    });
+    if (!go.isConfirmed) return;
+  }
+
   const confirm = await Swal.fire({
     icon: hasFail ? 'warning' : 'question',
     title: 'ยืนยันการลงผลตรวจ',

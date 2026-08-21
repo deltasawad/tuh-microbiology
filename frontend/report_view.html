@@ -335,15 +335,40 @@
         return;
       }
 
-      // Populate Metadata
-      // Populate Metadata
-      const isDrugBioburden = (rep.service_code === 'DRG_08') || (rep.service_name && rep.service_name.includes('ปนเปื้อน'));
-      const isDrugSterility = !isDrugBioburden && ((rep.service_code === 'DRG_07') || (rep.service_name && (rep.service_name.includes('Drug') || rep.service_name.includes('ยา') || rep.service_name.includes('Compounding'))) || (rep.department && (rep.department.includes('ผลิตยา') || rep.department.includes('เภสัช'))));
+      // ==========================================================================
+      // ตัดสินว่าใบนี้เป็นรายงานชนิดไหน เพื่อเลือกคอลัมน์ของตาราง
+      // --------------------------------------------------------------------------
+      // ⚠️ service_code คือคำตอบสุดท้ายเสมอเมื่อมีค่า
+      //    เดิมโค้ดยอมให้ "ชื่อหน่วยงาน" ตัดสินด้วย ทำให้ใบ AIR ที่ส่งโดย
+      //    งานธนาคารเลือดถูกจับเป็น Sterility แล้ววาดคอลัมน์ ปลอดเชื้อ/ไม่ปลอดเชื้อ
+      //    แทนที่จะเป็นจำนวนโคโลนี (Bacteria / Fungus) ตามแบบฟอร์ม AIR
+      //    หน่วยงานไหนก็ส่งตรวจบริการไหนก็ได้ จึงใช้หน่วยงานตัดสินไม่ได้
+      //
+      //    ชื่อบริการและหน่วยงานยังใช้เดาได้อยู่ แต่เฉพาะใบเก่าที่ไม่มี service_code
+      // ==========================================================================
+      const CODE = String(rep.service_code || '').toUpperCase();
+      const hasCode = /^(AIR_01|STR_02|WTS_03|WTO_04|WTM_05|FOD_06|DRG_07|DRG_08)$/.test(CODE);
+
+      const guess = (codes, nameWords, deptWords) => {
+        if (hasCode) return codes.includes(CODE);            // มีรหัส -> เชื่อรหัสอย่างเดียว
+        const n = rep.service_name || '';
+        const d = rep.department || '';
+        return nameWords.some(w => n.includes(w)) || deptWords.some(w => d.includes(w));
+      };
+
+      const isAir           = guess(['AIR_01'], ['Air Sampling', 'อากาศ'], ['อาชีวอนามัย']);
+      const isDrugBioburden = guess(['DRG_08'], ['ปนเปื้อน'], []);
+      const isDrugSterility = !isDrugBioburden &&
+                              guess(['DRG_07'], ['Drug', 'ยา', 'Compounding'], ['ผลิตยา', 'เภสัช']);
       const isDrug = isDrugBioburden || isDrugSterility;
-      const isFood = !isDrug && ((rep.service_code === 'FOD_06') || (rep.service_name && (rep.service_name.includes('Food') || rep.service_name.includes('อาหาร') || rep.service_name.includes('โภชนาการ'))) || (rep.department && rep.department.includes('โภชนาการ')));
-      const isWaterSurface = !isDrug && !isFood && ((rep.service_code === 'WTS_03' || rep.service_code === 'WTO_04' || rep.service_code === 'WTM_05') || (rep.service_name && (rep.service_name.includes('Water') || rep.service_name.includes('Surface') || rep.service_name.includes('น้ำ') || rep.service_name.includes('พื้นผิว'))) || (rep.department && (rep.department.includes('ควบคุมโรคติดเชื้อ') || rep.department.includes('IC'))));
-      const isSterility = !isDrug && !isFood && !isWaterSurface && ((rep.service_code === 'STR_02') || (rep.service_name && rep.service_name.includes('Sterility')) || (rep.department && rep.department.includes('ธนาคารเลือด')));
-      
+      const isFood = !isDrug && guess(['FOD_06'], ['Food', 'อาหาร', 'โภชนาการ'], ['โภชนาการ']);
+      const isWaterSurface = !isDrug && !isFood &&
+                             guess(['WTS_03', 'WTO_04', 'WTM_05'],
+                                   ['Water', 'Surface', 'น้ำ', 'พื้นผิว'],
+                                   ['ควบคุมโรคติดเชื้อ', 'IC']);
+      const isSterility = !isDrug && !isFood && !isWaterSurface && !isAir &&
+                          guess(['STR_02'], ['Sterility'], ['ธนาคารเลือด']);
+
       let serviceDisplay = 'Food Sanitation (สำหรับงานโภชนาการ)';
       if (isDrugBioburden) {
         serviceDisplay = rep.service_name || 'แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์';
@@ -785,7 +810,8 @@
       } else {
         // Default Air Sampling and Environmental Tests
         if (tableTitleEl) tableTitleEl.textContent = 'รายการตรวจวิเคราะห์คุณภาพอากาศ (Air Sampling Settle Plate Results)';
-        if (tableStdEl) tableStdEl.textContent = 'เกณฑ์มาตรฐาน: < 500 CFU/m³ หรือ ไม่พบเชื้อก่อโรค';
+        // ให้ตรงกับ SERVICES_CONFIG.AIR_01 ใน js/db.js ไม่งั้นเกณฑ์บนใบรายงานกับในระบบจะคนละค่า
+        if (tableStdEl) tableStdEl.textContent = 'หน่วยวัด: CFU/m³  |  เกณฑ์มาตรฐาน: Total Bacteria < 500 CFU/m³, Fungi < 100 CFU/m³';
         if (theadEl) {
           theadEl.innerHTML = `
             <tr class="bg-slate-100 text-slate-800 font-bold border-b border-slate-300">

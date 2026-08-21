@@ -118,6 +118,23 @@ const LIFF_RESULT_SCHEMAS = {
   DRG_08: [{ key: 'bacteria_count', label: 'ผล 72 ชม. (Growth/No growth)', type: 'growth' }]
 };
 
+/**
+ * เกณฑ์เชิงตัวเลขสำหรับบริการที่รายงานเป็นปริมาณ
+ * ------------------------------------------------------------------------------
+ * ใช้เตือนตอนลงผล ถ้าค่าที่คีย์เกินเกณฑ์แต่สรุปผลเป็น "ผ่าน"
+ * ตั้งใจให้เป็นแค่คำเตือน ไม่เปลี่ยนคำตัดสินให้อัตโนมัติ
+ * เพราะการสรุปผลเป็นดุลพินิจของนักเทคนิคการแพทย์
+ *
+ * ค่าอ้างอิงจาก SERVICES_CONFIG.standard ใน frontend/js/db.js
+ */
+const LIFF_RESULT_LIMITS = {
+  AIR_01: {
+    bacteria_count: { max: 500, label: 'Bacteria', unit: 'CFU/m³' },
+    fungus_count:   { max: 100, label: 'Fungus',   unit: 'CFU/m³' }
+  }
+};
+
+window.LIFF_RESULT_LIMITS = LIFF_RESULT_LIMITS;
 window.LIFF_CONFIG = LIFF_CONFIG;
 window.LIFF_SERVICES = LIFF_SERVICES;
 window.LIFF_RESULT_SCHEMAS = LIFF_RESULT_SCHEMAS;
