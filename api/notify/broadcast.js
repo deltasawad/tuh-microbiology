@@ -15,11 +15,32 @@
  * ไฟล์นี้คือตัวเดียวกันสำหรับ Vercel (ซึ่งไม่อ่านโฟลเดอร์ netlify/functions)
  * frontend/js/notify.js เรียก '/api/notify/broadcast' เป็นอันดับแรกอยู่แล้ว
  *
- * ข้อมูลลับทั้งหมดมาจาก Environment Variables เท่านั้น ไม่มีค่าสำรองในโค้ด:
- *    TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, LINE_CHANNEL_ACCESS_TOKEN, LINE_GROUP_ID
+ * ข้อมูลลับทั้งหมดมาจาก Environment Variables เท่านั้น ไม่มีค่าสำรองในโค้ด
  * repo นี้เป็นสาธารณะ การฝังค่าไว้เท่ากับเผยแพร่ และประวัติ git ลบทีหลังได้ยาก
  * ถ้าตั้งไม่ครบ ช่องทางนั้นจะข้ามไปพร้อมบอกเหตุผล ดีกว่าเงียบแล้วหาสาเหตุไม่เจอ
+ *
+ * ------------------------------------------------------------------------------
+ * ช่องทางไหนได้แจ้งเตือนเหตุการณ์ไหน
+ * ------------------------------------------------------------------------------
+ *   เหตุการณ์      LINE (กลุ่ม 14 คน)   Telegram
+ *   booking        ส่ง                  ส่ง
+ *   submission     ไม่ส่ง               ส่ง
+ *   result         ไม่ส่ง               ส่ง
+ *
+ * LINE จำกัดเฉพาะการจองคิว เพราะแผนฟรีมี 300 ข้อความ/เดือน และ push เข้ากลุ่ม
+ * หักตามจำนวนสมาชิก กลุ่มนี้มี 14 คน = หัก 14 ต่อการแจ้ง 1 ครั้ง
+ * ถ้าแจ้งทุกเหตุการณ์จะหมดโควตาภายในไม่กี่วัน
+ *
+ * ⚠️ LINE ที่ใช้แจ้งเตือนเป็นคนละบัญชีกับที่ใช้ทำ LIFF/Rich Menu/webhook
+ *      LINE_NOTIFY_TOKEN + LINE_NOTIFY_GROUP_ID  -> @518oehqa (microlabtuh)
+ *        บัญชีเดิมที่อยู่ในกลุ่มแจ้งเตือน 14 คนอยู่แล้ว ใช้เฉพาะแจ้งการจอง
+ *      LINE_CHANNEL_ACCESS_TOKEN                 -> @569knxox
+ *        บัญชีใหม่ ใช้กับ webhook, Rich Menu และการตอบแชท ไม่ใช้แจ้งเตือน
+ *    สองตัวนี้สลับกันไม่ได้ ถ้าใช้ผิดบัญชีจะได้ 403 เพราะบอทไม่ได้อยู่ในกลุ่มนั้น
  */
+
+/** เหตุการณ์ไหนส่งเข้า LINE บ้าง — ที่เหลือไป Telegram อย่างเดียว */
+const LINE_EVENTS = ['booking'];
 
 
 /** LINE รับได้เฉพาะ plain text -> ตัด HTML tag ของ Telegram ทิ้ง และจำกัดความยาว */
@@ -120,15 +141,28 @@ module.exports = async function handler(req, res) {
   // และ endpoint นี้เปิดสาธารณะ การรับข้อมูลลับจาก body จึงเป็นช่องทางที่ไม่ควรมี
   const tgToken = process.env.TELEGRAM_BOT_TOKEN;
   const tgChat = process.env.TELEGRAM_CHAT_ID;
-  const lineToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-  const lineGroup = process.env.LINE_GROUP_ID;
+  const lineToken = process.env.LINE_NOTIFY_TOKEN;
+  const lineGroup = process.env.LINE_NOTIFY_GROUP_ID;
+
+  // ชนิดเหตุการณ์ตัดสินว่าจะส่งเข้า LINE ด้วยหรือไม่
+  // ตัดสินที่เซิร์ฟเวอร์ ไม่ปล่อยให้ฝั่งเบราว์เซอร์กำหนดเอง
+  // ถ้าไม่ระบุมา ถือว่าไม่ใช่การจอง -> Telegram อย่างเดียว
+  const event = String(body.event || 'other').toLowerCase();
+  const lineWanted = LINE_EVENTS.includes(event);
 
   // body.flex = Flex Message จาก LIFF (frontend/liff/js/liff-flex.js)
   // Telegram ไม่รองรับการ์ด จึงใช้ text เสมอ ส่วน LINE จะได้การ์ดถ้าส่ง flex มา
-  const results = await Promise.all([
-    pushTelegram(String(text), tgToken, tgChat),
-    pushLine(String(text), lineToken, lineGroup, body.flex)
-  ]);
+  const jobs = [pushTelegram(String(text), tgToken, tgChat)];
+  jobs.push(lineWanted
+    ? pushLine(String(text), lineToken, lineGroup, body.flex)
+    : Promise.resolve({ channel: 'LINE', ok: false, skipped: true,
+        error: 'ข้ามตามนโยบาย — LINE แจ้งเตือนเฉพาะการจองคิว (event=' + event + ')' }));
 
-  return res.status(200).json({ success: results.some(r => r.ok), results });
+  const results = await Promise.all(jobs);
+
+  return res.status(200).json({
+    success: results.some(r => r.ok),
+    event,
+    results
+  });
 };

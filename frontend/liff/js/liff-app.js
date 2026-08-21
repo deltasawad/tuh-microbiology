@@ -450,7 +450,7 @@ async function submitBooking(ev) {
     booking_date_th: fmtThai(App.selectedDate, true),
     link: location.origin + '/workflow.html'
   });
-  const notify = await LiffFlex.sendToLabGroup(flex, `จองคิวส่งตรวจ ${svc.short} วันที่ ${fmtThai(App.selectedDate)}`);
+  const notify = await LiffFlex.sendToLabGroup(flex, `จองคิวส่งตรวจ ${svc.short} วันที่ ${fmtThai(App.selectedDate)}`, 'booking');
 
   await Swal.fire({
     icon: 'success',
@@ -636,7 +636,7 @@ async function submitSamples(ev) {
     item_count: rows.length,
     link: location.origin + '/liff/admin'
   });
-  const notify = await LiffFlex.sendToLabGroup(flex, `รับสิ่งส่งตรวจ ${submissionNo} (${rows.length} รายการ)`);
+  const notify = await LiffFlex.sendToLabGroup(flex, `รับสิ่งส่งตรวจ ${submissionNo} (${rows.length} รายการ)`, 'submission');
 
   await Swal.fire({
     icon: 'success',

@@ -645,7 +645,7 @@ async function saveResults() {
     link: location.origin + '/report_view.html?id=' + encodeURIComponent(Admin.active.submission_no)
   });
   const notify = await window.LiffFlex.sendToLabGroup(flex,
-    `ผลตรวจ ${Admin.active.submission_no} ${hasFail ? 'พบเชื้อ' : 'ผ่านเกณฑ์'}`);
+    `ผลตรวจ ${Admin.active.submission_no} ${hasFail ? 'พบเชื้อ' : 'ผ่านเกณฑ์'}`, 'result');
 
   await Swal.fire({
     icon: 'success', title: 'ออกผลเรียบร้อย',

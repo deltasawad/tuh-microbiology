@@ -50,7 +50,9 @@ const NotifyService = {
             headers: { 'Content-Type': 'application/json' },
             // ส่งเฉพาะข้อความ ไม่ส่ง token ใด ๆ จากฝั่งเบราว์เซอร์
             // token ทั้งหมดอยู่ใน Environment Variables ฝั่งเซิร์ฟเวอร์เท่านั้น
-            body: JSON.stringify({ text: text }),
+            // event บอกเซิร์ฟเวอร์ว่าเป็นเหตุการณ์อะไร
+            // เซิร์ฟเวอร์เป็นคนตัดสินว่าจะส่งเข้า LINE ด้วยไหม (ปัจจุบันเฉพาะ booking)
+            body: JSON.stringify({ text: text, event: options.event || 'other' }),
             signal: AbortSignal.timeout(4000)
           });
           if (proxyRes.ok) {
@@ -141,7 +143,8 @@ const NotifyService = {
 ━━━━━━━━━━━━━━━━━━━━━
 🌐 ระบบส่งตรวจและรายงานผล: ${window.location.origin}/workflow.html`;
 
-    return await this.broadcastMessage(text);
+    // การจองคิวเป็นเหตุการณ์เดียวที่ส่งเข้ากลุ่ม LINE ด้วย
+    return await this.broadcastMessage(text, { event: 'booking' });
   },
 
   /**
@@ -162,7 +165,7 @@ const NotifyService = {
 ━━━━━━━━━━━━━━━━━━━━━
 🌐 ดูรายละเอียดในระบบ: ${window.location.origin}/workflow.html?tab=reports`;
 
-    return await this.broadcastMessage(text);
+    return await this.broadcastMessage(text, { event: 'submission' });
   },
 
   /**
@@ -189,7 +192,7 @@ const NotifyService = {
 📄 <b>เปิดดูใบรายงานผลทางการ (PDF):</b>
 ${reportData.report_pdf_url || reportLink}`;
 
-    return await this.broadcastMessage(text);
+    return await this.broadcastMessage(text, { event: 'result' });
   }
 };
 

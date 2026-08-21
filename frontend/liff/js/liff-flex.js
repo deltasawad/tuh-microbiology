@@ -189,12 +189,15 @@ const LiffFlex = {
    *
    * @returns {Promise<{ok:boolean, mocked:boolean, channel:string, detail:any}>}
    */
-  async sendToLabGroup(bubble, altText) {
+  async sendToLabGroup(bubble, altText, event) {
     const payload = {
       // ส่งทั้ง flex และ text: proxy รุ่นใหม่จะใช้ flex, รุ่นเก่าจะใช้ text
       flex: { type: 'flex', altText: altText, contents: bubble },
       altText: altText,
-      text: this.flexToPlainText(bubble, altText)
+      text: this.flexToPlainText(bubble, altText),
+      // ชนิดเหตุการณ์ ให้เซิร์ฟเวอร์ตัดสินว่าจะส่งเข้า LINE ด้วยไหม
+      // ปัจจุบันมีเฉพาะ booking ที่เข้ากลุ่ม LINE ส่วนที่เหลือไป Telegram อย่างเดียว
+      event: event || 'other'
     };
 
     const endpoints = (window.LIFF_CONFIG && window.LIFF_CONFIG.notifyEndpoints) || ['/api/notify/broadcast'];
