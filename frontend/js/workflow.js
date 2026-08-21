@@ -2371,6 +2371,9 @@ async function adminEditReport(reportId) {
     return;
   }
 
+  // กันไม่ให้คีย์ข้อมูลจนเสร็จแล้วเพิ่งมารู้ว่าสิทธิ์เขียนหลุด
+  if (!(await requireWriteSession())) return;
+
   const res = await window.ReportDB.getReportById(reportId);
   const rep = res?.data || (res && res.submission_no ? res : null);
   if (!rep) {
@@ -2523,6 +2526,9 @@ async function adminDeleteReport(reportId) {
     Swal.fire({ icon: 'warning', title: 'เฉพาะผู้ดูแลระบบ', text: 'ต้องเข้าสู่ระบบด้วยสิทธิ์ ADMIN จึงจะลบได้' });
     return;
   }
+
+  // กันไม่ให้คีย์ข้อมูลจนเสร็จแล้วเพิ่งมารู้ว่าสิทธิ์เขียนหลุด
+  if (!(await requireWriteSession())) return;
 
   const res = await window.ReportDB.getReportById(reportId);
   const rep = res?.data || (res && res.submission_no ? res : null);
@@ -2852,6 +2858,9 @@ async function handleAdminSaveResults() {
     return;
   }
 
+  // กันไม่ให้คีย์ข้อมูลจนเสร็จแล้วเพิ่งมารู้ว่าสิทธิ์เขียนหลุด
+  if (!(await requireWriteSession())) return;
+
   Swal.fire({
     title: 'กำลังบันทึกผลการตรวจ...',
     allowOutsideClick: false,
@@ -3097,11 +3106,14 @@ async function findReportRow(id) {
   const pool = (typeof allReports !== 'undefined' && allReports) ? allReports : [];
   let r = pool.find(x => String(x.id) === String(id) || String(x.submission_no) === String(id));
   if (r) return r;
-  const res = await window.supabaseClient.from('reports').select('*').eq('id', id).maybeSingle();
+  // id ที่ส่งมาอาจเป็นเลขที่เอกสารแทน uuid (ตารางใช้ r.id || subNo)
+  const col = isDbId(id) ? 'id' : 'submission_no';
+  const res = await window.supabaseClient.from('reports').select('*').eq(col, id).maybeSingle();
   return res.data || null;
 }
 
 async function deptEditSubmission(id) {
+  if (!(await requireWriteSession())) return;
   const r = await findReportRow(id);
   if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
 
@@ -3156,6 +3168,7 @@ async function deptEditSubmission(id) {
 }
 
 async function deptCancelSubmission(id) {
+  if (!(await requireWriteSession())) return;
   const r = await findReportRow(id);
   if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
 
@@ -3202,6 +3215,28 @@ Object.assign(window, { deptEditSubmission, deptCancelSubmission, canManageRepor
 // "ยกเลิก" ตั้ง status = 'cancelled' ไม่ลบแถว ปฏิทินกรองค่านี้ออกแล้ว
 // ==============================================================================
 
+
+/**
+ * id ที่ใช้กับฐานข้อมูลได้จริงหรือไม่
+ * ------------------------------------------------------------------------------
+ * คิวที่ถูกสร้างไว้ก่อนหน้านี้อาจค้างอยู่ใน localStorage ด้วย id ปลอม 'BK-<timestamp>'
+ * ถ้าส่งเข้า PostgREST จะได้ invalid input syntax for type uuid
+ * ต้องดักไว้ก่อนแล้วจัดการกับสำเนาในเครื่องแทน
+ */
+const isDbId = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(v || ''));
+
+/** ลบคิวที่มีอยู่แค่ในเครื่องออก แล้วรีเฟรชปฏิทิน */
+async function dropLocalBooking(id) {
+  try {
+    const KEY = 'tuh_mock_bookings';
+    const local = JSON.parse(localStorage.getItem(KEY) || '[]');
+    localStorage.setItem(KEY, JSON.stringify(local.filter(b => String(b.id) !== String(id))));
+  } catch (e) {
+    console.warn('ลบสำเนาในเครื่องไม่สำเร็จ:', e);
+  }
+  await renderCalendar(calYear, calMonth);
+}
+
 function canManageBooking(b) {
   if (!currentLoggedUser || !b) return false;
   if (currentLoggedUser.role === 'admin') return true;
@@ -3224,6 +3259,15 @@ async function webEditBooking(id) {
     return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
       text: 'แก้ไขได้เฉพาะคิวของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
   }
+  if (!isDbId(id)) {
+    await Swal.fire({ icon: 'warning', title: 'คิวนี้ไม่ได้อยู่ในฐานข้อมูล',
+      html: '<div class="text-sm text-slate-600 leading-relaxed">คิวนี้เป็นข้อมูลค้างในเครื่องจากการจองที่บันทึกไม่สำเร็จ '
+          + 'แก้ไขไม่ได้<br><br>ระบบจะล้างรายการค้างนี้ออก กรุณาจองใหม่อีกครั้ง</div>',
+      confirmButtonColor: '#6c5070' });
+    return dropLocalBooking(id);
+  }
+
+  if (!(await requireWriteSession())) return;
 
   const res = await Swal.fire({
     title: 'แก้ไขคิวที่จอง',
@@ -3271,6 +3315,17 @@ async function webCancelBooking(id) {
     return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
       text: 'ยกเลิกได้เฉพาะคิวของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
   }
+  if (!isDbId(id)) {
+    const ok = await Swal.fire({ icon: 'warning', title: 'ล้างคิวค้างในเครื่อง?',
+      html: '<div class="text-sm text-slate-600 leading-relaxed">คิวนี้เป็นข้อมูลค้างในเครื่องจากการจองที่บันทึกไม่สำเร็จ '
+          + 'ไม่มีอยู่ในฐานข้อมูล<br><br>ห้องแล็บไม่เห็นคิวนี้อยู่แล้ว ล้างออกได้เลย</div>',
+      showCancelButton: true, confirmButtonText: 'ล้างออก', cancelButtonText: 'ไม่ใช่ตอนนี้',
+      confirmButtonColor: '#e11d48', cancelButtonColor: '#94a3b8' });
+    if (ok.isConfirmed) await dropLocalBooking(id);
+    return;
+  }
+
+  if (!(await requireWriteSession())) return;
 
   const ok = await Swal.fire({
     icon: 'warning', title: 'ยกเลิกคิวนี้?',
@@ -3296,3 +3351,59 @@ async function webCancelBooking(id) {
 }
 
 Object.assign(window, { webEditBooking, webCancelBooking, canManageBooking });
+
+// ==============================================================================
+// ด่านตรวจสิทธิ์เขียนก่อนบันทึกลงฐานข้อมูล
+// ------------------------------------------------------------------------------
+// AuthManager.signIn ทำงานสองชั้นแยกกัน: เก็บโปรไฟล์ลง localStorage (ชั้นหน้าจอ)
+// แล้วค่อยล็อกอิน Supabase ในพื้นหลัง (ชั้นสิทธิ์ฐานข้อมูล)
+// ถ้าเปิดหน้าใหม่ทั้งที่ localStorage ยังจำว่าล็อกอินอยู่ signIn จะไม่ถูกเรียกอีก
+// หน้าจอจึงยังบอกว่าล็อกอินแล้ว แต่ฐานข้อมูลมองเห็นเป็น anon
+//
+// อาการที่เจอจริง: กดบันทึกผลแล้วได้ 42501
+// "new row violates row-level security policy for table reports"
+// เพราะสิทธิ์ anon แก้ใบให้เป็น tested/completed ไม่ได้ตามนโยบาย
+//
+// ฟังก์ชันนี้พยายามต่อ session ให้เงียบ ๆ ก่อน ถ้าไม่ได้จริง ๆ ค่อยบอกผู้ใช้
+// ==============================================================================
+async function ensureWriteSession() {
+  if (!window.supabaseClient) return false;
+
+  const read = async () => {
+    try {
+      const res = await window.supabaseClient.auth.getSession();
+      return res && res.data ? res.data.session : null;
+    } catch (e) { return null; }
+  };
+
+  if (await read()) return true;
+
+  if (window.AuthManager && window.AuthManager.refreshWriteSession) {
+    try { await window.AuthManager.refreshWriteSession(); } catch (e) { /* เช็คผลด้านล่าง */ }
+  }
+  return !!(await read());
+}
+
+/** เรียกก่อนทุกคำสั่งเขียน — คืน true เมื่อเขียนได้จริง */
+async function requireWriteSession() {
+  if (await ensureWriteSession()) return true;
+
+  await Swal.fire({
+    icon: 'error',
+    title: 'บันทึกไม่ได้ — สิทธิ์เขียนหลุด',
+    html: '<div class="text-sm text-slate-600 leading-relaxed text-left">'
+        + 'ระบบยังจำว่าคุณล็อกอินอยู่ แต่การเชื่อมต่อสิทธิ์กับฐานข้อมูลหมดอายุแล้ว '
+        + 'ข้อมูลที่กรอกไว้ยังอยู่บนหน้าจอ<br><br>'
+        + '<b>กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่</b> จากนั้นกดบันทึกอีกครั้ง</div>',
+    confirmButtonText: 'ไปหน้าเข้าสู่ระบบ',
+    showCancelButton: true,
+    cancelButtonText: 'ไว้ทีหลัง',
+    confirmButtonColor: '#6c5070',
+    cancelButtonColor: '#94a3b8'
+  }).then(r => {
+    if (r.isConfirmed) location.href = '/login.html?redirect=' + encodeURIComponent(location.href);
+  });
+  return false;
+}
+
+Object.assign(window, { ensureWriteSession, requireWriteSession });

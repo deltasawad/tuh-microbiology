@@ -312,12 +312,19 @@ const BookingDB = {
     // ❗ ฐานข้อมูลต้องมาก่อนเสมอ (เป็นแหล่งข้อมูลหลัก)
     //    เดิมเอาสำเนาในเครื่องมาก่อน พอ dedupe จึงยึดสำเนาเก่าทับของจริง
     //    อาการ: admin ลงผลแล้ว สถานะในฐานข้อมูลเป็น "ตรวจแล้ว" แต่หน้าจอยังขึ้น "รอตรวจ"
+    // dedupe สองชั้น: ด้วย id และด้วยเนื้อหา
+    // เพราะสำเนาในเครื่องรุ่นเก่าใช้ id ปลอม 'BK-...' ซึ่งไม่มีวันตรงกับ uuid ของจริง
+    // ถ้าเทียบแต่ id คิวเดียวกันจะโผล่สองรายการในปฏิทิน
     const combined = [...dbBookings, ...local, ...initial];
-    const seen = new Set();
+    const seenId = new Set();
+    const seenContent = new Set();
     return combined.filter(b => {
-      const key = b.id || `${b.booking_date}_${b.department}_${b.service_code}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
+      const id = b.id ? String(b.id) : null;
+      if (id && seenId.has(id)) return false;
+      const content = `${b.booking_date}_${b.department}_${b.service_code}_${b.sender_name || ''}`;
+      if (seenContent.has(content)) return false;
+      if (id) seenId.add(id);
+      seenContent.add(content);
       return true;
     }).slice(0, limit);
   },
@@ -361,6 +368,19 @@ const BookingDB = {
           .single();
 
         if (!error && data) {
+          // ⚠️ สำคัญ: ต้องเขียนทับสำเนาในเครื่องด้วย id จริงจากฐานข้อมูล
+          //    เดิมสำเนาในเครื่องค้างที่ id ปลอม 'BK-<timestamp>' ทำให้เกิดสองปัญหา
+          //      1) ปฏิทินเห็นคิวเดียวกันสองรายการ (ตัวจริงกับสำเนา) เพราะ dedupe ใช้ id
+          //      2) กดแก้ไข/ยกเลิกจากสำเนาแล้วยิง .eq('id','BK-...') เข้าฐานข้อมูล
+          //         ได้ error: invalid input syntax for type uuid
+          try {
+            const local = JSON.parse(localStorage.getItem(MOCK_STORAGE_KEY_BOOKINGS) || '[]');
+            const i = local.findIndex(b => b.id === newBooking.id);
+            if (i >= 0) local[i] = { ...local[i], ...data, id: data.id };
+            localStorage.setItem(MOCK_STORAGE_KEY_BOOKINGS, JSON.stringify(local));
+          } catch (e) {
+            console.warn('อัปเดต id ของสำเนาในเครื่องไม่สำเร็จ:', e);
+          }
           return { data: { ...newBooking, id: data.id }, error: null };
         }
       } catch (err) {
