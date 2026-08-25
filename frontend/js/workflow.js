@@ -2365,6 +2365,69 @@ function renderReportsArchiveTable(reports) {
 // และฝั่งฐานข้อมูลยังบังคับด้วย RLS อีกชั้น (UPDATE/DELETE เฉพาะ authenticated)
 // ==============================================================================
 
+
+// ==============================================================================
+// ช่องเฉพาะแบบฟอร์มงานผลิตยา (DRG-07 / DRG-08) สำหรับกล่องแก้ไขใบรายงาน
+// ------------------------------------------------------------------------------
+// ใบที่บันทึกไว้ก่อนวันที่ 25 ส.ค. 2569 ไม่มีค่าเหล่านี้เก็บไว้เลย
+// เพราะตัวกรองคอลัมน์ใน db.js ทิ้งค่าตั้งแต่ก่อนถึงฐานข้อมูล
+// ช่องเหล่านี้จึงจำเป็นสำหรับกรอกย้อนหลัง ไม่งั้นใบเก่าจะขึ้น "-" ตลอดไป
+// ==============================================================================
+const DRUG_SERVICES = ['DRG_07', 'DRG_08'];
+const isDrugService = (rep) => DRUG_SERVICES.includes(String(rep && rep.service_code || '').toUpperCase());
+
+const edField = (id, label, value, type) =>
+  '<div><label class="block font-semibold text-slate-700 mb-1">' + label + '</label>'
+  + '<input type="' + (type || 'text') + '" id="' + id + '" value="' + String(value == null ? '' : value).replace(/"/g, '&quot;')
+  + '" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs"></div>';
+
+/** ส่วน HTML ของช่องงานผลิตยา — คืนค่าว่างถ้าไม่ใช่บริการยา */
+function drugFieldsHtml(rep) {
+  if (!isDrugService(rep)) return '';
+  const d = (v) => String(v || '').slice(0, 10);   // คอลัมน์ DATE ส่งกลับมาเป็น YYYY-MM-DD
+  return ''
+    + '<div class="border-t border-slate-200 pt-3 mt-1">'
+    + '<div class="font-bold text-[#6c5070] mb-2">ข้อมูลผลิตภัณฑ์ยา</div>'
+    + '<div class="grid grid-cols-2 gap-3">'
+    +   edField('ed-lot', 'Lot No.', rep.lot_no)
+    +   edField('ed-prod-date', 'ผลิตเมื่อวันที่', d(rep.production_date), 'date')
+    +   edField('ed-volume', 'ปริมาณ (ml)', rep.volume, 'number')
+    +   edField('ed-medicine', 'ยาเตรียม / ประเภท', rep.prepared_medicine || rep.ward_room)
+    +   edField('ed-prep-date', 'วันที่เตรียม', d(rep.preparation_date), 'date')
+    +   edField('ed-receipt-date', 'วันที่รับตัวอย่าง', d(rep.receipt_date), 'date')
+    +   edField('ed-analysis-date', 'วันที่วิเคราะห์', d(rep.analysis_date), 'date')
+    +   edField('ed-operator', 'ผู้ปฏิบัติงาน', rep.operator_name)
+    +   edField('ed-sender', 'ผู้ส่งตรวจ', rep.sender_name)
+    + '</div></div>';
+}
+
+/** อ่านค่าจากช่องงานผลิตยา — ช่องที่เว้นว่างส่ง null ไม่เดาค่าแทนผู้กรอก */
+function readDrugFields(rep) {
+  if (!isDrugService(rep)) return {};
+  const v = (id) => {
+    const el = document.getElementById(id);
+    const val = el ? String(el.value).trim() : '';
+    return val === '' ? null : val;
+  };
+  const num = (id) => {
+    const val = v(id);
+    if (val === null) return null;
+    const n = parseFloat(val);
+    return Number.isFinite(n) ? n : null;
+  };
+  return {
+    lot_no: v('ed-lot'),
+    production_date: v('ed-prod-date'),
+    volume: num('ed-volume'),
+    prepared_medicine: v('ed-medicine'),
+    preparation_date: v('ed-prep-date'),
+    receipt_date: v('ed-receipt-date'),
+    analysis_date: v('ed-analysis-date'),
+    operator_name: v('ed-operator'),
+    sender_name: v('ed-sender')
+  };
+}
+
 function isAdminUser() {
   return !!(currentLoggedUser && currentLoggedUser.role === 'admin');
 }
@@ -2408,6 +2471,7 @@ async function adminEditReport(reportId) {
       + '</div>'
       + '<div><label class="block font-semibold text-slate-700 mb-1">หมายเหตุ / ความเห็นทางเทคนิค</label>'
       + '<textarea id="ed-remarks" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs">' + (rep.remarks || '') + '</textarea></div>'
+      + drugFieldsHtml(rep)
       + '</div>',
     width: 560,
     showCancelButton: true,
@@ -2418,13 +2482,13 @@ async function adminEditReport(reportId) {
     preConfirm: () => {
       const dept = document.getElementById('ed-dept').value.trim();
       if (!dept) { Swal.showValidationMessage('กรุณาระบุหน่วยงานส่งตรวจ'); return false; }
-      return {
+      return Object.assign({
         department: dept,
         ward_room: document.getElementById('ed-ward').value.trim(),
         sampling_date: document.getElementById('ed-sampling').value,
         status: document.getElementById('ed-status').value,
         remarks: document.getElementById('ed-remarks').value.trim()
-      };
+      }, readDrugFields(rep));
     }
   });
 
@@ -3145,15 +3209,18 @@ async function deptEditSubmission(id) {
       row('สถานที่ / จุดเก็บตัวอย่าง', '<input id="ds-ward" value="' + escD(r.ward_room) + '" class="' + F + '">') +
       row('วันที่เก็บตัวอย่าง', '<input id="ds-date" type="date" value="' + escD(String(r.sampling_date || '').slice(0, 10)) + '" class="' + F + '">') +
       row('ผู้ส่งตรวจ', '<input id="ds-sampler" value="' + escD(r.sampler_name) + '" class="' + F + '">') +
-      row('หมายเหตุถึงห้องปฏิบัติการ', '<input id="ds-remarks" value="' + escD(r.remarks) + '" class="' + F + '">'),
+      row('หมายเหตุถึงห้องปฏิบัติการ', '<input id="ds-remarks" value="' + escD(r.remarks) + '" class="' + F + '">') +
+      drugFieldsHtml(r),
     showCancelButton: true, confirmButtonText: 'บันทึกการแก้ไข', cancelButtonText: 'ยกเลิก',
     confirmButtonColor: '#059669', cancelButtonColor: '#64748b',
     preConfirm: () => {
       const v = (i) => document.getElementById(i).value.trim();
       if (!v('ds-ward')) return Swal.showValidationMessage('กรุณาระบุสถานที่เก็บตัวอย่าง');
-      return { department: v('ds-dept'), ward_room: v('ds-ward'),
+      return Object.assign({
+               department: v('ds-dept'), ward_room: v('ds-ward'),
                sampling_date: v('ds-date') || r.sampling_date,
-               sampler_name: v('ds-sampler'), remarks: v('ds-remarks') };
+               sampler_name: v('ds-sampler'), remarks: v('ds-remarks') },
+               readDrugFields(r));
     }
   });
   if (!res.isConfirmed) return;
