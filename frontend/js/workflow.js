@@ -972,12 +972,12 @@ function initSubmissionForm() {
 
   if (prepDateInput && !prepDateInput.value) prepDateInput.value = todayStr;
   if (sampleDateInput && !sampleDateInput.value) sampleDateInput.value = todayStr;
-  if (operatorInput && !operatorInput.value) operatorInput.value = currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ';
+  if (operatorInput && !operatorInput.value) operatorInput.value = currentLoggedUser?.displayName || currentLoggedUser?.name || '';
   if (receiptDateInput && !receiptDateInput.value) receiptDateInput.value = todayStr;
   if (analysisDateInput && !analysisDateInput.value) analysisDateInput.value = todayStr;
   if (productionDateInput && !productionDateInput.value) productionDateInput.value = todayStr;
   if (drugVolumeInput && !drugVolumeInput.value) drugVolumeInput.value = '0';
-  if (senderNameInput && !senderNameInput.value) senderNameInput.value = currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ';
+  if (senderNameInput && !senderNameInput.value) senderNameInput.value = currentLoggedUser?.displayName || currentLoggedUser?.name || '';
 
   if (drug2HeaderInput) {
     drug2HeaderInput.addEventListener('input', (e) => {
@@ -1612,15 +1612,20 @@ async function handleSubmissionFormSubmit(e) {
   const items = [];
   const prepDate = document.getElementById('sub-prep-date')?.value || samplingDate;
   const sampleDate = document.getElementById('sub-sample-date')?.value || samplingDate;
-  const operator = document.getElementById('sub-operator')?.value.trim() || (currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ');
+  const operator = document.getElementById('sub-operator')?.value.trim() || currentLoggedUser?.displayName || currentLoggedUser?.name || '';
 
   const receiptDate = document.getElementById('sub-receipt-date')?.value || samplingDate;
   const analysisDate = document.getElementById('sub-analysis-date')?.value || samplingDate;
   const drug2Header = document.getElementById('sub-drug2-header')?.value.trim() || '';
-  const lotNo = document.getElementById('sub-lot-no')?.value.trim() || '-';
-  const productionDate = document.getElementById('sub-production-date')?.value || samplingDate;
-  const drugVolume = document.getElementById('sub-drug-volume')?.value || '0';
-  const senderName = document.getElementById('sub-sender-name')?.value.trim() || (currentLoggedUser?.name || 'ระวิวรรณ บรรยงวิมลณัฐ');
+  // ⚠️ ช่องที่เว้นว่างต้องเก็บเป็นค่าว่าง ห้ามเดาค่าแทนผู้กรอก
+  //    เดิม productionDate เว้นว่างแล้วเอา "วันที่เก็บตัวอย่าง" มาใส่แทน
+  //    ทำให้ใบรายงานพิมพ์วันผลิตที่ไม่เคยมีใครกรอก ซึ่งเป็นข้อมูลคุณภาพที่ตรวจสอบย้อนกลับได้
+  //    เช่นเดียวกับ drugVolume ที่เคยใส่ '0' และ senderName ที่เคยใส่ชื่อคนไว้ตายตัว
+  const lotNo = document.getElementById('sub-lot-no')?.value.trim() || '';
+  const productionDate = document.getElementById('sub-production-date')?.value || '';
+  const drugVolume = document.getElementById('sub-drug-volume')?.value || '';
+  const senderName = document.getElementById('sub-sender-name')?.value.trim()
+                     || currentLoggedUser?.displayName || currentLoggedUser?.name || '';
 
   rows.forEach((tr, idx) => {
     if (serviceCode === 'DRG_08') {

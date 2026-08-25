@@ -496,18 +496,18 @@
           metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs mb-6';
           metaBox.innerHTML = `
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3 text-xs md:text-sm">
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่รับตัวอย่าง</span><strong class="text-slate-800 mt-0.5">${rep.receipt_date || rep.sampling_date || '23/07/2569'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่วิเคราะห์</span><strong class="text-slate-800 mt-0.5">${rep.analysis_date || rep.sampling_date || '23/07/2569'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">Lot No.</span><strong class="text-slate-800 mt-0.5">${rep.lot_no || 'TE-6907'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">ผลิตเมื่อวันที่</span><strong class="text-slate-800 mt-0.5">${rep.production_date || '20/07/2569'}</strong></div>
-              <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4"><span class="text-slate-500 text-xs">ยาเตรียม / ประเภท</span><strong class="text-slate-800 mt-0.5 text-base">${rep.prepared_medicine || rep.ward_room || (items[0] && items[0].drug_name) || 'Trace element'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">ปริมาณ (ml)</span><strong class="text-slate-800 mt-0.5">${rep.volume || '500'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">จำนวน (Sample)</span><strong class="text-slate-800 mt-0.5">${rep.sample_count || items.length || '10'}</strong></div>
-              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sampling_date || '23/07/2569'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่รับตัวอย่าง</span><strong class="text-slate-800 mt-0.5">${rep.receipt_date || rep.sampling_date || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่วิเคราะห์</span><strong class="text-slate-800 mt-0.5">${rep.analysis_date || rep.sampling_date || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">Lot No.</span><strong class="text-slate-800 mt-0.5">${rep.lot_no || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">ผลิตเมื่อวันที่</span><strong class="text-slate-800 mt-0.5">${rep.production_date || '-'}</strong></div>
+              <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4"><span class="text-slate-500 text-xs">ยาเตรียม / ประเภท</span><strong class="text-slate-800 mt-0.5 text-base">${rep.prepared_medicine || rep.ward_room || (items[0] && items[0].drug_name) || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">ปริมาณ (ml)</span><strong class="text-slate-800 mt-0.5">${rep.volume || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">จำนวน (Sample)</span><strong class="text-slate-800 mt-0.5">${rep.sample_count || items.length || '-'}</strong></div>
+              <div class="flex flex-col"><span class="text-slate-500 text-xs">วันที่ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sampling_date || '-'}</strong></div>
               <div class="flex flex-col sm:col-span-2 md:col-span-3 lg:col-span-4 border-t border-slate-200 pt-2 mt-1">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><span class="text-slate-500 text-xs block">ผู้ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sender_name || rep.operator_name || 'ระวิวรรณ บรรยงวิมลณัฐ'}</strong></div>
-                  <div><span class="text-slate-500 text-xs block">หน่วยงานส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.department || 'งานผลิตยา'}</strong></div>
+                  <div><span class="text-slate-500 text-xs block">ผู้ส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.sender_name || rep.operator_name || '-'}</strong></div>
+                  <div><span class="text-slate-500 text-xs block">หน่วยงานส่งตรวจ</span><strong class="text-slate-800 mt-0.5">${rep.department || '-'}</strong></div>
                 </div>
               </div>
             </div>
@@ -582,12 +582,12 @@
           metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs mb-6';
           metaBox.innerHTML = `
             <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-xs md:text-sm">
-              <div><strong>วันที่เตรียม:</strong> <span class="font-normal text-slate-800">${rep.preparation_date || '17/05/2569'}</span></div>
-              <div><strong>วันที่สุ่มตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '24/05/2569'}</span></div>
-              <div><strong>วันที่ส่งตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '24/05/2569'}</span></div>
-              <div><strong>วันที่รายงาน:</strong> <span class="font-normal text-slate-800">${rep.reported_date || '17/08/2569'}</span></div>
-              <div><strong>ผู้ปฏิบัติงาน:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.operator_name || 'ระวิวรรณ บรรยงวิมลณัฐ'}</span></div>
-              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.department || 'งานผลิตยา'}</span></div>
+              <div><strong>วันที่เตรียม:</strong> <span class="font-normal text-slate-800">${rep.preparation_date || '-'}</span></div>
+              <div><strong>วันที่สุ่มตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '-'}</span></div>
+              <div><strong>วันที่ส่งตรวจ:</strong> <span class="font-normal text-slate-800">${rep.sampling_date || '-'}</span></div>
+              <div><strong>วันที่รายงาน:</strong> <span class="font-normal text-slate-800">${rep.reported_date || '-'}</span></div>
+              <div><strong>ผู้ปฏิบัติงาน:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.operator_name || '-'}</span></div>
+              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="font-normal text-slate-800 font-semibold">${rep.department || '-'}</span></div>
             </div>
           `;
         }
@@ -695,7 +695,7 @@
         if (titleH1) {
           titleH1.innerHTML = `
             <span class="text-xl sm:text-2xl font-bold text-[#6c5070]">ใบรายงานผลตรวจเพาะเชื้อจากน้ำและพื้นผิว</span>
-            <div class="text-xs sm:text-sm font-normal text-slate-500 mt-1">เลขที่รายงาน: ${rep.submission_no || 'FM-09-156-080'}</div>
+            <div class="text-xs sm:text-sm font-normal text-slate-500 mt-1">เลขที่รายงาน: ${rep.submission_no || '-'}</div>
           `;
         }
         const srvBanner = document.getElementById('view-service-name');
@@ -706,8 +706,8 @@
           metaBox.className = 'bg-white rounded-2xl p-4 border border-slate-200 text-xs md:text-sm mb-6';
           metaBox.innerHTML = `
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 text-xs md:text-sm">
-              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="text-slate-800">${rep.department || 'งานการพยาบาลผู้ป่วยผ่าตัดเปลี่ยนข้อ (ศูนย์ข้อ)'}</span></div>
-              <div class="sm:text-right"><strong>วันที่รายงาน:</strong> <span class="text-slate-800">${rep.reported_date || '17/08/2569'}</span></div>
+              <div><strong>หน่วยงานส่งตรวจ:</strong> <span class="text-slate-800">${rep.department || '-'}</span></div>
+              <div class="sm:text-right"><strong>วันที่รายงาน:</strong> <span class="text-slate-800">${rep.reported_date || '-'}</span></div>
               <div class="sm:col-span-2"><strong>เชื้อที่สงสัย:</strong> <span class="text-slate-800">${rep.suspected_organism || 'ไม่ได้ระบุ'}</span></div>
             </div>
           `;

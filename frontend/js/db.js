@@ -651,16 +651,41 @@ const ReportDB = {
     // 2. บันทึกลง Supabase หากเชื่อมต่อได้
     if (window.supabaseClient) {
       try {
+        // ⚠️ รายการนี้คือตัวกรองว่าค่าไหนจะไปถึงฐานข้อมูล
+        //    ช่องที่ไม่อยู่ในรายการจะถูกทิ้งเงียบ ๆ ตั้งแต่ก่อนถึงฐานข้อมูล
+        //    เดิมมีแค่ 14 ตัว ทำให้ค่าจากแบบฟอร์มงานผลิตยา 11 ช่อง
+        //    เช่น "ผลิตเมื่อวันที่" และ "ปริมาณ (ml)" หายไปทั้งหมด
+        //    แล้วหน้ารายงานไปแสดงค่าที่ฝังไว้ในโค้ดแทน ทุกใบจึงขึ้นค่าชุดเดียวกัน
         const validReportColumns = [
           'submission_no', 'service_code', 'service_name', 'department', 'ward_room',
           'sampling_date', 'received_date', 'reported_date', 'sampler_name',
-          'reporter_name', 'approver_name', 'overall_result', 'status', 'remarks'
+          'reporter_name', 'approver_name', 'overall_result', 'status', 'remarks',
+          // ช่องเฉพาะของแบบฟอร์มงานผลิตยา (DRG-07 / DRG-08)
+          'preparation_date', 'sample_date', 'receipt_date', 'analysis_date',
+          'production_date', 'lot_no', 'prepared_medicine', 'prepared_medicine_header',
+          'operator_name', 'sender_name', 'volume'
         ];
+
+        // คอลัมน์วันที่และตัวเลขรับค่าว่างไม่ได้ ต้องส่ง null แทน
+        // ไม่งั้น PostgreSQL ปฏิเสธทั้งแถวด้วย invalid input syntax
+        const DATE_COLS = ['preparation_date', 'sample_date', 'receipt_date',
+                           'analysis_date', 'production_date'];
+        const NUM_COLS = ['volume'];
+
         const sanitizedHeader = {};
         for (const col of validReportColumns) {
-          if (reportHeader[col] !== undefined) {
-            sanitizedHeader[col] = reportHeader[col];
+          if (reportHeader[col] === undefined) continue;
+          let v = reportHeader[col];
+          if (typeof v === 'string') v = v.trim();
+          if (v === '' || v === '-') v = null;
+          if (v !== null && NUM_COLS.includes(col)) {
+            const n = parseFloat(v);
+            v = Number.isFinite(n) ? n : null;
           }
+          if (v !== null && DATE_COLS.includes(col) && !/^\d{4}-\d{2}-\d{2}/.test(String(v))) {
+            v = null;   // รับเฉพาะรูปแบบ YYYY-MM-DD ที่ input type=date ให้มา
+          }
+          sanitizedHeader[col] = v;
         }
         if (!sanitizedHeader.approver_name) {
           sanitizedHeader.approver_name = 'ทนพญ.ปราญชลี หรั่งอ่อน';
