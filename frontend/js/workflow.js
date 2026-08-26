@@ -115,6 +115,54 @@ if (document.readyState === 'loading') {
   bootWorkflow();
 }
 
+
+// ==============================================================================
+// รายการยาที่ส่งตรวจเพาะเชื้อประจำ (DRG-07 งานผลิตยา 1)
+// ------------------------------------------------------------------------------
+// คัดจากแบบฟอร์มกระดาษ "ผลเพาะเชื้อ" ที่งานผลิตยาใช้อยู่ เรียงตามลำดับเดิม
+// ใช้เป็นตัวเลือกในช่อง "ชนิดของยา" แต่ยังพิมพ์ชื่ออื่นเองได้
+// (ใช้ datalist ไม่ใช่ select เพราะรายการยาเปลี่ยนได้ ไม่ควรบังคับให้เลือกเฉพาะที่มี)
+//
+// เลขในวงเล็บบนกระดาษเป็นวันที่ผลิตของแต่ละรอบ จึงไม่ใส่ไว้ในตัวเลือก
+// ==============================================================================
+const DRUG_SAMPLE_LIST = [
+  'Alprostadil 10 mcg/ml',
+  'ACTH',
+  'Methylprednisolone 1% ED',
+  'Insulin ED',
+  'Dexamethasone 0.01% ED',
+  'Norepinephrine',
+  'Heparin 4 U',
+  'Heparin 100 U',
+  'TPN-S',
+  'TPN-Lipid'
+];
+
+/** วาง datalist ไว้ครั้งเดียวในหน้า ให้ทุกแถวใช้ร่วมกัน */
+function ensureDrugDatalist() {
+  if (document.getElementById('drug-sample-list')) return;
+  const dl = document.createElement('datalist');
+  dl.id = 'drug-sample-list';
+  dl.innerHTML = DRUG_SAMPLE_LIST.map(d => '<option value="' + d + '"></option>').join('');
+  document.body.appendChild(dl);
+}
+
+/** เติมชื่อยามาตรฐานลงทุกแถวตามลำดับในแบบฟอร์มกระดาษ */
+function fillStandardDrugList() {
+  const inputs = document.querySelectorAll('.sub-item-drug');
+  if (!inputs.length) return;
+  inputs.forEach((el, i) => {
+    if (i < DRUG_SAMPLE_LIST.length) el.value = DRUG_SAMPLE_LIST[i];
+  });
+  if (window.Swal) {
+    Swal.fire({ icon: 'success', title: 'เติมรายการยาแล้ว',
+      text: 'เติม ' + Math.min(inputs.length, DRUG_SAMPLE_LIST.length) + ' รายการตามลำดับในแบบฟอร์ม แก้ไขแต่ละช่องได้',
+      timer: 1800, showConfirmButton: false });
+  }
+}
+
+Object.assign(window, { DRUG_SAMPLE_LIST, fillStandardDrugList, ensureDrugDatalist });
+
 // ==============================================================================
 // ROLE CHECK & TAB NAVIGATION (เห็นแท็บลงผลเฉพาะ ADMIN)
 // ==============================================================================
@@ -1337,7 +1385,13 @@ function buildSampleItemsMatrix(rowCount = 10) {
       suspectedOrganismContainer.classList.remove('hidden');
     }
     if (footerHint) {
-      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i> <span>ช่อง ผลเพาะเชื้อ และ ผล (Pass/Fail) ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+      // ปุ่มลัดเติมรายการยาตามลำดับในแบบฟอร์มกระดาษ ช่วยให้ไม่ต้องเลือกทีละแถว
+      footerHint.innerHTML = `<i class="fas fa-lock text-[#df6a6a]"></i>
+        <span>ช่อง ผลเพาะเชื้อ และ ผล (Pass/Fail) ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>
+        <button type="button" onclick="fillStandardDrugList()"
+                class="ml-2 inline-flex items-center gap-1 bg-[#f7f2f8] hover:bg-[#f0e8f2] text-[#6c5070] border border-[#6c5070]/25 text-[11px] font-bold px-3 py-1.5 rounded-xl transition">
+          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยามาตรฐาน 10 รายการ
+        </button>`;
     }
 
     if (thead) {
@@ -1345,7 +1399,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
       thead.innerHTML = `
         <tr>
           <th class="p-3 text-center w-12 bg-[#573e5a] rounded-tl-2xl">ลำดับ</th>
-          <th class="p-3 w-56">สถานที่/จุดเก็บตัวอย่าง</th>
+          <th class="p-3 w-56">ชนิดของยา</th>
           <th class="p-3 text-center w-36">ผลเพาะเชื้อ</th>
           <th class="p-3 text-center w-28">ผล</th>
           <th class="p-3 w-40 rounded-tr-2xl">หมายเหตุ</th>
@@ -1353,6 +1407,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
       `;
     }
 
+    ensureDrugDatalist();
     tbody.innerHTML = '';
     for (let i = 1; i <= rowCount; i++) {
       const tr = document.createElement('tr');
@@ -1360,7 +1415,9 @@ function buildSampleItemsMatrix(rowCount = 10) {
       tr.innerHTML = `
         <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
         <td class="p-2">
-          <input type="text" class="sub-item-loc w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เช่น ก๊อกน้ำอ่างล้างมือ, โต๊ะเตรียมยา">
+          <input type="text" list="drug-sample-list"
+                 class="sub-item-drug w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium"
+                 placeholder="เลือกหรือพิมพ์ชื่อยา">
         </td>
         <td class="p-2 text-center">
           <input type="text" disabled value="-" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" placeholder="ผลเพาะเชื้อ" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
