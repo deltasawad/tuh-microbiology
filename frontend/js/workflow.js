@@ -641,7 +641,14 @@ async function handleDayClick(dateStr, thaiDateStr) {
     return;
   }
 
-  const user = currentLoggedUser || (window.AuthManager ? await window.AuthManager.getCurrentUser() : null);
+  // ต้องเขียนกลับเข้า currentLoggedUser ด้วย ไม่ใช่เก็บไว้ในตัวแปรของตัวเอง
+  // เพราะ canManageReport / canManageBooking อ่านจากตัวแปรส่วนกลางตัวนี้
+  // ถ้าฟังก์ชันนี้ทำงานก่อน checkUserRoleAndInitTabs() ตัวแปรส่วนกลางจะยังเป็น null
+  // ผลคือรายการแสดงครบแต่ปุ่มจัดการหายไปทั้งตาราง
+  if (!currentLoggedUser && window.AuthManager) {
+    currentLoggedUser = await window.AuthManager.getCurrentUser();
+  }
+  const user = currentLoggedUser;
   let defaultDept = user?.department || '';
   let defaultSender = user?.displayName || user?.name || '';
   let defaultService = 'AIR_01';
@@ -1929,7 +1936,14 @@ async function loadReportsArchiveTable() {
   // 🔒 ต้องเข้าสู่ระบบก่อนจึงจะดูรายงานผลตรวจได้
   // ผลตรวจสิ่งแวดล้อมเป็นข้อมูลภายในของโรงพยาบาล ไม่เปิดให้บุคคลทั่วไปดู
   // ==========================================================================
-  const user = currentLoggedUser || (window.AuthManager ? await window.AuthManager.getCurrentUser() : null);
+  // ต้องเขียนกลับเข้า currentLoggedUser ด้วย ไม่ใช่เก็บไว้ในตัวแปรของตัวเอง
+  // เพราะ canManageReport / canManageBooking อ่านจากตัวแปรส่วนกลางตัวนี้
+  // ถ้าฟังก์ชันนี้ทำงานก่อน checkUserRoleAndInitTabs() ตัวแปรส่วนกลางจะยังเป็น null
+  // ผลคือรายการแสดงครบแต่ปุ่มจัดการหายไปทั้งตาราง
+  if (!currentLoggedUser && window.AuthManager) {
+    currentLoggedUser = await window.AuthManager.getCurrentUser();
+  }
+  const user = currentLoggedUser;
 
   if (!user) {
     if (scopeBadge) {
@@ -2016,9 +2030,10 @@ async function loadReportsArchiveTable() {
     }
 
   } else if (user && user.department) {
-    // 🔒 สิทธิ์เจ้าหน้าที่หน่วยงาน: เห็นเฉพาะรายงานของหน่วยงานตนเองเท่านั้น!
-    const userDept = user.department.toLowerCase();
-
+    // 🔒 ขอบเขตของเจ้าหน้าที่หน่วยงาน: เห็นเฉพาะใบของหน่วยงานตนเอง
+    //    กติกาเดียวกันนี้ถูกใช้ตัดสินสิทธิ์ แก้ไข/ยกเลิก/ลบ ด้วย
+    //    จึงย้ายไปไว้ที่ isRecordInUserScope() ที่เดียว ไม่ให้สองที่เพี้ยนจากกัน
+    //    แล้วเกิดกรณี "เห็นใบอยู่ตรงหน้าแต่กดปุ่มแล้วบอกไม่มีสิทธิ์"
     if (scopeBadge) {
       scopeBadge.innerHTML = `
         <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-full border border-emerald-200">
@@ -2027,53 +2042,7 @@ async function loadReportsArchiveTable() {
       `;
     }
 
-    filteredReports = allReports.filter(r => {
-      const rDept = (r.department || '').toLowerCase();
-      const rWard = (r.ward_room || '').toLowerCase();
-      const rSrv = (r.service_code || '').toLowerCase();
-
-      // ถ้ายูสเซอร์คือ icn (งานควบคุมโรคติดเชื้อ) ให้แสดงเฉพาะงานของ IC
-      if (user.username === 'icn') {
-        return rDept.includes('ควบคุมโรคติดเชื้อ') || rDept.includes('ic') || rSrv === 'wts_03';
-      }
-
-      // ถ้ายูสเซอร์คือ occ (งานอาชีวอนามัย)
-      if (user.username === 'occ') {
-        return rDept.includes('อาชีวอนามัย') || rSrv === 'air_01';
-      }
-      
-      // ถ้ายูสเซอร์คือ compounding (ผลิตยา 1)
-      if (user.username === 'compounding') {
-        return rDept.includes('ปราศจากเชื้อ') || rSrv === 'drg_07';
-      }
-
-      // ถ้ายูสเซอร์คือ pharma (ผลิตยา 2)
-      if (user.username === 'pharma') {
-        return (rDept.includes('ผลิตยา') && !rDept.includes('ปราศจากเชื้อ')) || rSrv === 'drg_08';
-      }
-
-      // ถ้ายูสเซอร์คือ bloodbank (งานธนาคารเลือด)
-      if (user.username === 'bloodbank') {
-        return rDept.includes('ธนาคารเลือด') || rSrv === 'str_02';
-      }
-
-      // ถ้ายูสเซอร์คือ nutrition (งานโภชนาการ)
-      if (user.username === 'nutrition') {
-        return rDept.includes('โภชนาการ') || rSrv === 'fod_06';
-      }
-
-      // ถ้ายูสเซอร์คือ thamc (ศูนย์การแพทย์)
-      if (user.username === 'thamc') {
-        return rDept.includes('thamc') || rDept.includes('ศูนย์การแพทย์') || rSrv === 'wtm_05';
-      }
-
-      // ถ้ายูสเซอร์คือ or (ห้องผ่าตัด)
-      if (user.username === 'or') {
-        return rDept.includes('ผ่าตัด') || rSrv === 'wto_04';
-      }
-
-      return rDept.includes(userDept) || rWard.includes(userDept);
-    });
+    filteredReports = allReports.filter(r => isRecordInUserScope(r, user));
 
   } else {
     // 👤 ผู้ใช้ทั่วไป / โหมดทดสอบ (Guest View): แสดงรายการที่เพิ่งส่งตรวจใหม่ + ประวัติรายงานทั้งหมดทันที
@@ -2114,6 +2083,31 @@ function handleAdminDeptFilterChange(selectedDept) {
   loadReportsArchiveTable();
 }
 window.handleAdminDeptFilterChange = handleAdminDeptFilterChange;
+
+/**
+ * ปุ่มจัดการใบส่งตรวจสำหรับตารางรายงาน
+ * ------------------------------------------------------------------------------
+ * ตารางรายงานมีเลย์เอาต์ 5 แบบตามชนิดบริการ (ยา2 / ยา1 / อาหาร / น้ำ-พื้นผิว / ทั่วไป)
+ * ต้องเรียกตัวนี้ในทุกแบบ ไม่งั้นหน่วยงานที่ใช้เลย์เอาต์เฉพาะจะไม่มีปุ่มให้กดเลย
+ * คืนค่าว่างถ้าผู้ใช้ไม่มีสิทธิ์กับใบนี้
+ */
+function manageButtonsHtml(r, subNo) {
+  if (!canManageReport(r)) return '';
+  const id = r.id || subNo;
+  return `
+    <button type="button" onclick="editReportRecord('${id}')" title="แก้ไขใบนี้"
+            class="bg-white border border-[#6c5070]/40 hover:bg-[#f7f2f8] text-[#6c5070] text-xs font-bold px-2 py-1 rounded-lg transition inline-flex items-center">
+      <i class="fas fa-pen-to-square"></i>
+    </button>
+    <button type="button" onclick="cancelReportRecord('${id}')" title="ยกเลิกใบนี้ (ข้อมูลยังเก็บไว้ ตรวจสอบย้อนกลับได้)"
+            class="bg-white border border-amber-300 hover:bg-amber-50 text-amber-700 text-xs font-bold px-2 py-1 rounded-lg transition inline-flex items-center">
+      <i class="fas fa-xmark"></i>
+    </button>
+    <button type="button" onclick="deleteReportRecord('${id}')" title="ลบใบนี้ถาวร (กู้คืนไม่ได้)"
+            class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2 py-1 rounded-lg transition inline-flex items-center">
+      <i class="fas fa-trash-can"></i>
+    </button>`;
+}
 
 function renderReportsArchiveTable(reports) {
   const tbody = document.getElementById('rep-archive-tbody');
@@ -2226,6 +2220,7 @@ function renderReportsArchiveTable(reports) {
               <i class="far fa-eye text-slate-500"></i>
               <span>ดูผล</span>
             </a>
+            ${manageButtonsHtml(r, subNo)}
           </td>
         </tr>
       `;
@@ -2257,6 +2252,7 @@ function renderReportsArchiveTable(reports) {
             <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-[#a3c9a8] hover:bg-[#8eb894] text-slate-800 text-xs font-bold px-4 py-1.5 rounded-xl transition shadow-xs inline-flex items-center gap-1.5">
               <span>ดูรายงาน</span>
             </a>
+            <div class="inline-flex items-center gap-1 ml-1">${manageButtonsHtml(r, subNo)}</div>
           </td>
         </tr>
       `;
@@ -2293,6 +2289,7 @@ function renderReportsArchiveTable(reports) {
             <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-xl transition shadow-2xs inline-flex items-center gap-1">
               <span>ดูรายงาน</span>
             </a>
+            <div class="inline-flex items-center gap-1 mt-1">${manageButtonsHtml(r, subNo)}</div>
           </td>
         </tr>
       `;
@@ -2323,6 +2320,7 @@ function renderReportsArchiveTable(reports) {
             <a href="report_view.html?id=${r.id || subNo}" target="_blank" class="bg-[#c2dbc1]/50 hover:bg-[#a8caa7] text-slate-800 text-xs p-2 rounded-xl transition shadow-2xs inline-flex items-center justify-center">
               <i class="far fa-eye text-slate-700"></i>
             </a>
+            ${manageButtonsHtml(r, subNo)}
           </td>
         </tr>
       `;
@@ -2389,24 +2387,7 @@ function renderReportsArchiveTable(reports) {
               <i class="fas fa-file-lines"></i>
               <span>ดูรายงาน</span>
             </a>
-            ${isAdminUser() ? `
-              <button type="button" onclick="adminEditReport('${r.id || subNo}')" title="แก้ไขใบรายงาน (Admin)"
-                      class="bg-white border border-[#6c5070]/40 hover:bg-[#f7f2f8] text-[#6c5070] text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
-                <i class="fas fa-pen-to-square"></i>
-              </button>
-              <button type="button" onclick="adminDeleteReport('${r.id || subNo}')" title="ลบใบรายงาน (Admin)"
-                      class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
-                <i class="fas fa-trash-can"></i>
-              </button>` : ''}
-            ${(!isAdminUser() && canManageReport(r)) ? `
-              <button type="button" onclick="deptEditSubmission('${r.id || subNo}')" title="แก้ไขใบส่งตรวจของหน่วยงาน (ยังไม่ออกผล)"
-                      class="bg-white border border-[#6c5070]/40 hover:bg-[#f7f2f8] text-[#6c5070] text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
-                <i class="fas fa-pen-to-square"></i>
-              </button>
-              <button type="button" onclick="deptCancelSubmission('${r.id || subNo}')" title="ยกเลิกใบส่งตรวจของหน่วยงาน"
-                      class="bg-white border border-rose-300 hover:bg-rose-50 text-rose-600 text-xs font-bold px-2.5 py-1.5 rounded-xl transition inline-flex items-center gap-1">
-                <i class="fas fa-xmark"></i>
-              </button>` : ''}
+            ${manageButtonsHtml(r, subNo)}
           </div>
         </td>
       </tr>
@@ -2416,10 +2397,11 @@ function renderReportsArchiveTable(reports) {
 
 
 // ==============================================================================
-// สิทธิ์ ADMIN: แก้ไข / ลบ ใบรายงานผล จากหน้ารายงานผลตรวจ
+// แก้ไข / ลบ ใบรายงานผล จากหน้ารายงานผลตรวจ
 // ------------------------------------------------------------------------------
-// เฉพาะผู้ใช้ที่ role = 'admin' เท่านั้นจึงเห็นปุ่มเหล่านี้
-// และฝั่งฐานข้อมูลยังบังคับด้วย RLS อีกชั้น (UPDATE/DELETE เฉพาะ authenticated)
+// ผู้ใช้ทุกหน่วยงานเรียกได้ แต่ทำได้เฉพาะใบที่อยู่ในขอบเขตของตน (canManageReport)
+// admin อยู่นอกข้อจำกัดนี้ จัดการได้ทุกหน่วยงาน
+// ฝั่งฐานข้อมูลยังบังคับด้วย RLS อีกชั้น (UPDATE/DELETE ต้องล็อกอินเป็น authenticated)
 // ==============================================================================
 
 
@@ -2485,17 +2467,14 @@ function readDrugFields(rep) {
   };
 }
 
+/** ผู้ใช้คนนี้เป็น admin ของงานจุลชีววิทยาหรือไม่ (ใช้กับแท็บลงผลตรวจ) */
 function isAdminUser() {
   return !!(currentLoggedUser && currentLoggedUser.role === 'admin');
 }
+window.isAdminUser = isAdminUser;
 
 /** แก้ไขข้อมูลส่วนหัวของใบรายงาน (หน่วยงาน / สถานที่ / วันที่ / สถานะ) */
-async function adminEditReport(reportId) {
-  if (!isAdminUser()) {
-    Swal.fire({ icon: 'warning', title: 'เฉพาะผู้ดูแลระบบ', text: 'ต้องเข้าสู่ระบบด้วยสิทธิ์ ADMIN จึงจะแก้ไขได้' });
-    return;
-  }
-
+async function editReportRecord(reportId) {
   // กันไม่ให้คีย์ข้อมูลจนเสร็จแล้วเพิ่งมารู้ว่าสิทธิ์เขียนหลุด
   if (!(await requireWriteSession())) return;
 
@@ -2506,10 +2485,17 @@ async function adminEditReport(reportId) {
     return;
   }
 
+  // ต้องเช็คหลังโหลดใบ เพราะขอบเขตสิทธิ์ตัดสินจากหน่วยงานที่อยู่บนใบ
+  if (!canManageReport(rep)) {
+    Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
+      text: 'แก้ไขได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
+    return;
+  }
+
   const waiting = isWaitingReport(rep);
 
   const { value: form } = await Swal.fire({
-    title: '<div class="text-left"><div class="text-xs text-[#6c5070] font-semibold">แก้ไขใบรายงานผล (ADMIN)</div>'
+    title: '<div class="text-left"><div class="text-xs text-[#6c5070] font-semibold">แก้ไขใบส่งตรวจ / ใบรายงานผล</div>'
          + '<div class="text-base font-bold text-slate-900 mt-0.5 font-mono">' + (rep.submission_no || '') + '</div></div>',
     html:
       '<div class="text-left text-xs space-y-3 pt-1">'
@@ -2517,6 +2503,8 @@ async function adminEditReport(reportId) {
       + '<input id="ed-dept" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.department || '') + '"></div>'
       + '<div><label class="block font-semibold text-slate-700 mb-1">สถานที่ / จุดเก็บตัวอย่าง</label>'
       + '<input id="ed-ward" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.ward_room || '') + '"></div>'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">ผู้เก็บตัวอย่าง / ผู้ส่งตรวจ</label>'
+      + '<input id="ed-sampler-name" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.sampler_name || '') + '"></div>'
       + '<div class="grid grid-cols-2 gap-3">'
       + '<div><label class="block font-semibold text-slate-700 mb-1">วันที่เก็บตัวอย่าง</label>'
       + '<input type="date" id="ed-sampling" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.sampling_date || '') + '"></div>'
@@ -2542,6 +2530,7 @@ async function adminEditReport(reportId) {
       return Object.assign({
         department: dept,
         ward_room: document.getElementById('ed-ward').value.trim(),
+        sampler_name: document.getElementById('ed-sampler-name').value.trim(),
         sampling_date: document.getElementById('ed-sampling').value,
         status: document.getElementById('ed-status').value,
         remarks: document.getElementById('ed-remarks').value.trim()
@@ -2584,16 +2573,25 @@ async function adminEditReport(reportId) {
     //    เดิมระบุแค่ 5 ช่องตายตัว ช่องของงานผลิตยา (Lot No. ผลิตเมื่อวันที่ ปริมาณ ฯลฯ)
     //    ที่ผู้ใช้กรอกมาจึงถูกมองข้าม กดบันทึกแล้ว updated_at เปลี่ยนแต่ค่ายังเป็น null
     //    ทำให้ดูเหมือนบันทึกสำเร็จทั้งที่ไม่ได้บันทึก
-    const { error } = await window.supabaseClient
+    // ⚠️ ต้องขอแถวที่แก้จริงกลับมาด้วย .select() แล้วนับเอง
+    //    RLS ที่ปฏิเสธ UPDATE ไม่คืน error แต่แก้ 0 แถว จะดูเหมือนบันทึกสำเร็จ
+    const { data, error } = await window.supabaseClient
       .from('reports')
       .update({
         ...form,
         status: st,
         updated_at: new Date().toISOString()
       })
-      .eq('id', targetId);
+      .eq('id', targetId)
+      .select();
 
-    if (!error) { saved = true; break; }
+    if (!error && (data || []).length) { saved = true; break; }
+
+    if (!error) {
+      lastErr = new Error('ไม่มีแถวใดถูกแก้ไข — สิทธิ์เขียนอาจหลุด กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง');
+      break;
+    }
+
     lastErr = error;
     const isCheck = error.code === '23514' || /violates check constraint/i.test(error.message || '');
     if (!isCheck) break;
@@ -2621,7 +2619,8 @@ async function adminEditReport(reportId) {
   await Swal.fire({ icon: 'success', title: 'แก้ไขเรียบร้อย', timer: 1200, showConfirmButton: false });
   loadReportsArchiveTable();
 }
-window.adminEditReport = adminEditReport;
+window.editReportRecord = editReportRecord;
+window.adminEditReport = editReportRecord;   // ชื่อเดิม เผื่อมีที่เรียกค้างอยู่
 
 /** ตรวจว่าเป็น UUID จริงหรือไม่ (แถวใน Supabase ใช้ UUID เท่านั้น) */
 function isRealUuid(v) {
@@ -2648,12 +2647,7 @@ function purgeLocalReport(submissionNo, localId) {
 }
 
 /** ลบใบรายงานผล (ต้องพิมพ์ยืนยัน เพราะลบแล้วกู้คืนไม่ได้) */
-async function adminDeleteReport(reportId) {
-  if (!isAdminUser()) {
-    Swal.fire({ icon: 'warning', title: 'เฉพาะผู้ดูแลระบบ', text: 'ต้องเข้าสู่ระบบด้วยสิทธิ์ ADMIN จึงจะลบได้' });
-    return;
-  }
-
+async function deleteReportRecord(reportId) {
   // กันไม่ให้คีย์ข้อมูลจนเสร็จแล้วเพิ่งมารู้ว่าสิทธิ์เขียนหลุด
   if (!(await requireWriteSession())) return;
 
@@ -2661,6 +2655,12 @@ async function adminDeleteReport(reportId) {
   const rep = res?.data || (res && res.submission_no ? res : null);
   if (!rep) {
     Swal.fire({ icon: 'error', title: 'ไม่พบใบรายงาน' });
+    return;
+  }
+
+  if (!canManageReport(rep)) {
+    Swal.fire({ icon: 'info', title: 'ลบไม่ได้',
+      text: 'ลบได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
     return;
   }
 
@@ -2711,14 +2711,19 @@ async function adminDeleteReport(reportId) {
   Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
   if (dbId) {
-    const { error } = await window.supabaseClient.from('reports').delete().eq('id', dbId);
-    if (error) {
+    // ⚠️ RLS ที่ปฏิเสธ DELETE ไม่คืน error — ตอบ 204 แล้วลบ 0 แถว
+    //    ต้องขอแถวที่ลบจริงกลับมาแล้วนับเอง ไม่งั้นจะขึ้นว่าสำเร็จทั้งที่ใบยังอยู่
+    const { data, error } = await window.supabaseClient
+      .from('reports').delete().eq('id', dbId).select();
+
+    if (error || !(data || []).length) {
       Swal.fire({
         icon: 'error',
         title: 'ลบไม่สำเร็จ',
         html: '<div class="text-xs text-left text-slate-600">'
-            + '<div class="font-mono text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 break-all">' + error.message + '</div>'
-            + '<div class="mt-2 text-[11px] text-slate-500">การลบต้องเข้าสู่ระบบด้วยสิทธิ์เจ้าหน้าที่ (RLS)</div></div>',
+            + '<div class="font-mono text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 break-all">'
+            + ((error && error.message) || 'ไม่มีแถวใดถูกลบ') + '</div>'
+            + '<div class="mt-2 text-[11px] text-slate-500">การลบต้องเข้าสู่ระบบด้วยสิทธิ์เจ้าหน้าที่ (RLS) — ลองออกจากระบบแล้วเข้าใหม่</div></div>',
         confirmButtonColor: '#6c5070'
       });
       return;
@@ -2739,7 +2744,8 @@ async function adminDeleteReport(reportId) {
   });
   loadReportsArchiveTable();
 }
-window.adminDeleteReport = adminDeleteReport;
+window.deleteReportRecord = deleteReportRecord;
+window.adminDeleteReport = deleteReportRecord;   // ชื่อเดิม เผื่อมีที่เรียกค้างอยู่
 
 
 function filterReportsTable(query) {
@@ -3203,27 +3209,68 @@ window.checkSupabaseHealth = checkSupabaseHealth;
 
 
 // ==============================================================================
-// สิทธิ์หน่วยงาน: แก้ไข / ยกเลิก ใบส่งตรวจของหน่วยงานตนเอง (เฉพาะที่ยังไม่ออกผล)
+// สิทธิ์หน่วยงาน: เพิ่ม / แก้ไข / ยกเลิก / ลบ ใบส่งตรวจของหน่วยงานตนเอง
 // ------------------------------------------------------------------------------
 // กติกา:
-//   หน่วยงานผู้ส่งตรวจ  -> แก้ไข/ยกเลิก "ใบที่ยังไม่ออกผล" ของหน่วยงานตนเอง
-//   ใบที่ห้องแล็บลงผลแล้ว -> แตะไม่ได้ ต้องให้ admin จัดการ
-//   admin              -> ทำได้ทุกอย่างผ่าน adminEditReport / adminDeleteReport
+//   หน่วยงานผู้ส่งตรวจ  -> จัดการใบของหน่วยงานตนเองได้ครบทุกอย่าง
+//                        รวมใบที่ห้องแล็บออกผลแล้ว (ตามที่ผู้ใช้ระบบกำหนด)
+//   admin (งานจุลชีววิทยา) -> จัดการได้ทุกหน่วยงาน
 //
-// "ยกเลิก" ตั้ง status = 'cancelled' ไม่ลบแถว เพราะใบส่งตรวจเป็นเอกสารคุณภาพ
-// ตาม ISO 15189 การลบทำให้ตรวจสอบย้อนกลับไม่ได้
+// มีสองระดับความรุนแรงให้เลือกใช้ ไม่ได้เหมือนกัน:
+//   "ยกเลิก" ตั้ง status = 'cancelled' แถวยังอยู่ ตรวจสอบย้อนกลับได้
+//   "ลบ"     ลบแถวถาวร report_items หายตาม ON DELETE CASCADE กู้คืนไม่ได้
+//
+// ⚠️ ใบที่ออกผลแล้วถูกเปิดให้แก้และลบตามคำสั่งของผู้ดูแลระบบ
+//    ข้อกำหนด ISO 15189 ต้องการให้ผลที่ออกไปแล้วตรวจสอบย้อนกลับได้
+//    ถ้าต้องการคงร่องรอยไว้ ควรใช้ "ยกเลิก" แทน "ลบ"
 // ==============================================================================
 
 const OPEN_STATUSES = ['draft', 'pending', 'waiting_for_testing', 'in_progress', 'received', 'submitted'];
 const isOpenReport = (r) => OPEN_STATUSES.includes(String(r && r.status || '').toLowerCase());
 
-/** หน่วยงานนี้จัดการใบนี้ได้ไหม */
+/**
+ * รายการนี้ (ใบส่งตรวจ หรือ คิวจอง) อยู่ในขอบเขตของผู้ใช้คนนี้หรือไม่
+ * ------------------------------------------------------------------------------
+ * ใช้ทั้งตอนกรองรายการที่แสดง และตอนตัดสินว่ากดปุ่ม แก้ไข/ยกเลิก/ลบ ได้ไหม
+ * ต้องเป็นชุดกติกาเดียวกันเสมอ ไม่งั้นจะเกิดกรณี "เห็นใบแต่กดปุ่มไม่ได้"
+ *
+ * ตัวชี้ขาดเจ้าของใบคือ "รหัสบริการ" ไม่ใช่ชื่อหน่วยงานบนใบ
+ * ------------------------------------------------------------------------------
+ * ดูจากข้อมูลจริง 206 ใบ ช่องหน่วยงานของ AIR-01 และ WTS-03 เก็บ
+ * "หอผู้ป่วยที่ไปเก็บตัวอย่าง" เช่น NICU, Stroke, ศูนย์ต้อกระจก
+ * ไม่ใช่หน่วยงานที่ส่งตรวจ (งานอาชีวอนามัย / งานควบคุมโรคติดเชื้อ เป็นผู้ส่ง)
+ *
+ * ถ้าเทียบด้วยชื่อหน่วยงาน จะมีใบที่สองหน่วยงานอ้างสิทธิ์ทับกันถึง 55 ใบ เช่น
+ *   DRG-07 48 ใบเขียนหน่วยงานว่า "งานผลิตยา" -> pharma อ้างได้ทั้งที่เป็นของ compounding
+ *   AIR-01 ที่ไปเก็บตัวอย่างในธนาคารเลือด    -> bloodbank อ้างได้ทั้งที่เป็นของ occ
+ * ตอนที่กติกานี้คุมแค่การมองเห็นยังพอทน แต่ตอนนี้มันคุมปุ่มลบด้วย
+ * ทับกันเมื่อไหร่แปลว่าหน่วยงานหนึ่งลบใบของอีกหน่วยงานได้
+ *
+ * รหัสบริการประจำหน่วยงานอ่านจาก serviceCode ใน auth.js ที่เดียว
+ * ทั้ง 8 หน่วยงานมีรหัสไม่ซ้ำกัน จับคู่กันแบบหนึ่งต่อหนึ่งพอดี
+ */
+function isRecordInUserScope(r, user) {
+  const u = user || currentLoggedUser;
+  if (!u || !r) return false;
+  if (u.role === 'admin') return true;
+
+  const rSrv = String(r.service_code || '').toLowerCase();
+  const uSrv = String(u.serviceCode || '').toLowerCase();
+
+  if (rSrv && uSrv) return rSrv === uSrv;
+
+  // ใบที่ไม่มีรหัสบริการ (ของเก่าหรือที่ยังไม่ sync) ถอยไปเทียบชื่อหน่วยงาน
+  if (!u.department) return false;
+  const userDept = u.department.toLowerCase();
+  return (r.department || '').toLowerCase().includes(userDept)
+      || (r.ward_room || '').toLowerCase().includes(userDept);
+}
+window.isRecordInUserScope = isRecordInUserScope;
+
+/** จัดการใบนี้ได้ไหม — ทุกใบที่อยู่ในขอบเขตของผู้ใช้ ไม่จำกัดสถานะ */
 function canManageReport(r) {
   if (!currentLoggedUser || !r) return false;
-  if (currentLoggedUser.role === 'admin') return true;
-  return isOpenReport(r)
-      && !!currentLoggedUser.department
-      && r.department === currentLoggedUser.department;
+  return isRecordInUserScope(r, currentLoggedUser);
 }
 
 const escD = (v) => String(v == null ? '' : v)
@@ -3239,73 +3286,16 @@ async function findReportRow(id) {
   return res.data || null;
 }
 
-async function deptEditSubmission(id) {
+/**
+ * ยกเลิกใบส่งตรวจ — ทางเลือกที่อ่อนกว่าการลบ
+ * ตั้ง status = 'cancelled' แถวยังอยู่ในฐานข้อมูล ตรวจสอบย้อนกลับได้
+ * ใช้อันนี้แทน deleteReportRecord ทุกครั้งที่ทำได้
+ */
+async function cancelReportRecord(id) {
   if (!(await requireWriteSession())) return;
   const r = await findReportRow(id);
   if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
 
-  if (!isOpenReport(r)) {
-    return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
-      text: 'ใบนี้ออกผลตรวจแล้ว การแก้ไขต้องให้ผู้ดูแลระบบดำเนินการ', confirmButtonColor: '#6c5070' });
-  }
-  if (!canManageReport(r)) {
-    return Swal.fire({ icon: 'info', title: 'แก้ไขไม่ได้',
-      text: 'แก้ไขได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
-  }
-
-  const F = 'w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-hidden';
-  const row = (label, inner) =>
-    '<label class="block text-left mb-2.5"><span class="block text-[11px] font-bold text-slate-600 mb-1">'
-    + label + '</span>' + inner + '</label>';
-
-  const res = await Swal.fire({
-    title: 'แก้ไขใบส่งตรวจ',
-    width: '520px',
-    html:
-      '<div class="text-left mb-3 font-mono font-bold text-[#6c5070] text-sm">' + escD(r.submission_no) + '</div>' +
-      row('หน่วยงานผู้ส่งตรวจ', '<input id="ds-dept" value="' + escD(r.department) + '" class="' + F + '">') +
-      row('สถานที่ / จุดเก็บตัวอย่าง', '<input id="ds-ward" value="' + escD(r.ward_room) + '" class="' + F + '">') +
-      row('วันที่เก็บตัวอย่าง', '<input id="ds-date" type="date" value="' + escD(String(r.sampling_date || '').slice(0, 10)) + '" class="' + F + '">') +
-      row('ผู้ส่งตรวจ', '<input id="ds-sampler" value="' + escD(r.sampler_name) + '" class="' + F + '">') +
-      row('หมายเหตุถึงห้องปฏิบัติการ', '<input id="ds-remarks" value="' + escD(r.remarks) + '" class="' + F + '">') +
-      drugFieldsHtml(r),
-    showCancelButton: true, confirmButtonText: 'บันทึกการแก้ไข', cancelButtonText: 'ยกเลิก',
-    confirmButtonColor: '#059669', cancelButtonColor: '#64748b',
-    preConfirm: () => {
-      const v = (i) => document.getElementById(i).value.trim();
-      if (!v('ds-ward')) return Swal.showValidationMessage('กรุณาระบุสถานที่เก็บตัวอย่าง');
-      return Object.assign({
-               department: v('ds-dept'), ward_room: v('ds-ward'),
-               sampling_date: v('ds-date') || r.sampling_date,
-               sampler_name: v('ds-sampler'), remarks: v('ds-remarks') },
-               readDrugFields(r));
-    }
-  });
-  if (!res.isConfirmed) return;
-
-  // RLS ปฏิเสธ UPDATE โดยไม่คืน error — แก้ 0 แถวแล้วเงียบ จึงต้องนับแถวเอง
-  const upd = await window.supabaseClient.from('reports')
-    .update({ ...res.value, updated_at: new Date().toISOString() }).eq('id', r.id).select();
-
-  if (upd.error || !(upd.data || []).length) {
-    return Swal.fire({ icon: 'error', title: 'แก้ไขไม่สำเร็จ',
-      text: (upd.error && upd.error.message) || 'ใบนี้อาจเพิ่งถูกลงผล จึงแก้ไม่ได้แล้ว',
-      confirmButtonColor: '#6c5070' });
-  }
-
-  await Swal.fire({ icon: 'success', title: 'บันทึกแล้ว', timer: 1300, showConfirmButton: false });
-  if (typeof loadReportsArchiveTable === 'function') await loadReportsArchiveTable();
-}
-
-async function deptCancelSubmission(id) {
-  if (!(await requireWriteSession())) return;
-  const r = await findReportRow(id);
-  if (!r) return Swal.fire({ icon: 'error', title: 'ไม่พบใบส่งตรวจ', confirmButtonColor: '#6c5070' });
-
-  if (!isOpenReport(r)) {
-    return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
-      text: 'ใบนี้ออกผลตรวจแล้ว การยกเลิกต้องให้ผู้ดูแลระบบดำเนินการ', confirmButtonColor: '#6c5070' });
-  }
   if (!canManageReport(r)) {
     return Swal.fire({ icon: 'info', title: 'ยกเลิกไม่ได้',
       text: 'ยกเลิกได้เฉพาะใบส่งตรวจของหน่วยงานตนเอง', confirmButtonColor: '#6c5070' });
@@ -3316,7 +3306,12 @@ async function deptCancelSubmission(id) {
     html: '<div class="text-sm text-slate-600 leading-relaxed">'
         + '<div class="font-mono font-bold text-rose-600">' + escD(r.submission_no) + '</div>'
         + '<div class="mt-1 text-xs">ใบจะถูกทำเครื่องหมายว่ายกเลิกและหลุดจากคิวรอตรวจ<br>'
-        + 'ข้อมูลยังเก็บไว้เพื่อการตรวจสอบย้อนกลับ ไม่ได้ลบทิ้ง</div></div>',
+        + 'ข้อมูลยังเก็บไว้เพื่อการตรวจสอบย้อนกลับ ไม่ได้ลบทิ้ง</div>'
+        + (isOpenReport(r) ? '' :
+            '<div class="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-[11px] text-left">'
+          + '⚠️ ใบนี้ห้องแล็บออกผลไปแล้ว การยกเลิกเท่ากับถอนผลที่รายงานออกไป '
+          + 'หากมีผู้รับรายงานไปใช้แล้ว ควรแจ้งให้ทราบด้วย</div>')
+        + '</div>',
     showCancelButton: true, confirmButtonText: 'ยกเลิกใบนี้', cancelButtonText: 'ไม่ใช่ตอนนี้',
     confirmButtonColor: '#e11d48', cancelButtonColor: '#64748b'
   });
@@ -3335,7 +3330,10 @@ async function deptCancelSubmission(id) {
   if (typeof loadReportsArchiveTable === 'function') await loadReportsArchiveTable();
 }
 
-Object.assign(window, { deptEditSubmission, deptCancelSubmission, canManageReport, isOpenReport });
+Object.assign(window, {
+  cancelReportRecord, canManageReport, isOpenReport,
+  deptCancelSubmission: cancelReportRecord   // ชื่อเดิม เผื่อมีที่เรียกค้างอยู่
+});
 
 // ==============================================================================
 // สิทธิ์หน่วยงาน: แก้ไข / ยกเลิก คิวจองของหน่วยงานตนเอง
@@ -3367,10 +3365,17 @@ async function dropLocalBooking(id) {
   await renderCalendar(calYear, calMonth);
 }
 
+/**
+ * จัดการคิวจองนี้ได้ไหม
+ * ------------------------------------------------------------------------------
+ * ใช้กติกาเดียวกับใบส่งตรวจ คือดูที่รหัสบริการเป็นหลัก
+ * เดิมเทียบชื่อหน่วยงานแบบตรงตัวเป๊ะ ๆ ซึ่งพังกับข้อมูลจริง 12 จาก 18 คิว
+ * เพราะคนจองพิมพ์ย่อไม่เหมือนกัน เช่น "งานอาชีวอนามัยฯ" "ผลิตยา"
+ * "เวชศาสตร์การบริการโลหิต" ทำให้หน่วยงานเจ้าของคิวแก้คิวตัวเองไม่ได้
+ */
 function canManageBooking(b) {
   if (!currentLoggedUser || !b) return false;
-  if (currentLoggedUser.role === 'admin') return true;
-  return !!currentLoggedUser.department && b.department === currentLoggedUser.department;
+  return isRecordInUserScope(b, currentLoggedUser);
 }
 
 const escBk = (v) => String(v == null ? '' : v)

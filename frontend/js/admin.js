@@ -69,7 +69,7 @@ async function initUserInfo() {
 
   if (user.role === 'department_staff') {
     if (bannerTitle) bannerTitle.textContent = `${user.department}`;
-    if (bannerDesc) bannerDesc.textContent = `บริการหลัก: ${user.serviceName} | สิทธิ์: คีย์จองวัน, คีย์รายการตรวจ, ดูรายงานผล`;
+    if (bannerDesc) bannerDesc.textContent = `บริการหลัก: ${user.serviceName} | สิทธิ์: คีย์จองวัน, เพิ่ม/แก้ไข/ลบ รายการตรวจของหน่วยงาน, ดูรายงานผล`;
     if (bannerBadge) {
       bannerBadge.textContent = `${user.username.toUpperCase()}`;
       bannerBadge.className = `text-[10px] font-bold px-2.5 py-0.5 rounded-full ${user.badgeColor || 'bg-emerald-500/20 text-emerald-300'}`;
@@ -94,6 +94,16 @@ async function initUserInfo() {
     }
     if (deptInput && user.department) {
       deptInput.value = user.department;
+    }
+
+    // ตัวกรองบริการในคลังรายงานถูกล็อกไว้ที่บริการของหน่วยงาน
+    // ปล่อยให้เลือกได้ทั้งที่ผลลัพธ์ไม่เปลี่ยน จะดูเหมือนตัวกรองเสีย
+    const archiveSrv = document.getElementById('archive-filter-service');
+    if (archiveSrv && user.serviceCode) {
+      archiveSrv.value = user.serviceCode;
+      archiveSrv.disabled = true;
+      archiveSrv.title = 'หน่วยงานของท่านดูแลบริการนี้บริการเดียว';
+      archiveSrv.classList.add('opacity-60', 'cursor-not-allowed');
     }
   } else {
     // Admin Master
@@ -603,22 +613,25 @@ async function loadReportsTable() {
   const search = document.getElementById('archive-search-input')?.value || '';
   const filterService = document.getElementById('archive-filter-service')?.value || '';
   const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
-  const filterDept = (user && user.role === 'department_staff') ? user.department : '';
+
+  // ขอบเขตของหน่วยงานตัดสินจาก "รหัสบริการ" ไม่ใช่ชื่อหน่วยงานบนใบ
+  // ช่องหน่วยงานของ AIR-01 / WTS-03 เก็บหอผู้ป่วยที่ไปเก็บตัวอย่าง ไม่ใช่ผู้ส่งตรวจ
+  // ใช้ชื่อหน่วยงานกรองจะได้ใบของหน่วยงานอื่นติดมาด้วย ซึ่งตอนนี้มีปุ่มลบอยู่ข้าง ๆ
+  const isDeptStaff = (user && user.role === 'department_staff');
+  const myService = isDeptStaff ? (user.serviceCode || '') : '';
 
   tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-xl mr-2"></i> กำลังโหลดข้อมูลรายงาน...</td></tr>`;
 
   const { data: reports } = await window.ReportDB.getReports({
-    serviceCode: filterService,
-    department: filterDept,
+    serviceCode: myService || filterService,
     search: search
   });
 
   if (!reports || reports.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่พบรายงานผลตรวจ${filterDept ? ` ของ ${filterDept}` : ''}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ไม่พบรายงานผลตรวจ${isDeptStaff ? ` ของ ${user.department}` : ''}</td></tr>`;
     return;
   }
 
-  const isDeptStaff = (user && user.role === 'department_staff');
 
   tbody.innerHTML = reports.map((r, idx) => {
     const isPass = ['pass', 'normal', 'no_growth'].includes(r.overall_result?.toLowerCase());
@@ -653,34 +666,21 @@ async function loadReportsTable() {
           <a href="report_view.html?id=${r.id || r.submission_no}" target="_blank" class="inline-flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="ดูรายงานผลและพิมพ์">
             <i class="fas fa-file-lines"></i> <span>ดูผลตรวจ</span>
           </a>
-          ${!isDeptStaff ? `
-            <button onclick="previewReportModal('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-slate-700" title="แก้ไข / ลงผลตรวจ">
-              <i class="fas fa-pen-to-square"></i>
-            </button>
-            <button onclick="deleteReportConfirm('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-rose-600" title="ลบรายงาน">
-              <i class="fas fa-trash"></i>
-            </button>
-          ` : ''}
+          <button onclick="deleteReportConfirm('${r.id || r.submission_no}')" class="p-1 text-slate-400 hover:text-rose-600" title="ลบรายงานถาวร (กู้คืนไม่ได้)">
+            <i class="fas fa-trash"></i>
+          </button>
         </td>
       </tr>
     `;
   }).join('');
 }
 
+// หน่วยงานลบใบของตนเองได้ (ตารางนี้กรองด้วย department อยู่แล้ว)
+// ฝั่งฐานข้อมูลยังบังคับอีกชั้นว่าต้องล็อกอินเป็นเจ้าหน้าที่จึงจะลบได้ (RLS)
 async function deleteReportConfirm(reportId) {
-  const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
-  if (user && user.role === 'department_staff') {
-    Swal.fire({
-      icon: 'error',
-      title: 'ไม่มีสิทธิ์ลบรายงาน',
-      text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่มีสิทธิ์ลบรายงานผลตรวจ'
-    });
-    return;
-  }
-
   const result = await Swal.fire({
     title: 'ยืนยันการลบรายงานตรวจ?',
-    text: 'การลบรายงานผลตรวจนี้จะไม่สามารถกู้คืนได้ตามมาตรฐาน ISO 15189',
+    text: 'ลบแล้วกู้คืนไม่ได้ และรายการตัวอย่างในใบนี้จะถูกลบตามไปด้วย หากต้องการคงร่องรอยไว้ตามมาตรฐาน ISO 15189 ให้ใช้การยกเลิกใบแทน',
     icon: 'warning',
     showCancelButton: true,
     confirmButtonColor: '#e11d48',
@@ -709,18 +709,21 @@ async function loadBookingsManagerTable() {
   if (!tbody) return;
 
   const user = currentLoggedUser || await window.AuthManager.getCurrentUser();
-  const filterDept = (user && user.role === 'department_staff') ? user.department : '';
   const isDeptStaff = (user && user.role === 'department_staff');
+  const myService = isDeptStaff ? String(user.serviceCode || '').toUpperCase() : '';
 
   tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400"><i class="fas fa-spinner fa-spin text-xl mr-2"></i> กำลังโหลดรายการจอง...</td></tr>`;
 
   let bookings = await window.BookingDB.getAllBookings(50);
-  if (filterDept) {
-    bookings = bookings.filter(b => b.department && b.department.includes(filterDept));
+
+  // เทียบชื่อหน่วยงานแบบตรงตัวใช้ไม่ได้ คนจองพิมพ์ย่อไม่เหมือนกัน
+  // เช่น "งานอาชีวอนามัยฯ" "ผลิตยา" "เวชศาสตร์การบริการโลหิต"
+  if (myService) {
+    bookings = bookings.filter(b => String(b.service_code || '').toUpperCase() === myService);
   }
 
   if (!bookings || bookings.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ยังไม่มีรายการจองคิว${filterDept ? ` ของ ${filterDept}` : ''}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">ยังไม่มีรายการจองคิว${isDeptStaff ? ` ของ ${user.department}` : ''}</td></tr>`;
     return;
   }
 
@@ -737,11 +740,9 @@ async function loadBookingsManagerTable() {
         </span>
       </td>
       <td class="p-3 text-right space-x-1">
-        ${!isDeptStaff ? `
-          <button onclick="convertBookingToReport('${b.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="ออกผลตรวจจากคิวนี้">
-            <i class="fas fa-file-signature mr-0.5"></i> ออกผลตรวจ
-          </button>
-        ` : ''}
+        <button onclick="convertBookingToReport('${b.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2 py-1 rounded text-[11px] border border-emerald-200 transition" title="เปิดแบบฟอร์มส่งตรวจโดยเติมข้อมูลจากคิวนี้ให้">
+          <i class="fas fa-file-signature mr-0.5"></i> สร้างรายการตรวจ
+        </button>
         <button onclick="deleteBookingConfirm('${b.id}')" class="p-1 text-slate-400 hover:text-rose-600" title="ยกเลิกคิวจอง">
           <i class="fas fa-trash"></i>
         </button>
@@ -807,9 +808,11 @@ async function loadDashboardKPIs() {
   const elBook = document.getElementById('adm-kpi-bookings');
 
   if (user && user.role === 'department_staff') {
-    const { data: reports } = await window.ReportDB.getReports({ department: user.department, pageSize: 500 });
+    // นับด้วยรหัสบริการให้ตรงกับขอบเขตที่หน่วยงานจัดการได้จริง
+    const myService = String(user.serviceCode || '').toUpperCase();
+    const { data: reports } = await window.ReportDB.getReports({ serviceCode: myService, pageSize: 500 });
     let bookings = await window.BookingDB.getAllBookings(500);
-    bookings = bookings.filter(b => b.department && b.department.includes(user.department));
+    bookings = bookings.filter(b => String(b.service_code || '').toUpperCase() === myService);
 
     if (elTot) elTot.textContent = reports ? reports.length : 0;
     if (elComp) elComp.textContent = reports ? reports.filter(r => r.status === 'completed' || ['pass', 'normal', 'no_growth'].includes(r.overall_result?.toLowerCase())).length : 0;

@@ -105,7 +105,11 @@ function initFilterControls() {
 async function loadDashboardData() {
   const year = document.getElementById('dash-filter-year')?.value || '';
   const serviceCode = document.getElementById('dash-filter-service')?.value || '';
-  const deptFilter = (!isViewingAll && loggedInUser && loggedInUser.role === 'department_staff') ? loggedInUser.department : '';
+  // ไม่กรองด้วยชื่อหน่วยงานซ้ำอีกชั้น เพราะช่องหน่วยงานของ AIR-01 / WTS-03
+  // เก็บหอผู้ป่วยที่ไปเก็บตัวอย่าง ไม่ใช่หน่วยงานผู้ส่งตรวจ
+  // กรองซ้ำแล้วตัวเลขบนแดชบอร์ดจะน้อยกว่าจำนวนใบที่หน่วยงานเห็นในหน้ารายงาน
+  // ตัวกรองบริการด้านบนตั้งเป็นบริการของหน่วยงานอยู่แล้ว จึงคุมขอบเขตได้ครบ
+  const deptFilter = '';
 
   const loadingOverlay = document.getElementById('dashboard-loading');
   if (loadingOverlay) loadingOverlay.classList.remove('hidden');

@@ -838,15 +838,44 @@ const ReportDB = {
   /**
    * ลบรายงานผลตรวจ
    */
+  /**
+   * ลบใบรายงานถาวร (report_items หายตาม ON DELETE CASCADE)
+   * ----------------------------------------------------------------------------
+   * มีสองกับดักที่ต้องดักเอง ไม่งั้นจะรายงานว่าสำเร็จทั้งที่ใบยังอยู่:
+   *
+   * 1) RLS ที่ปฏิเสธ DELETE ไม่คืน error — PostgREST ตอบ 204 แล้วลบ 0 แถว
+   *    จึงต้องขอแถวที่ลบจริงกลับมาด้วย .select() แล้วนับเอง
+   *    เกิดจริงเมื่อ session ฝั่ง Supabase หลุด หน้าจอยังบอกว่าล็อกอินอยู่
+   *
+   * 2) ใบที่ยังไม่ sync ขึ้นคลาวด์มี id เป็นเลขที่เอกสาร ไม่ใช่ UUID
+   *    ยิงตรงเข้า Postgres จะได้ invalid input syntax for type uuid
+   */
   async deleteReport(id) {
     if (window.supabaseClient) {
       try {
-        const { error } = await window.supabaseClient
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(id || ''));
+        let targetId = isUuid ? id : null;
+
+        if (!targetId) {
+          const found = await window.supabaseClient
+            .from('reports').select('id').eq('submission_no', id).maybeSingle();
+          targetId = found.data && found.data.id;
+        }
+
+        if (!targetId) {
+          return { success: false, error: new Error('ไม่พบใบนี้ในฐานข้อมูลกลาง (อาจมีเฉพาะในเครื่องนี้)') };
+        }
+
+        const { data, error } = await window.supabaseClient
           .from('reports')
           .delete()
-          .eq('id', id);
+          .eq('id', targetId)
+          .select();
 
         if (error) throw error;
+        if (!(data || []).length) {
+          return { success: false, error: new Error('ไม่มีแถวใดถูกลบ — สิทธิ์เขียนอาจหลุด กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง') };
+        }
         return { success: true, error: null };
       } catch (err) {
         return { success: false, error: err };
