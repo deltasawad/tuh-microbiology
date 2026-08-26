@@ -120,7 +120,7 @@ const SERVICES_CONFIG = {
   'DRG_07': {
     code: 'DRG_07',
     prefix: 'DRG1',
-    name: 'Drug (สำหรับงานผลิตยา1) ปลอดเชื้อ',
+    name: 'Drug (สำหรับงานผลิตยา) ปลอดเชื้อ',
     category: 'การทดสอบความปราศจากเชื้อของผลิตภัณฑ์ยา (Sterility Test)',
     unit: 'Growth / No growth',
     standard: 'USP <71> Sterility Tests (FTM & TSB)',
@@ -138,7 +138,7 @@ const SERVICES_CONFIG = {
   'DRG_08': {
     code: 'DRG_08',
     prefix: 'DRG2',
-    name: 'Drug (สำหรับงานผลิตยา2) การปนเปื้อนเชื้อจุลินทรีย์',
+    name: 'Drug (สำหรับยาผลิตปราศจากเชื้อ) การปนเปื้อนเชื้อจุลินทรีย์',
     category: 'รายงานผลการวิเคราะห์ปริมาณเชื้อและการปนเปื้อนในยาไม่ปราศจากเชื้อ',
     unit: 'Growth / No growth',
     standard: 'USP <61> TAMC / TYMC & USP <62> Specified Microorganisms',
@@ -176,7 +176,7 @@ const WARDS_LIST = [
   "ปัญจา", "ก่อนและหลังผ่าตัด", "ผ่าตัดไม่ค้างคืน", "งานการพยาบาลผู้ป่วยผ่าตัด", "วิสัญญี",
   "ส่องกล้องและหัตถการพิเศษ", "หน่วยการพยาบาลตรวจโรคภูมิแพ้โรคหืดฯ", "ศูนย์ thammasat Lifestyle and wellness medical center",
   "งานการพยาบาลเวชศาสตร์การเจริญพันธ์(ผู้มีบุตรยาก)", "หน่วยการพยาบาลตรวจโรคผิวหนัง", "ศูนย์ไตเทียมประสิทธิภาพสูง",
-  "หน่วยการพยาบาลตรวจโรคเวชศาสตร์ฟื้นฟู", "ธนาคารเลือด", "งานโภชนาการ", "งานผลิตยา", "งานควบคุมโรคติดเชื้อ (IC)"
+  "หน่วยการพยาบาลตรวจโรคเวชศาสตร์ฟื้นฟู", "ธนาคารเลือด", "งานโภชนาการ", "งานผลิตยา", "ยาผลิตปราศจากเชื้อ", "งานควบคุมโรคติดเชื้อ (IC)"
 ];
 
 // LocalStorage Mock Data Fallbacks (เมื่อยังไม่ได้เชื่อม Supabase)
@@ -1051,7 +1051,8 @@ const ReportDB = {
     const normalizeDepartment = (deptStr) => {
       const d = (deptStr || 'ไม่ระบุหน่วยงาน').trim();
       if (d.includes('อาชีวอนามัย')) return 'งานอาชีวอนามัยและศูนย์บริการสุขภาพบุคลากร';
-      if (d.includes('ผลิตยา') || d.includes('เตรียมยา') || d.includes('pharma') || d.includes('compounding')) return 'งานผลิตยา (หน่วยเตรียมยาและผลิตยา)';
+      if (d.includes('ยาผลิตปราศจากเชื้อ')) return 'ยาผลิตปราศจากเชื้อ';
+      if (d.includes('ผลิตยา') || d.includes('เตรียมยา') || d.includes('pharma') || d.includes('compounding')) return 'งานผลิตยา';
       if (d.includes('ควบคุมโรค') || d.includes('IC') || d.includes('icn')) return 'งานควบคุมโรคติดเชื้อ (IC)';
       if (d.includes('ธนาคารเลือด') || d.includes('Blood')) return 'งานธนาคารเลือด';
       if (d.includes('โภชนาการ') || d.includes('อาหาร')) return 'งานโภชนาการ';

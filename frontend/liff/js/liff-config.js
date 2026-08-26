@@ -91,8 +91,8 @@ const LIFF_SERVICES = {
   WTO_04: { code: 'WTO_04', short: 'WTO-04', name: 'Water (ห้องผ่าตัด OR)',                       dept: 'ห้องผ่าตัด (OR)',                            icon: '🚿', subjectLabel: 'จุดเก็บน้ำ',      accent: '#4338ca' },
   WTM_05: { code: 'WTM_05', short: 'WTM-05', name: 'Water (ศูนย์การแพทย์ธรรมศาสตร์ THAMC)',       dept: 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)',            icon: '💧', subjectLabel: 'จุดเก็บน้ำ',      accent: '#0e7490' },
   FOD_06: { code: 'FOD_06', short: 'FOD-06', name: 'Food Sanitation (สุขาภิบาลอาหาร)',            dept: 'งานโภชนาการ',                                icon: '🍲', subjectLabel: 'รายการอาหาร',    accent: '#047857' },
-  DRG_07: { code: 'DRG_07', short: 'DRG-07', name: 'Drug — ยาปลอดเชื้อ (งานผลิตยา 1)',            dept: 'งานผลิตยา (หน่วยเตรียมยาปราศจากเชื้อ)',      icon: '💊', subjectLabel: 'ชนิดยา',         accent: '#7e22ce' },
-  DRG_08: { code: 'DRG_08', short: 'DRG-08', name: 'Drug — การปนเปื้อนเชื้อจุลินทรีย์ (ผลิตยา 2)', dept: 'งานผลิตยา',                                  icon: '🧪', subjectLabel: 'ยาเตรียม',       accent: '#b45309' }
+  DRG_07: { code: 'DRG_07', short: 'DRG-07', name: 'Drug — ยาปลอดเชื้อ (งานผลิตยา)',              dept: 'งานผลิตยา',      icon: '💊', subjectLabel: 'ชนิดยา',         accent: '#7e22ce' },
+  DRG_08: { code: 'DRG_08', short: 'DRG-08', name: 'Drug — การปนเปื้อนเชื้อจุลินทรีย์',           dept: 'ยาผลิตปราศจากเชื้อ',                                  icon: '🧪', subjectLabel: 'ยาเตรียม',       accent: '#b45309' }
 };
 
 /**

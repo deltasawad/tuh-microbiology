@@ -64,14 +64,14 @@ const SERVICES = [
 
   { code: 'DRG_07', label: 'DRG-07', icon: '💊', accent: '#7e22ce',
     name: 'Drug — ยาปลอดเชื้อ',
-    forWho: 'งานผลิตยา 1',
+    forWho: 'งานผลิตยา',
     what: 'ความปราศจากเชื้อของผลิตภัณฑ์ยา',
     unit: 'Growth / No growth',
     std: 'USP <71> Sterility Tests (FTM & TSB)' },
 
   { code: 'DRG_08', label: 'DRG-08', icon: '🧪', accent: '#a16207',
     name: 'Drug — การปนเปื้อน',
-    forWho: 'งานผลิตยา 2',
+    forWho: 'ยาผลิตปราศจากเชื้อ',
     what: 'ปริมาณเชื้อและการปนเปื้อนในยาไม่ปราศจากเชื้อ',
     unit: 'Growth / No growth',
     std: 'USP <61> TAMC/TYMC และ USP <62>' }

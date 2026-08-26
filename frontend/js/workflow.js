@@ -117,7 +117,7 @@ if (document.readyState === 'loading') {
 
 
 // ==============================================================================
-// รายการยาที่ส่งตรวจเพาะเชื้อประจำ (DRG-07 งานผลิตยา 1)
+// รายการยาที่ส่งตรวจเพาะเชื้อประจำ (DRG-07 งานผลิตยา)
 // ------------------------------------------------------------------------------
 // คัดจากแบบฟอร์มกระดาษ "ผลเพาะเชื้อ" ที่งานผลิตยาใช้อยู่ เรียงตามลำดับเดิม
 // ใช้เป็นตัวเลือกในช่อง "ชนิดของยา" แต่ยังพิมพ์ชื่ออื่นเองได้
@@ -259,7 +259,8 @@ async function checkUserRoleAndInitTabs() {
       'bioburden': 'DRG_08',
       'ผลิตยา': 'DRG_07',
       'ผลิตยา1': 'DRG_07',
-      'ผลิตยา2': 'DRG_08'
+      'ผลิตยา2': 'DRG_08',
+      'ยาผลิตปราศจากเชื้อ': 'DRG_08'
     };
     const mappedSrv = srvMap[targetService.toLowerCase()] || targetService.toUpperCase();
     const srvSelect = document.getElementById('sub-service-select');
@@ -672,13 +673,13 @@ async function handleDayClick(dateStr, thaiDateStr) {
       defaultPhone = defaultPhone || '8406';
     } else if (user.username === 'compounding') {
       defaultService = 'DRG_07';
-      defaultDept = defaultDept || 'งานผลิตยา (ปลอดเชื้อ)';
-      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 1';
+      defaultDept = defaultDept || 'งานผลิตยา';
+      defaultSender = defaultSender || 'เจ้าหน้าที่งานผลิตยา';
       defaultPhone = defaultPhone || '9907';
     } else if (user.username === 'pharma') {
       defaultService = 'DRG_08';
-      defaultDept = defaultDept || 'งานผลิตยา';
-      defaultSender = defaultSender || 'เจ้าหน้าที่ผลิตยา 2';
+      defaultDept = defaultDept || 'ยาผลิตปราศจากเชื้อ';
+      defaultSender = defaultSender || 'เจ้าหน้าที่ยาผลิตปราศจากเชื้อ';
       defaultPhone = defaultPhone || '9907';
     } else if (user.username === 'bloodbank') {
       defaultService = 'STR_02';
@@ -959,7 +960,8 @@ function initSubmissionForm() {
       'bioburden': 'DRG_08',
       'ผลิตยา': 'DRG_07',
       'ผลิตยา1': 'DRG_07',
-      'ผลิตยา2': 'DRG_08'
+      'ผลิตยา2': 'DRG_08',
+      'ยาผลิตปราศจากเชื้อ': 'DRG_08'
     };
     const mappedSrv = srvMap[paramService.toLowerCase()] || paramService.toUpperCase();
     if (srvSelect) srvSelect.value = mappedSrv;
@@ -987,8 +989,10 @@ function initSubmissionForm() {
       if (deptInput) deptInput.value = 'ศูนย์การแพทย์ธรรมศาสตร์ (THAMC)';
     } else if (srvSelect?.value === 'FOD_06') {
       if (deptInput) deptInput.value = 'งานโภชนาการ';
-    } else if (srvSelect?.value === 'DRG_07' || srvSelect?.value === 'DRG_08') {
+    } else if (srvSelect?.value === 'DRG_07') {
       if (deptInput) deptInput.value = 'งานผลิตยา';
+    } else if (srvSelect?.value === 'DRG_08') {
+      if (deptInput) deptInput.value = 'ยาผลิตปราศจากเชื้อ';
     }
   }
 
@@ -1128,7 +1132,7 @@ window.exportReportsToCSV = exportReportsToCSV;
 /**
  * ตัวย่อหน้าเลขที่เอกสารของแต่ละบริการ (ถอดจากข้อมูลจริงในระบบ)
  * ห้ามใช้ serviceCode.split('_')[0] เพราะ DRG_07 กับ DRG_08 จะได้ 'DRG' ชนกัน
- * ของจริงแยกเป็น DR1 (งานผลิตยา 1) และ DR2 (งานผลิตยา 2)
+ * ของจริงแยกเป็น DR1 (งานผลิตยา) และ DR2 (ยาผลิตปราศจากเชื้อ)
  */
 const SUBMISSION_PREFIX = {
   AIR_01: 'AIR', STR_02: 'STR', WTS_03: 'WTS', WTO_04: 'WTO',
@@ -1244,20 +1248,20 @@ function buildSampleItemsMatrix(rowCount = 10) {
   }
 
   // =========================================================================
-  // 1A. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_08 - งานผลิตยา 2)
+  // 1A. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_08 - ยาผลิตปราศจากเชื้อ)
   // =========================================================================
   if (serviceCode === 'DRG_08') {
     if (titleEl) {
       titleEl.innerHTML = `<i class="fas fa-flask text-[#df6a6a]"></i> <span>แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</span>`;
     }
     if (descEl) {
-      descEl.textContent = 'สำหรับงานผลิตยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ';
+      descEl.textContent = 'สำหรับยาผลิตปราศจากเชื้อ โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ';
     }
     if (deptLabel) {
       deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
     }
     if (deptInput && !deptInput.value) {
-      deptInput.value = 'งานผลิตยา';
+      deptInput.value = 'ยาผลิตปราศจากเชื้อ';
     }
     if (specimenTypeInput && !specimenTypeInput.value) {
       specimenTypeInput.value = 'ยาเตรียม';
@@ -1370,7 +1374,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
   }
 
   // =========================================================================
-  // 1C. ตรวจเพาะเชื้อจากยาปลอดเชื้อ (DRG_07 - งานผลิตยา 1 ปลอดเชื้อ)
+  // 1C. ตรวจเพาะเชื้อจากยาปลอดเชื้อ (DRG_07 - งานผลิตยา ปลอดเชื้อ)
   // =========================================================================
   if (serviceCode === 'DRG_07') {
     if (titleEl) {
@@ -1802,8 +1806,8 @@ async function handleSubmissionFormSubmit(e) {
   });
 
   const srvObj = window.SERVICES_CONFIG[serviceCode] || { 
-    name: (serviceCode === 'DRG_08' ? 'แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์' : 
-          (serviceCode === 'DRG_07' ? 'Drug ปลอดเชื้อ (สำหรับงานผลิตยา 1)' : 
+    name: (serviceCode === 'DRG_08' ? 'Drug (สำหรับยาผลิตปราศจากเชื้อ) การปนเปื้อนเชื้อจุลินทรีย์' : 
+          (serviceCode === 'DRG_07' ? 'Drug (สำหรับงานผลิตยา) ปลอดเชื้อ' : 
           (serviceCode === 'FOD_06' ? 'Food Sanitation (สำหรับงานโภชนาการ)' : 'ตรวจวิเคราะห์สิ่งแวดล้อม')))
   };
   const targetWard = items.length > 0 ? (items[0].drug_name || items[0].food_name || items[0].location_name || items[0].ward_name || department) : department;
@@ -2188,7 +2192,7 @@ function renderReportsArchiveTable(reports) {
     return;
   }
 
-  // View: งานผลิตยา 2 (DRG_08) -> 5 Columns Table Layout
+  // View: ยาผลิตปราศจากเชื้อ (DRG_08) -> 5 Columns Table Layout
   if (isDrug2View) {
     tbody.innerHTML = reports.map((r, idx) => {
       const formattedDate = r.formatted_date || r.sampling_date || '23/07/2569';
@@ -2228,7 +2232,7 @@ function renderReportsArchiveTable(reports) {
     return;
   }
 
-  // View: งานผลิตยา 1 (DRG_07) -> Card Layout
+  // View: งานผลิตยา (DRG_07) -> Card Layout
   if (isDrug1View) {
     tbody.innerHTML = reports.map((r, idx) => {
       const formattedDate = r.formatted_date || r.sampling_date || '24/05/2569';
