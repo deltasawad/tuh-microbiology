@@ -2523,14 +2523,15 @@ async function adminEditReport(reportId) {
   let saved = false, lastErr = null;
 
   for (const st of candidates) {
+    // ⚠️ ต้องกระจายค่าจากกล่องแก้ไขทั้งหมด ไม่ใช่ไล่เขียนทีละช่อง
+    //    เดิมระบุแค่ 5 ช่องตายตัว ช่องของงานผลิตยา (Lot No. ผลิตเมื่อวันที่ ปริมาณ ฯลฯ)
+    //    ที่ผู้ใช้กรอกมาจึงถูกมองข้าม กดบันทึกแล้ว updated_at เปลี่ยนแต่ค่ายังเป็น null
+    //    ทำให้ดูเหมือนบันทึกสำเร็จทั้งที่ไม่ได้บันทึก
     const { error } = await window.supabaseClient
       .from('reports')
       .update({
-        department: form.department,
-        ward_room: form.ward_room,
-        sampling_date: form.sampling_date,
+        ...form,
         status: st,
-        remarks: form.remarks,
         updated_at: new Date().toISOString()
       })
       .eq('id', targetId);
