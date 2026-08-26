@@ -123,19 +123,19 @@ if (document.readyState === 'loading') {
 // ใช้เป็นตัวเลือกในช่อง "ชนิดของยา" แต่ยังพิมพ์ชื่ออื่นเองได้
 // (ใช้ datalist ไม่ใช่ select เพราะรายการยาเปลี่ยนได้ ไม่ควรบังคับให้เลือกเฉพาะที่มี)
 //
-// เลขในวงเล็บบนกระดาษเป็นวันที่ผลิตของแต่ละรอบ จึงไม่ใส่ไว้ในตัวเลือก
+// ตรงกับของจริงในระบบ: รายการย่อยของ DRG-07 ทั้ง 144 รายการจาก 48 ใบ
+// เป็นยา 4 ตัวนี้เท่านั้น ไม่มีตัวอื่นเลย
+//
+// ใช้ 'Zinc sulphate solution' เต็มคำ เพราะใบเก่าทุกใบเขียนแบบนี้
+// ถ้าใส่แค่ 'Zinc sulphate' ใบใหม่จะกลายเป็นคนละชื่อกับใบเก่าเวลาค้นหรือจัดกลุ่ม
+//
+// เลขล็อตในวงเล็บบนกระดาษเปลี่ยนทุกรอบผลิต จึงไม่ใส่ไว้ในตัวเลือก
 // ==============================================================================
 const DRUG_SAMPLE_LIST = [
-  'Alprostadil 10 mcg/ml',
-  'ACTH',
-  'Methylprednisolone 1% ED',
-  'Insulin ED',
-  'Dexamethasone 0.01% ED',
-  'Norepinephrine',
-  'Heparin 4 U',
-  'Heparin 100 U',
-  'TPN-S',
-  'TPN-Lipid'
+  'Zinc sulphate solution',
+  'Trace element',
+  'Magnesium Chloride',
+  'Phosphate solution'
 ];
 
 /** วาง datalist ไว้ครั้งเดียวในหน้า ให้ทุกแถวใช้ร่วมกัน */
@@ -1329,7 +1329,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
         <span>ช่อง ผลการตรวจเพาะเชื้อที่ 72 ชม. ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>
         <button type="button" onclick="fillStandardPreparedMedicineList()"
                 class="ml-2 inline-flex items-center gap-1 bg-[#f7f2f8] hover:bg-[#f0e8f2] text-[#6c5070] border border-[#6c5070]/25 text-[11px] font-bold px-3 py-1.5 rounded-xl transition">
-          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยาเตรียมมาตรฐาน 10 รายการ
+          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยาเตรียมมาตรฐาน ${PREPARED_MEDICINE_LIST.length} รายการ
         </button>`;
     }
 
@@ -1464,7 +1464,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
         <span>ช่อง ผลเพาะเชื้อ และ ผล (Pass/Fail) ถูกล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>
         <button type="button" onclick="fillStandardDrugList()"
                 class="ml-2 inline-flex items-center gap-1 bg-[#f7f2f8] hover:bg-[#f0e8f2] text-[#6c5070] border border-[#6c5070]/25 text-[11px] font-bold px-3 py-1.5 rounded-xl transition">
-          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยามาตรฐาน 10 รายการ
+          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยามาตรฐาน ${DRUG_SAMPLE_LIST.length} รายการ
         </button>`;
     }
 
