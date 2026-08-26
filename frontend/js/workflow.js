@@ -163,6 +163,60 @@ function fillStandardDrugList() {
 
 Object.assign(window, { DRUG_SAMPLE_LIST, fillStandardDrugList, ensureDrugDatalist });
 
+
+// ==============================================================================
+// รายการยาเตรียมประจำ (DRG-08 ยาผลิตปราศจากเชื้อ)
+// ------------------------------------------------------------------------------
+// คัดจากแบบฟอร์มกระดาษของหน่วยงาน เรียงตามลำดับเดิม
+// ใช้เป็นตัวเลือกทั้งช่อง "ยาเตรียม" ของแต่ละแถว และช่องหัวตาราง
+//
+// เป็นคนละชุดกับ DRUG_SAMPLE_LIST ของ DRG-07 สองหน่วยงานส่งยาคนละกลุ่มกัน
+// ใช้ datalist ไม่ใช่ select เพราะรายการยาเปลี่ยนได้ ไม่ควรบังคับให้เลือกเฉพาะที่มี
+// ==============================================================================
+const PREPARED_MEDICINE_LIST = [
+  'ACTH',
+  'Amikacin',
+  'Cefotaxime',
+  'Gentamicin',
+  'Norepinephrine',
+  'Vancomycin',
+  'Heparin 4 U',
+  'Heparin 100 U',
+  'TPN-S',
+  'Insulin ED'
+];
+
+/**
+ * เติมตัวเลือกลง datalist ที่มีอยู่แล้วในหน้า (ถ้าไม่มีก็สร้างให้)
+ * รายชื่อยาเก็บไว้ที่เดียวในไฟล์นี้ ไม่ได้เขียนซ้ำใน HTML
+ */
+function ensurePreparedMedicineDatalist() {
+  let dl = document.getElementById('prepared-medicine-list');
+  if (!dl) {
+    dl = document.createElement('datalist');
+    dl.id = 'prepared-medicine-list';
+    document.body.appendChild(dl);
+  }
+  if (dl.children.length) return;   // เติมไว้แล้ว
+  dl.innerHTML = PREPARED_MEDICINE_LIST.map(d => '<option value="' + d + '"></option>').join('');
+}
+
+/** เติมชื่อยาเตรียมลงทุกแถวตามลำดับในแบบฟอร์มกระดาษ */
+function fillStandardPreparedMedicineList() {
+  const inputs = document.querySelectorAll('.sub-item-drug2');
+  if (!inputs.length) return;
+  inputs.forEach((el, i) => {
+    if (i < PREPARED_MEDICINE_LIST.length) el.value = PREPARED_MEDICINE_LIST[i];
+  });
+  if (window.Swal) {
+    Swal.fire({ icon: 'success', title: 'เติมรายการยาเตรียมแล้ว',
+      text: 'เติม ' + Math.min(inputs.length, PREPARED_MEDICINE_LIST.length) + ' รายการตามลำดับในแบบฟอร์ม แก้ไขแต่ละช่องได้',
+      timer: 1800, showConfirmButton: false });
+  }
+}
+
+Object.assign(window, { PREPARED_MEDICINE_LIST, fillStandardPreparedMedicineList, ensurePreparedMedicineDatalist });
+
 // ==============================================================================
 // ROLE CHECK & TAB NAVIGATION (เห็นแท็บลงผลเฉพาะ ADMIN)
 // ==============================================================================
@@ -1270,7 +1324,13 @@ function buildSampleItemsMatrix(rowCount = 10) {
       suspectedOrganismContainer.classList.add('hidden');
     }
     if (footerHint) {
-      footerHint.innerHTML = `<i class="fas fa-info-circle text-[#6c5070]"></i> <span>ช่อง ผลการตรวจเพาะเชื้อที่ 72 ชม. ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>`;
+      // ปุ่มลัดเติมรายการยาตามลำดับในแบบฟอร์มกระดาษ ช่วยให้ไม่ต้องเลือกทีละแถว
+      footerHint.innerHTML = `<i class="fas fa-info-circle text-[#6c5070]"></i>
+        <span>ช่อง ผลการตรวจเพาะเชื้อที่ 72 ชม. ล็อคไว้สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ</span>
+        <button type="button" onclick="fillStandardPreparedMedicineList()"
+                class="ml-2 inline-flex items-center gap-1 bg-[#f7f2f8] hover:bg-[#f0e8f2] text-[#6c5070] border border-[#6c5070]/25 text-[11px] font-bold px-3 py-1.5 rounded-xl transition">
+          <i class="fas fa-wand-magic-sparkles"></i> เติมรายการยาเตรียมมาตรฐาน 10 รายการ
+        </button>`;
     }
 
     if (thead) {
@@ -1285,18 +1345,21 @@ function buildSampleItemsMatrix(rowCount = 10) {
       `;
     }
 
+    // ชื่อยาจากช่องหัวตารางถูกส่งต่อลงทุกแถวได้ แต่ห้ามเดาชื่อยาใส่ให้เอง
+    // เดิมวนใส่ Zinc sulphate / Trace element / Phosphate / Magnesium ให้อัตโนมัติ
+    // ถ้าผู้กรอกไม่ทันสังเกต ใบส่งตรวจจะได้ชื่อยาที่ไม่มีใครกรอกติดไปด้วย
     const defaultDrugHeader = document.getElementById('sub-drug2-header')?.value || '';
-    const sampleOptions = ['Zinc sulphate solution', 'Trace element', 'Phosphate solution', 'Magnesium Chloride'];
 
+    ensurePreparedMedicineDatalist();
     tbody.innerHTML = '';
     for (let i = 1; i <= rowCount; i++) {
       const tr = document.createElement('tr');
       tr.className = 'border-b border-slate-100 hover:bg-[#f7f2f8]/30 text-xs transition';
-      const defaultVal = defaultDrugHeader || (sampleOptions[(i - 1) % sampleOptions.length] || '');
+      const defaultVal = defaultDrugHeader;
       tr.innerHTML = `
         <td class="p-3 text-center font-bold text-slate-500 bg-[#f7f2f8]/40">${i}</td>
         <td class="p-2">
-          <input type="text" list="prepared-medicine-list" class="sub-item-drug2 w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เลือกหรือพิมพ์" value="${defaultVal}">
+          <input type="text" list="prepared-medicine-list" class="sub-item-drug2 w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs placeholder:text-slate-400 focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden font-medium" placeholder="เลือกหรือพิมพ์ชื่อยาเตรียม" value="${defaultVal}">
         </td>
         <td class="p-2 text-center">
           <input type="text" disabled value="กำลังส่งตรวจ" class="w-full px-3 py-2.5 bg-[#fafafa] border border-slate-200 rounded-2xl text-slate-400 text-center font-mono cursor-not-allowed text-xs" title="🔒 สำหรับเจ้าหน้าที่ห้องปฏิบัติการลงผลตรวจ">
