@@ -425,6 +425,24 @@ async function sendMail({ to, subject, html, text, from, replyTo, refId }) {
     });
     if (!(r.status === 202 || r.ok)) {
       const t = await r.text().catch(() => '');
+
+      // อีเมลผู้ส่งใน MAIL_FROM ไม่ตรงกับ Sender ที่ยืนยันไว้ใน SendGrid
+      // เป็นกรณีที่เจอบ่อยที่สุดตอนตั้งค่าครั้งแรก และข้อความดิบยาวมาก
+      if (r.status === 403 && /verified Sender Identity/i.test(t)) {
+        const e = new Error('อีเมลผู้ส่งไม่ตรงกับที่ยืนยันไว้กับ SendGrid');
+        e.hint = 'ค่า MAIL_FROM ต้องเป็นอีเมลเดียวกับที่ยืนยันไว้ใน SendGrid ' +
+                 '(Settings → Sender Authentication → Single Sender Verification) ' +
+                 'ตัวสะกดต้องตรงกันทุกตัวอักษร';
+        throw e;
+      }
+
+      if (r.status === 401) {
+        const e = new Error('SendGrid ปฏิเสธคีย์ที่ใช้');
+        e.hint = 'ตรวจว่า SENDGRID_API_KEY ถูกต้องและยังไม่ถูกลบ ' +
+                 'คีย์ต้องมีสิทธิ์ Mail Send เป็นอย่างน้อย';
+        throw e;
+      }
+
       throw new Error('SendGrid ตอบกลับ ' + r.status + ': ' + t.slice(0, 300));
     }
     return { provider: 'SendGrid', id: r.headers.get('x-message-id') || null };
