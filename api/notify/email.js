@@ -178,6 +178,16 @@ function itemResult(it, rep) {
   return organism ? `Growth — ${esc(organism)}` : 'Growth';
 }
 
+/**
+ * จำนวนโคโลนีหนึ่งช่องของ AIR-01
+ * ค่าว่างแปลว่ายังไม่ลงผล ไม่ใช่ศูนย์ ห้ามเติม 0 แทนเด็ดขาด
+ */
+function airCount(v, hasResult) {
+  const t = String(v == null ? '' : v).trim();
+  if (t === '') return hasResult ? '-' : 'รอตรวจ';
+  return esc(t);
+}
+
 /** ป้ายสถานะผ่าน/ไม่ผ่านของแต่ละแถว */
 function itemBadge(it) {
   const r = String(it.item_result || '').toLowerCase();
@@ -201,25 +211,45 @@ function buildHtml(rep, items, reportUrl) {
 
   const S = stdOf(rep);
 
-  const itemRows = items.map((it, i) => `
+  // AIR-01 รายงานเป็นจำนวนโคโลนี จึงแยก Bacteria กับ Fungus เป็นคนละคอลัมน์
+  // เหมือนใบรายงานบนเว็บ อ่านเทียบกับเกณฑ์ทีละชนิดได้ทันทีโดยไม่ต้องแยกในหัว
+  // บริการอื่นรายงานเป็น Growth / No growth ค่าเดียว จึงใช้คอลัมน์เดียวพอ
+  const isAir = String(rep.service_code || '').toUpperCase() === 'AIR_01';
+
+  const TD = 'padding:8px 6px;border-bottom:1px solid #eee;font-size:12px;';
+  const TH = 'padding:8px 6px;color:#6c5070;font-size:12px;';
+
+  const itemRows = items.map((it, i) => {
+    const hasResult = String(it.item_result || '').trim() !== '';
+    const resultCells = isAir
+      ? `<td style="${TD}text-align:center;color:#342838;font-family:monospace;font-weight:700;">${airCount(it.bacteria_count, hasResult)}</td>
+         <td style="${TD}text-align:center;color:#342838;font-family:monospace;font-weight:700;">${airCount(it.fungus_count, hasResult)}</td>`
+      : `<td style="${TD}color:#342838;">${itemResult(it, rep)}</td>`;
+    return `
     <tr>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;color:#78687e;font-size:12px;">${it.item_no || i + 1}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;font-weight:600;">${esc(itemWard(it, rep))}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${esc(dash(it.location_name || it.sample_description))}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${itemResult(it, rep)}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#78687e;font-size:12px;">${esc(dash(it.standard_criteria || it.standard_limit || (S && S.perItem)))}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;font-size:12px;">${itemBadge(it)}</td>
-    </tr>`).join('');
+      <td style="${TD}text-align:center;color:#78687e;">${it.item_no || i + 1}</td>
+      <td style="${TD}color:#342838;font-weight:600;">${esc(itemWard(it, rep))}</td>
+      <td style="${TD}color:#342838;">${esc(dash(it.location_name || it.sample_description))}</td>
+      ${resultCells}
+      <td style="${TD}color:#78687e;">${esc(dash(it.standard_criteria || it.standard_limit || (S && S.perItem)))}</td>
+      <td style="${TD}text-align:center;">${itemBadge(it)}</td>
+    </tr>`;
+  }).join('');
+
+  const resultHeads = isAir
+    ? `<th style="${TH}text-align:center;width:104px;">Bacteria (CFU)</th>
+       <th style="${TH}text-align:center;width:96px;">Fungus (CFU)</th>`
+    : `<th style="${TH}text-align:left;">ผลการตรวจ</th>`;
 
   const itemsTable = items.length ? `
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:8px;">
       <tr style="background:#f7f2f8;">
-        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:36px;">ลำดับ</th>
-        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">หน่วยงาน</th>
-        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">ตำแหน่งที่เก็บ</th>
-        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">ผลการตรวจ</th>
-        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">เกณฑ์มาตรฐาน</th>
-        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:56px;">สถานะ</th>
+        <th style="${TH}text-align:center;width:36px;">ลำดับ</th>
+        <th style="${TH}text-align:left;">หน่วยงาน</th>
+        <th style="${TH}text-align:left;">ตำแหน่งที่เก็บ</th>
+        ${resultHeads}
+        <th style="${TH}text-align:left;">เกณฑ์มาตรฐาน</th>
+        <th style="${TH}text-align:center;width:56px;">สถานะ</th>
       </tr>
       ${itemRows}
     </table>`
@@ -291,10 +321,17 @@ function buildText(rep, items, reportUrl) {
   ];
   const S = stdOf(rep);
   if (S) lines.push(`หน่วยวัด: ${S.unit} | เกณฑ์มาตรฐาน: ${S.std}`);
+  const isAirTxt = String(rep.service_code || '').toUpperCase() === 'AIR_01';
   items.forEach((it, i) => {
     const std = it.standard_criteria || it.standard_limit || (S && S.perItem) || '-';
+    const hasResult = String(it.item_result || '').trim() !== '';
     lines.push(`  ${it.item_no || i + 1}. [${itemWard(it, rep)}] ${dash(it.location_name || it.sample_description)}`);
-    lines.push(`      ผล: ${itemResult(it, rep).replace(/<[^>]+>/g, '')}  |  เกณฑ์: ${std}`);
+    if (isAirTxt) {
+      lines.push(`      Bacteria (CFU): ${airCount(it.bacteria_count, hasResult)}` +
+                 `  |  Fungus (CFU): ${airCount(it.fungus_count, hasResult)}  |  เกณฑ์: ${std}`);
+    } else {
+      lines.push(`      ผล: ${itemResult(it, rep).replace(/<[^>]+>/g, '')}  |  เกณฑ์: ${std}`);
+    }
   });
   if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
   if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
