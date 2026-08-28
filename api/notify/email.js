@@ -24,6 +24,8 @@
  *   แล้วเลือกผู้ให้บริการอย่างใดอย่างหนึ่ง
  *   RESEND_API_KEY      ถ้าใช้ Resend
  *   SENDGRID_API_KEY    ถ้าใช้ SendGrid
+ *   MAIL_PROVIDER       "resend" หรือ "sendgrid" — บังคับเมื่อตั้งคีย์ไว้ทั้งสองเจ้า
+ *                       ตั้งไว้แล้วสลับผู้ให้บริการได้โดยแก้ค่าเดียว
  *
  *   MAIL_REPLY_TO       (ไม่บังคับ) อีเมลห้องแล็บให้ผู้รับตอบกลับ
  *   PUBLIC_BASE_URL     (ไม่บังคับ) ปกติเดาจาก header ของคำขอได้เอง
@@ -353,7 +355,25 @@ async function sendMail({ to, subject, html, text, from, replyTo, refId }) {
   const resend = process.env.RESEND_API_KEY;
   const sendgrid = process.env.SENDGRID_API_KEY;
 
-  if (resend) {
+  // เลือกผู้ให้บริการ
+  // ------------------------------------------------------------------------------
+  // เดิมเช็ค Resend ก่อนแบบตายตัว ถ้าเพิ่มคีย์ SendGrid เข้ามาโดยไม่ลบคีย์ Resend
+  // ระบบจะยังส่งผ่าน Resend อยู่เงียบ ๆ แล้วงงว่าทำไมตั้งค่าแล้วไม่เปลี่ยน
+  // จึงให้ MAIL_PROVIDER เป็นตัวชี้ขาด สลับผู้ให้บริการได้โดยแก้ค่าเดียว
+  // ถ้ามีคีย์ทั้งสองแต่ไม่ได้ระบุ MAIL_PROVIDER จะไม่เดาให้ แต่บอกให้ระบุ
+  const pref = String(process.env.MAIL_PROVIDER || '').trim().toLowerCase();
+  if (pref && pref !== 'resend' && pref !== 'sendgrid') {
+    throw new Error(`MAIL_PROVIDER ต้องเป็น "resend" หรือ "sendgrid" เท่านั้น (ตอนนี้ตั้งไว้ว่า "${pref}")`);
+  }
+  if (!pref && resend && sendgrid) {
+    const e = new Error('ตั้งคีย์ไว้ทั้ง Resend และ SendGrid ระบบเลือกให้ไม่ได้');
+    e.hint = 'เพิ่มตัวแปร MAIL_PROVIDER บน Vercel แล้วใส่ค่าว่า sendgrid หรือ resend';
+    throw e;
+  }
+  const useSendgrid = sendgrid && (pref === 'sendgrid' || !resend);
+  const useResend   = resend   && (pref === 'resend'   || !sendgrid);
+
+  if (useResend) {
     const body = { from, to: [to], subject, html, text, headers: { 'X-Entity-Ref-ID': refId } };
     if (replyTo) body.reply_to = replyTo;
     const r = await fetch('https://api.resend.com/emails', {
@@ -388,7 +408,7 @@ async function sendMail({ to, subject, html, text, from, replyTo, refId }) {
     return { provider: 'Resend', id: d.id || null };
   }
 
-  if (sendgrid) {
+  if (useSendgrid) {
     const m = String(from).match(/^\s*(.*?)\s*<(.+)>\s*$/);
     const body = {
       personalizations: [{ to: [{ email: to }] }],
