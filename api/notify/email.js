@@ -91,6 +91,20 @@ function thaiDate(v) {
 }
 
 /**
+ * วันเวลาที่ส่ง ตามเขตเวลาไทย
+ * ฟังก์ชันบน Vercel รันด้วยเขตเวลา UTC จึงต้องบวก 7 ชั่วโมงเอง
+ * ห้ามใช้ toLocaleString('th-TH') เพราะ runtime อาจไม่มีข้อมูล locale ไทยติดมา
+ */
+function thaiNow() {
+  const d = new Date(Date.now() + 7 * 3600 * 1000);
+  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+             'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getUTCDate()} ${M[d.getUTCMonth()]} ${d.getUTCFullYear() + 543} ` +
+         `เวลา ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} น.`;
+}
+
+/**
  * ผลของรายการย่อยหนึ่งแถว
  * แต่ละบริการเก็บผลคนละคอลัมน์ (นับโคโลนี / พบ-ไม่พบเชื้อ / ข้อความสรุป)
  * จึงไล่หาค่าที่มีจริง ไม่เติมค่าแทนถ้าไม่มี
@@ -198,7 +212,7 @@ function buildHtml(rep, items, reportUrl) {
     </td></tr>
 
     <tr><td style="padding:16px 24px;background:#faf7fb;border-top:1px solid #e6d9ea;color:#78687e;font-size:11px;line-height:1.7;">
-      อีเมลฉบับนี้ส่งอัตโนมัติจากระบบส่งตรวจและรายงานผลสิ่งแวดล้อม<br>
+      อีเมลฉบับนี้ส่งอัตโนมัติจากระบบส่งตรวจและรายงานผลสิ่งแวดล้อม · ส่งเมื่อ ${esc(thaiNow())}<br>
       ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา · โทร. 0-2926-9460
     </td></tr>
   </table>
@@ -230,16 +244,25 @@ function buildText(rep, items, reportUrl) {
   if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
   if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
   if (reportUrl) lines.push('', `ระบบส่งตรวจสิ่งแวดล้อม: ${reportUrl}`);
+  lines.push('', `ส่งเมื่อ ${thaiNow()}`);
   return lines.join('\n');
 }
 
 /** ส่งผ่านผู้ให้บริการที่ตั้งค่าไว้ — ไม่มี dependency ใช้ fetch ล้วน */
-async function sendMail({ to, subject, html, text, from, replyTo }) {
+/**
+ * ส่งผ่านผู้ให้บริการที่ตั้งค่าไว้ — ไม่มี dependency ใช้ fetch ล้วน
+ * ------------------------------------------------------------------------------
+ * X-Entity-Ref-ID: Gmail จะจับเมลที่หัวเรื่องและเนื้อหาคล้ายกันมัดรวมเป็นเธรดเดียว
+ * แล้วยุบส่วนที่ซ้ำให้เหลือปุ่ม "..." ผู้รับต้องกดขยายเองถึงจะเห็นตารางผล
+ * เกิดจริงเมื่อส่งใบเดิมซ้ำ หรือส่งหลายใบที่หน้าตาเหมือนกันไปหาคนเดียวกัน
+ * ใส่ค่าไม่ซ้ำในหัวจดหมายนี้ Gmail จะถือเป็นคนละฉบับ ไม่ยุบเนื้อหา
+ */
+async function sendMail({ to, subject, html, text, from, replyTo, refId }) {
   const resend = process.env.RESEND_API_KEY;
   const sendgrid = process.env.SENDGRID_API_KEY;
 
   if (resend) {
-    const body = { from, to: [to], subject, html, text };
+    const body = { from, to: [to], subject, html, text, headers: { 'X-Entity-Ref-ID': refId } };
     if (replyTo) body.reply_to = replyTo;
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -257,7 +280,8 @@ async function sendMail({ to, subject, html, text, from, replyTo }) {
       personalizations: [{ to: [{ email: to }] }],
       from: m ? { name: m[1], email: m[2] } : { email: String(from).trim() },
       subject,
-      content: [{ type: 'text/plain', value: text }, { type: 'text/html', value: html }]
+      content: [{ type: 'text/plain', value: text }, { type: 'text/html', value: html }],
+      headers: { 'X-Entity-Ref-ID': refId }
     };
     if (replyTo) body.reply_to = { email: replyTo };
     const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -364,8 +388,12 @@ module.exports = async (req, res) => {
     const subjWard = String(rep.ward_room || rep.department || '').trim();
     const subject = `[${rep.submission_no}] ${waiting ? 'แจ้งรับตัวอย่าง — อยู่ระหว่างรอผล' : 'ผลการตรวจวิเคราะห์สิ่งแวดล้อม'}${subjWard ? ' · ' + subjWard : ''}`;
 
+    // ค่าไม่ซ้ำต่อการส่งหนึ่งครั้ง ใช้กับ X-Entity-Ref-ID
+    const refId = `${rep.submission_no || rep.id}-${Date.now().toString(36)}`;
+
     const sent = await sendMail({
       to,
+      refId,
       subject,
       html: buildHtml(rep, items, reportUrl),
       text: buildText(rep, items, reportUrl),
