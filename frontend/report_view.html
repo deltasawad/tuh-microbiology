@@ -910,49 +910,47 @@
       return Swal.fire({ icon: 'error', title: 'ยังไม่มีข้อมูลใบรายงาน', confirmButtonColor: '#6c5070' });
     }
 
-    // ---------- ยังไม่มีผู้รับ -> ให้กรอกแล้วบันทึกลงใบก่อน ----------
+    // อีเมลที่เคยบันทึกไว้กับใบ ใช้เป็นค่าตั้งต้นในช่องกรอก
     let to = String(rep.recipient_email || '').trim();
-    if (!to) {
-      const ask = await Swal.fire({
-        icon: 'question',
-        title: 'ใบนี้ยังไม่มีอีเมลผู้รับผล',
-        html: '<div class="text-sm text-slate-600 leading-relaxed">กรอกอีเมลที่ต้องการให้ส่งผล '
-            + 'ระบบจะบันทึกไว้กับใบนี้ ครั้งต่อไปจะส่งได้เลยไม่ต้องกรอกซ้ำ</div>',
-        input: 'email',
-        inputPlaceholder: 'name@tu.ac.th',
-        showCancelButton: true,
-        confirmButtonText: 'บันทึกแล้วส่ง',
-        cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#6c5070',
-        cancelButtonColor: '#94a3b8',
-        inputValidator: (v) => (isEmail(v) ? undefined : 'รูปแบบอีเมลไม่ถูกต้อง')
-      });
-      if (!ask.isConfirmed) return;
-      to = String(ask.value).trim();
-      if (!(await saveRecipientEmail(rep, to))) return;
-    }
 
-    // ---------- ยืนยันก่อนส่งออกไปข้างนอก ----------
+    // ---------- กล่องเดียวจบ: ยืนยัน + แก้อีเมลผู้รับได้ตรงนี้ ----------
+    // เดิมแยกเป็นสองกรณี ถ้าใบมีอีเมลอยู่แล้วจะกดยืนยันได้อย่างเดียว
+    // แก้ไม่ได้ ต้องไปแก้ที่ใบก่อนแล้วค่อยกลับมากดใหม่ ซึ่งวกวนเกินจำเป็น
+    // ตอนนี้ช่องอีเมลอยู่ในกล่องยืนยันเลย เติมค่าเดิมมาให้ พิมพ์ทับได้ทันที
     const waiting = OPEN_ST.includes(String(rep.status || '').toLowerCase());
-    const ok = await Swal.fire({
+    const ask = await Swal.fire({
       icon: waiting ? 'warning' : 'question',
       title: 'ส่งใบรายงานผลทางอีเมล?',
       html: '<div class="text-sm text-slate-600 leading-relaxed text-left">'
           + '<div>เลขที่เอกสาร: <b class="font-mono text-[#6c5070]">' + escE(rep.submission_no) + '</b></div>'
-          + '<div class="mt-1">ส่งถึง: <b>' + escE(to) + '</b></div>'
+          + (rep.ward_room ? '<div class="mt-1">หน่วยงานที่เก็บตัวอย่าง: <b>' + escE(rep.ward_room) + '</b></div>' : '')
           + (waiting
               ? '<div class="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">'
                 + 'ใบนี้<b>ยังไม่ออกผลตรวจ</b> อีเมลที่ส่งไปจะระบุว่าอยู่ระหว่างรอผล '
                 + 'ไม่ใช่ผลฉบับสมบูรณ์</div>'
               : '')
+          + '<div class="mt-3 text-xs font-bold text-slate-700">ส่งถึงอีเมล</div>'
+          + '<div class="text-[11px] text-slate-400">แก้ได้ ระบบจะจำไว้กับใบนี้ให้</div>'
           + '</div>',
+      input: 'email',
+      inputValue: to,
+      inputPlaceholder: 'name@tu.ac.th',
+      inputAttributes: { autocomplete: 'email' },
       showCancelButton: true,
       confirmButtonText: waiting ? 'ยืนยัน ส่งทั้งที่ยังไม่ออกผล' : 'ส่งอีเมล',
       cancelButtonText: 'ยกเลิก',
       confirmButtonColor: waiting ? '#d97706' : '#6c5070',
-      cancelButtonColor: '#94a3b8'
+      cancelButtonColor: '#94a3b8',
+      inputValidator: (v) => (isEmail(v) ? undefined : 'รูปแบบอีเมลไม่ถูกต้อง')
     });
-    if (!ok.isConfirmed) return;
+    if (!ask.isConfirmed) return;
+
+    // เปลี่ยนผู้รับต้องเขียนลงใบก่อน เพราะเซิร์ฟเวอร์อ่านผู้รับจากฐานข้อมูลเท่านั้น
+    const chosen = String(ask.value).trim();
+    if (chosen !== to) {
+      if (!(await saveRecipientEmail(rep, chosen))) return;
+      to = chosen;
+    }
 
     Swal.fire({ title: 'กำลังส่งอีเมล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 

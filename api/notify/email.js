@@ -357,7 +357,12 @@ module.exports = async (req, res) => {
     const reportUrl = base ? `${base}/workflow?tab=submission&service=${svc}` : '';
 
     const waiting = OPEN_STATUSES.includes(String(rep.status || '').toLowerCase());
-    const subject = `[${rep.submission_no}] ${waiting ? 'แจ้งรับตัวอย่าง — อยู่ระหว่างรอผล' : 'ผลการตรวจวิเคราะห์สิ่งแวดล้อม'} · ${rep.department || ''}`.trim();
+
+    // หัวเรื่องใช้ "หน่วยงานที่เข้าไปเก็บสิ่งส่งตรวจ" ไม่ใช่หน่วยงานผู้ส่งตรวจ
+    // AIR-01 และ WTS-03 งานอาชีวอนามัย/IC เป็นผู้ส่งทุกใบ ถ้าใช้ department
+    // หัวเรื่องของทุกใบจะเหมือนกันหมด แยกไม่ออกว่าเป็นผลของหอผู้ป่วยไหน
+    const subjWard = String(rep.ward_room || rep.department || '').trim();
+    const subject = `[${rep.submission_no}] ${waiting ? 'แจ้งรับตัวอย่าง — อยู่ระหว่างรอผล' : 'ผลการตรวจวิเคราะห์สิ่งแวดล้อม'}${subjWard ? ' · ' + subjWard : ''}`;
 
     const sent = await sendMail({
       to,
