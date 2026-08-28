@@ -116,21 +116,66 @@ function thaiStamp() {
 
 /**
  * ผลของรายการย่อยหนึ่งแถว
- * แต่ละบริการเก็บผลคนละคอลัมน์ (นับโคโลนี / พบ-ไม่พบเชื้อ / ข้อความสรุป)
- * จึงไล่หาค่าที่มีจริง ไม่เติมค่าแทนถ้าไม่มี
+ * ------------------------------------------------------------------------------
+ * AIR-01 รายงานเป็น "จำนวนโคโลนี" ของแบคทีเรียและเชื้อรา (หน่วย CFU/m³)
+ * บริการที่เหลือรายงานเป็น Growth / No growth ตามหน่วยวัดของแต่ละงาน
+ *
+ * ข้อมูลจริงในฐานข้อมูลเก็บไว้คนละแบบในคอลัมน์เดียวกัน จึงต้องแปลงเอง:
+ *   WTS-03  bacteria_count เก็บ "ชื่อเชื้อที่พบ" หรือ "No growth"
+ *   FOD-06  bacteria_count เก็บ "พบเชื้อ" / "ไม่พบเชื้อ"
+ *   DRG-08  bacteria_count เก็บ "< 10^2 CFU/g"
+ *   STR-02  bacteria_count เก็บ "0"
+ * ใช้ item_result เป็นตัวชี้ขาดก่อน เพราะเป็นคอลัมน์เดียวที่ทุกบริการกรอกตรงกัน
+ * แล้วค่อยหยิบชื่อเชื้อมาต่อท้ายเมื่อพบเชื้อ ซึ่งเป็นข้อมูลที่ห้ามตกหล่น
  */
-function itemResult(it) {
-  const parts = [];
-  if (it.bacteria_count != null && String(it.bacteria_count).trim() !== '') {
-    parts.push(`แบคทีเรีย ${esc(it.bacteria_count)}`);
+const PASS_WORDS = ['pass', 'normal', 'no_growth', 'nogrowth', 'ผ่าน'];
+const FAIL_WORDS = ['fail', 'growth', 'contaminated', 'positive', 'ไม่ผ่าน', 'พบเชื้อ'];
+
+/** ข้อความนี้แปลว่า "ไม่พบเชื้อ" หรือเป็นแค่ตัวเลข ไม่ใช่ชื่อเชื้อ */
+function isNotOrganismName(v) {
+  const t = String(v == null ? '' : v).trim().toLowerCase();
+  if (t === '' || t === '-' || t === '0') return true;
+  if (/^[\d.,<>=\s]+$/.test(t)) return true;                 // ตัวเลขหรือค่าจำกัด เช่น "< 10^2"
+  if (/cfu|ml|g|m³|m3/.test(t)) return true;             // มีหน่วยวัดติดมา
+  // คำที่บอก "ผลเป็นอย่างไร" ไม่ใช่ "เชื้ออะไร" — ต่อท้ายไปก็ซ้ำซ้อน
+  // เช่น FOD-06 เก็บว่า "พบเชื้อ" จะได้ "Growth — พบเชื้อ" ซึ่งอ่านแล้วงง
+  return ['no growth', 'nogrowth', 'ไม่พบเชื้อ', 'ไม่พบ', 'ไม่พบเชื้อก่อโรค',
+          'negative', 'sterile', 'ปกติ',
+          'พบเชื้อ', 'growth', 'positive', 'ไม่ผ่าน', 'fail', 'ผ่าน',
+          'contaminated', 'รอตรวจ', 'pending'].some(w => t.includes(w));
+}
+
+function itemResult(it, rep) {
+  const code = String(rep && rep.service_code || '').toUpperCase();
+  const res = String(it.item_result || '').trim().toLowerCase();
+
+  // ---------- AIR-01: รายงานจำนวนโคโลนี ----------
+  if (code === 'AIR_01') {
+    const parts = [];
+    if (it.bacteria_count != null && String(it.bacteria_count).trim() !== '') {
+      parts.push(`แบคทีเรีย ${esc(it.bacteria_count)}`);
+    }
+    if (it.fungus_count != null && String(it.fungus_count).trim() !== '') {
+      parts.push(`เชื้อรา ${esc(it.fungus_count)}`);
+    }
+    if (parts.length) return parts.join(' · ');
+    if (!res) return 'รอตรวจ';
+    return '-';
   }
-  if (it.fungus_count != null && String(it.fungus_count).trim() !== '') {
-    parts.push(`เชื้อรา ${esc(it.fungus_count)}`);
-  }
-  if (parts.length) return parts.join(' · ');
-  if (it.microorganism_found) return esc(it.microorganism_found);
-  if (it.item_result) return esc(it.item_result);
-  return '-';
+
+  // ---------- บริการอื่น: Growth / No growth ----------
+  if (!res || res === 'pending') return 'รอตรวจ';
+
+  const failed = FAIL_WORDS.includes(res) ||
+                 (!PASS_WORDS.includes(res) && FAIL_WORDS.some(w => res.includes(w)));
+  if (!failed) return 'No growth';
+
+  // พบเชื้อ — ต่อชื่อเชื้อที่พบไว้ด้วย ห้ามตัดทิ้ง
+  const organism = [it.microorganism_found, it.bacteria_count, it.fungus_count]
+    .map(v => String(v == null ? '' : v).trim())
+    .find(v => v && !isNotOrganismName(v));
+
+  return organism ? `Growth — ${esc(organism)}` : 'Growth';
 }
 
 /** ป้ายสถานะผ่าน/ไม่ผ่านของแต่ละแถว */
@@ -161,7 +206,7 @@ function buildHtml(rep, items, reportUrl) {
       <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;color:#78687e;font-size:12px;">${it.item_no || i + 1}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;font-weight:600;">${esc(itemWard(it, rep))}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${esc(dash(it.location_name || it.sample_description))}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${itemResult(it)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${itemResult(it, rep)}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#78687e;font-size:12px;">${esc(dash(it.standard_criteria || it.standard_limit || (S && S.perItem)))}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;font-size:12px;">${itemBadge(it)}</td>
     </tr>`).join('');
@@ -249,7 +294,7 @@ function buildText(rep, items, reportUrl) {
   items.forEach((it, i) => {
     const std = it.standard_criteria || it.standard_limit || (S && S.perItem) || '-';
     lines.push(`  ${it.item_no || i + 1}. [${itemWard(it, rep)}] ${dash(it.location_name || it.sample_description)}`);
-    lines.push(`      ผล: ${itemResult(it).replace(/<[^>]+>/g, '')}  |  เกณฑ์: ${std}`);
+    lines.push(`      ผล: ${itemResult(it, rep).replace(/<[^>]+>/g, '')}  |  เกณฑ์: ${std}`);
   });
   if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
   if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
