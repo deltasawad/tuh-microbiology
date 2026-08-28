@@ -35,6 +35,7 @@
   
   <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Custom Styles -->
   <link rel="stylesheet" href="css/style.css?v=3.0">
@@ -69,6 +70,10 @@
     </div>
 
     <div class="flex items-center gap-2">
+      <button id="btn-send-email" onclick="sendReportByEmail()" class="bg-white hover:bg-[#f7f2f8] text-[#6c5070] border border-[#6c5070]/30 text-xs font-bold px-4 py-2 rounded-2xl shadow-2xs transition flex items-center gap-1.5">
+        <i class="fas fa-envelope"></i>
+        <span>ส่งผลทางเมล</span>
+      </button>
       <button onclick="window.print()" class="k-btn-coral text-xs font-bold px-4 py-2 rounded-2xl shadow-xs transition flex items-center gap-1.5">
         <i class="fas fa-print"></i>
         <span>พิมพ์ใบรายงานผล (Print / PDF)</span>
@@ -312,6 +317,8 @@
       } catch (e) {
         rep = null;
       }
+      // ปุ่มส่งผลทางเมลอยู่นอกฟังก์ชันนี้ จึงต้องฝากใบที่โหลดมาไว้ตรงนี้
+      window.__CURRENT_REPORT__ = rep;
 
       // ==========================================================================
       // ⚠️ ตัดตัวสร้างข้อมูลปลอมออกแล้ว (Local mock fallback)
@@ -858,6 +865,141 @@
         }
       }
     });
+  </script>
+
+  <script>
+  // ==========================================================================
+  // ส่งใบรายงานผลทางอีเมล
+  // --------------------------------------------------------------------------
+  // ฝั่งเซิร์ฟเวอร์รับมาแค่ "ใบไหน" แล้วไปอ่านอีเมลผู้รับจากฐานข้อมูลเอง
+  // หน้านี้จึงไม่ส่งที่อยู่ผู้รับไปกับคำขอ ถ้าส่งไปได้เมื่อไหร่
+  // ใครก็ยิงส่งเมลในนามโรงพยาบาลผ่าน endpoint นี้ได้ทันที
+  //
+  // เวลาจะเปลี่ยนผู้รับ จึงต้องเขียนลงใบก่อน (ผ่าน Supabase ที่มี RLS คุม)
+  // แล้วค่อยสั่งส่ง
+  // ==========================================================================
+  const OPEN_ST = ['draft', 'pending', 'waiting_for_testing', 'in_progress', 'received', 'submitted'];
+  const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v || '').trim());
+  const escE = (v) => String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+
+  /** เขียนอีเมลผู้รับลงใบ — คืน true เมื่อบันทึกสำเร็จจริง */
+  async function saveRecipientEmail(rep, email) {
+    if (!window.supabaseClient) return false;
+    // RLS ที่ปฏิเสธ UPDATE ไม่คืน error แต่แก้ 0 แถว จึงต้องนับแถวเอง
+    const { data, error } = await window.supabaseClient
+      .from('reports')
+      .update({ recipient_email: email, updated_at: new Date().toISOString() })
+      .eq('id', rep.id)
+      .select();
+    if (error || !(data || []).length) {
+      await Swal.fire({
+        icon: 'error', title: 'บันทึกอีเมลไม่สำเร็จ',
+        text: (error && error.message) || 'ไม่มีแถวใดถูกแก้ไข — กรุณาเข้าสู่ระบบใหม่แล้วลองอีกครั้ง',
+        confirmButtonColor: '#6c5070'
+      });
+      return false;
+    }
+    rep.recipient_email = email;
+    return true;
+  }
+
+  async function sendReportByEmail() {
+    const rep = window.__CURRENT_REPORT__;
+    if (!rep || !rep.id) {
+      return Swal.fire({ icon: 'error', title: 'ยังไม่มีข้อมูลใบรายงาน', confirmButtonColor: '#6c5070' });
+    }
+
+    // ---------- ยังไม่มีผู้รับ -> ให้กรอกแล้วบันทึกลงใบก่อน ----------
+    let to = String(rep.recipient_email || '').trim();
+    if (!to) {
+      const ask = await Swal.fire({
+        icon: 'question',
+        title: 'ใบนี้ยังไม่มีอีเมลผู้รับผล',
+        html: '<div class="text-sm text-slate-600 leading-relaxed">กรอกอีเมลที่ต้องการให้ส่งผล '
+            + 'ระบบจะบันทึกไว้กับใบนี้ ครั้งต่อไปจะส่งได้เลยไม่ต้องกรอกซ้ำ</div>',
+        input: 'email',
+        inputPlaceholder: 'name@tu.ac.th',
+        showCancelButton: true,
+        confirmButtonText: 'บันทึกแล้วส่ง',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#6c5070',
+        cancelButtonColor: '#94a3b8',
+        inputValidator: (v) => (isEmail(v) ? undefined : 'รูปแบบอีเมลไม่ถูกต้อง')
+      });
+      if (!ask.isConfirmed) return;
+      to = String(ask.value).trim();
+      if (!(await saveRecipientEmail(rep, to))) return;
+    }
+
+    // ---------- ยืนยันก่อนส่งออกไปข้างนอก ----------
+    const waiting = OPEN_ST.includes(String(rep.status || '').toLowerCase());
+    const ok = await Swal.fire({
+      icon: waiting ? 'warning' : 'question',
+      title: 'ส่งใบรายงานผลทางอีเมล?',
+      html: '<div class="text-sm text-slate-600 leading-relaxed text-left">'
+          + '<div>เลขที่เอกสาร: <b class="font-mono text-[#6c5070]">' + escE(rep.submission_no) + '</b></div>'
+          + '<div class="mt-1">ส่งถึง: <b>' + escE(to) + '</b></div>'
+          + (waiting
+              ? '<div class="mt-3 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">'
+                + 'ใบนี้<b>ยังไม่ออกผลตรวจ</b> อีเมลที่ส่งไปจะระบุว่าอยู่ระหว่างรอผล '
+                + 'ไม่ใช่ผลฉบับสมบูรณ์</div>'
+              : '')
+          + '</div>',
+      showCancelButton: true,
+      confirmButtonText: waiting ? 'ยืนยัน ส่งทั้งที่ยังไม่ออกผล' : 'ส่งอีเมล',
+      cancelButtonText: 'ยกเลิก',
+      confirmButtonColor: waiting ? '#d97706' : '#6c5070',
+      cancelButtonColor: '#94a3b8'
+    });
+    if (!ok.isConfirmed) return;
+
+    Swal.fire({ title: 'กำลังส่งอีเมล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    let res, data;
+    try {
+      res = await fetch('/api/notify/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reportId: rep.id })
+      });
+      data = await res.json().catch(() => ({}));
+    } catch (e) {
+      return Swal.fire({
+        icon: 'error', title: 'ติดต่อเซิร์ฟเวอร์ไม่ได้',
+        text: String(e && e.message || e), confirmButtonColor: '#6c5070'
+      });
+    }
+
+    if (!res.ok || !data.ok) {
+      // ตั้งค่ายังไม่ครบ -> บอกชื่อตัวแปรที่ขาดตรง ๆ จะได้ไม่ต้องไล่หา
+      const miss = Array.isArray(data.missing) && data.missing.length
+        ? '<div class="mt-2 text-left text-[11px] bg-slate-50 border border-slate-200 rounded-lg p-2">'
+          + '<div class="font-bold text-slate-700 mb-1">ยังไม่ได้ตั้งค่าบน Vercel:</div>'
+          + data.missing.map(m => '<div class="font-mono text-rose-700">' + escE(m) + '</div>').join('')
+          + '</div>'
+        : '';
+      return Swal.fire({
+        icon: 'error',
+        title: data.error || 'ส่งอีเมลไม่สำเร็จ',
+        html: '<div class="text-xs text-slate-600 text-left">'
+            + (data.hint ? '<div>' + escE(data.hint) + '</div>' : '')
+            + miss + '</div>',
+        confirmButtonColor: '#6c5070'
+      });
+    }
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ส่งอีเมลแล้ว',
+      html: '<div class="text-sm text-slate-600">ส่งถึง <b>' + escE(data.to) + '</b>'
+          + '<div class="text-[11px] text-slate-400 mt-1">' + escE(data.provider || '') + ' · '
+          + escE(data.items || 0) + ' รายการผล</div></div>',
+      timer: 2600,
+      showConfirmButton: false
+    });
+  }
+  window.sendReportByEmail = sendReportByEmail;
   </script>
 </body>
 </html>

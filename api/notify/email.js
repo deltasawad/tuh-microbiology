@@ -1,0 +1,329 @@
+/**
+ * ==============================================================================
+ * ส่งใบรายงานผลตรวจทางอีเมล  (Vercel Serverless Function)
+ * POST /api/notify/email     body: { "reportId": "<uuid>" }
+ *                        หรือ { "submissionNo": "AIR-2026-08-26-01" }
+ * ==============================================================================
+ *
+ * ทำไมผู้รับต้องมาจากฐานข้อมูล ไม่ใช่จาก request
+ * ------------------------------------------------------------------------------
+ * ถ้ารับที่อยู่ผู้รับจาก body ตรง ๆ ฟังก์ชันนี้จะกลายเป็น open relay ทันที
+ * ใครก็ตามที่รู้ URL ยิง POST เข้ามาก็ส่งเมลในนามโรงพยาบาลได้ทุกฉบับ
+ * จึงรับมาแค่ "ใบไหน" แล้วไปอ่าน recipient_email ของใบนั้นจากฐานข้อมูลเอง
+ * ถ้าจะเปลี่ยนผู้รับ ต้องแก้ที่ใบผ่านหน้าเว็บซึ่งมีการล็อกอินและ RLS คุมอยู่
+ *
+ * ข้อมูลลับทั้งหมดมาจาก Environment Variables เท่านั้น ไม่มีค่าสำรองในโค้ด
+ * repo นี้เป็นสาธารณะ การฝังค่าไว้เท่ากับเผยแพร่
+ *
+ * ------------------------------------------------------------------------------
+ * ตัวแปรที่ต้องตั้งบน Vercel (Settings -> Environment Variables -> Production)
+ * ------------------------------------------------------------------------------
+ *   SUPABASE_URL        https://xxxx.supabase.co
+ *   SUPABASE_ANON_KEY   anon key (ตัวเดียวกับที่หน้าเว็บใช้ ไม่ใช่ service role)
+ *   MAIL_FROM           ผู้ส่ง เช่น  TUH Microbiology <lab@ธนาคารโดเมนที่ยืนยันแล้ว>
+ *   แล้วเลือกผู้ให้บริการอย่างใดอย่างหนึ่ง
+ *   RESEND_API_KEY      ถ้าใช้ Resend
+ *   SENDGRID_API_KEY    ถ้าใช้ SendGrid
+ *
+ *   MAIL_REPLY_TO       (ไม่บังคับ) อีเมลห้องแล็บให้ผู้รับตอบกลับ
+ *   PUBLIC_BASE_URL     (ไม่บังคับ) ปกติเดาจาก header ของคำขอได้เอง
+ *
+ * ถ้าตั้งไม่ครบ จะตอบกลับพร้อมบอกชื่อตัวแปรที่ขาด ไม่เงียบให้ไปหาสาเหตุเอง
+ * ==============================================================================
+ */
+
+const OPEN_STATUSES = ['draft', 'pending', 'waiting_for_testing', 'in_progress', 'received', 'submitted'];
+
+const esc = (v) => String(v == null ? '' : v)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const dash = (v) => {
+  const s = String(v == null ? '' : v).trim();
+  return s === '' ? '-' : s;
+};
+
+/** รูปแบบวันที่ไทย พ.ศ. — ค่าที่ไม่ใช่วันที่ส่งคืนเดิม ไม่เดาแทน */
+function thaiDate(v) {
+  const s = String(v || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return dash(v);
+  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+             'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+  const [y, m, d] = s.split('-').map(Number);
+  return `${d} ${M[m - 1]} ${y + 543}`;
+}
+
+/**
+ * ผลของรายการย่อยหนึ่งแถว
+ * แต่ละบริการเก็บผลคนละคอลัมน์ (นับโคโลนี / พบ-ไม่พบเชื้อ / ข้อความสรุป)
+ * จึงไล่หาค่าที่มีจริง ไม่เติมค่าแทนถ้าไม่มี
+ */
+function itemResult(it) {
+  const parts = [];
+  if (it.bacteria_count != null && String(it.bacteria_count).trim() !== '') {
+    parts.push(`แบคทีเรีย ${esc(it.bacteria_count)}`);
+  }
+  if (it.fungus_count != null && String(it.fungus_count).trim() !== '') {
+    parts.push(`เชื้อรา ${esc(it.fungus_count)}`);
+  }
+  if (parts.length) return parts.join(' · ');
+  if (it.microorganism_found) return esc(it.microorganism_found);
+  if (it.item_result) return esc(it.item_result);
+  return '-';
+}
+
+/** ป้ายสถานะผ่าน/ไม่ผ่านของแต่ละแถว */
+function itemBadge(it) {
+  const r = String(it.item_result || '').toLowerCase();
+  if (['pass', 'normal', 'no_growth', 'ผ่าน', 'ไม่พบเชื้อ'].includes(r)) {
+    return '<span style="color:#15803d;font-weight:700;">ผ่าน</span>';
+  }
+  if (['fail', 'growth', 'contaminated', 'ไม่ผ่าน', 'พบเชื้อ'].includes(r)) {
+    return '<span style="color:#b91c1c;font-weight:700;">ไม่ผ่าน</span>';
+  }
+  return '<span style="color:#94a3b8;">-</span>';
+}
+
+function buildHtml(rep, items, reportUrl) {
+  const waiting = OPEN_STATUSES.includes(String(rep.status || '').toLowerCase());
+
+  const row = (label, value) => `
+    <tr>
+      <td style="padding:6px 12px 6px 0;color:#78687e;font-size:13px;white-space:nowrap;">${esc(label)}</td>
+      <td style="padding:6px 0;color:#342838;font-size:13px;font-weight:600;">${esc(value)}</td>
+    </tr>`;
+
+  const itemRows = items.map((it, i) => `
+    <tr>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;color:#78687e;font-size:12px;">${it.item_no || i + 1}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${esc(dash(it.location_name || it.sample_description))}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${itemResult(it)}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#78687e;font-size:12px;">${esc(dash(it.standard_criteria || it.standard_limit))}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;font-size:12px;">${itemBadge(it)}</td>
+    </tr>`).join('');
+
+  const itemsTable = items.length ? `
+    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:8px;">
+      <tr style="background:#f7f2f8;">
+        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:40px;">ลำดับ</th>
+        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">รายการ / ตำแหน่ง</th>
+        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">ผลการตรวจ</th>
+        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">เกณฑ์มาตรฐาน</th>
+        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:60px;">สถานะ</th>
+      </tr>
+      ${itemRows}
+    </table>`
+    : '<p style="color:#78687e;font-size:13px;margin:8px 0 0;">ยังไม่มีรายการผลการตรวจในใบนี้</p>';
+
+  return `<!doctype html>
+<html lang="th"><body style="margin:0;padding:24px 12px;background:#faf7fb;font-family:'Segoe UI',Tahoma,sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e6d9ea;border-radius:16px;overflow:hidden;">
+    <tr><td style="background:#6c5070;padding:20px 24px;">
+      <div style="color:#ffffff;font-size:17px;font-weight:700;">ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม</div>
+      <div style="color:#e8dcea;font-size:12px;margin-top:4px;">งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ</div>
+    </td></tr>
+    <tr><td style="height:4px;background:#f9d56e;"></td></tr>
+
+    <tr><td style="padding:24px;">
+      ${waiting
+        ? '<div style="background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:16px;">ใบนี้ยัง<strong>อยู่ระหว่างรอผลการตรวจ</strong> ข้อมูลด้านล่างจึงยังไม่ใช่ผลฉบับสมบูรณ์</div>'
+        : '<div style="background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:16px;">ห้องปฏิบัติการ<strong>ออกผลการตรวจเรียบร้อยแล้ว</strong></div>'}
+
+      <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+        ${row('เลขที่เอกสาร', dash(rep.submission_no))}
+        ${row('บริการ', dash(rep.service_name))}
+        ${row('หน่วยงานส่งตรวจ', dash(rep.department))}
+        ${row('สถานที่ / จุดเก็บตัวอย่าง', dash(rep.ward_room))}
+        ${row('วันที่เก็บตัวอย่าง', thaiDate(rep.sampling_date))}
+        ${row('วันที่รายงานผล', thaiDate(rep.reported_date))}
+        ${row('ผู้รายงานผล', dash(rep.reporter_name))}
+      </table>
+
+      <div style="margin-top:22px;color:#6c5070;font-size:14px;font-weight:700;">ผลการตรวจวิเคราะห์</div>
+      ${itemsTable}
+
+      ${rep.remarks ? `<div style="margin-top:18px;padding:12px 14px;background:#faf7fb;border:1px solid #e6d9ea;border-radius:12px;">
+        <div style="color:#78687e;font-size:12px;margin-bottom:4px;">ความเห็นทางเทคนิค</div>
+        <div style="color:#342838;font-size:13px;line-height:1.6;">${esc(rep.remarks)}</div>
+      </div>` : ''}
+
+      ${reportUrl ? `<div style="margin-top:24px;text-align:center;">
+        <a href="${esc(reportUrl)}" style="display:inline-block;background:#6c5070;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:12px 26px;border-radius:12px;">เปิดใบรายงานผลฉบับเต็ม</a>
+        <div style="color:#94a3b8;font-size:11px;margin-top:8px;">ต้องเข้าสู่ระบบด้วยบัญชีหน่วยงานจึงจะเปิดดูได้</div>
+      </div>` : ''}
+    </td></tr>
+
+    <tr><td style="padding:16px 24px;background:#faf7fb;border-top:1px solid #e6d9ea;color:#78687e;font-size:11px;line-height:1.7;">
+      อีเมลฉบับนี้ส่งอัตโนมัติจากระบบส่งตรวจและรายงานผลสิ่งแวดล้อม<br>
+      ห้องปฏิบัติการจุลชีววิทยา ชั้น 3 ตึกกิติวัฒนา · โทร. 0-2926-9460
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+/** ข้อความล้วนสำหรับโปรแกรมเมลที่ไม่แสดง HTML */
+function buildText(rep, items, reportUrl) {
+  const lines = [
+    'ใบรายงานผลการตรวจวิเคราะห์สิ่งแวดล้อม',
+    'งานจุลชีววิทยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ',
+    '',
+    `เลขที่เอกสาร      : ${dash(rep.submission_no)}`,
+    `บริการ            : ${dash(rep.service_name)}`,
+    `หน่วยงานส่งตรวจ   : ${dash(rep.department)}`,
+    `สถานที่เก็บตัวอย่าง : ${dash(rep.ward_room)}`,
+    `วันที่เก็บตัวอย่าง  : ${thaiDate(rep.sampling_date)}`,
+    `วันที่รายงานผล     : ${thaiDate(rep.reported_date)}`,
+    '',
+    'ผลการตรวจวิเคราะห์'
+  ];
+  items.forEach((it, i) => {
+    lines.push(`  ${it.item_no || i + 1}. ${dash(it.location_name || it.sample_description)} — ` +
+      itemResult(it).replace(/<[^>]+>/g, ''));
+  });
+  if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
+  if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
+  if (reportUrl) lines.push('', `ใบรายงานผลฉบับเต็ม: ${reportUrl}`);
+  return lines.join('\n');
+}
+
+/** ส่งผ่านผู้ให้บริการที่ตั้งค่าไว้ — ไม่มี dependency ใช้ fetch ล้วน */
+async function sendMail({ to, subject, html, text, from, replyTo }) {
+  const resend = process.env.RESEND_API_KEY;
+  const sendgrid = process.env.SENDGRID_API_KEY;
+
+  if (resend) {
+    const body = { from, to: [to], subject, html, text };
+    if (replyTo) body.reply_to = replyTo;
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + resend, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error('Resend ตอบกลับ ' + r.status + ': ' + JSON.stringify(d).slice(0, 300));
+    return { provider: 'Resend', id: d.id || null };
+  }
+
+  if (sendgrid) {
+    const m = String(from).match(/^\s*(.*?)\s*<(.+)>\s*$/);
+    const body = {
+      personalizations: [{ to: [{ email: to }] }],
+      from: m ? { name: m[1], email: m[2] } : { email: String(from).trim() },
+      subject,
+      content: [{ type: 'text/plain', value: text }, { type: 'text/html', value: html }]
+    };
+    if (replyTo) body.reply_to = { email: replyTo };
+    const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + sendgrid, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!(r.status === 202 || r.ok)) {
+      const t = await r.text().catch(() => '');
+      throw new Error('SendGrid ตอบกลับ ' + r.status + ': ' + t.slice(0, 300));
+    }
+    return { provider: 'SendGrid', id: r.headers.get('x-message-id') || null };
+  }
+
+  throw new Error('ยังไม่ได้ตั้งค่าผู้ให้บริการส่งเมล');
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, error: 'ใช้ได้เฉพาะ POST' });
+  }
+
+  // ---------- ตรวจการตั้งค่าก่อน จะได้บอกได้ว่าขาดอะไร ----------
+  const SB_URL = process.env.SUPABASE_URL;
+  const SB_KEY = process.env.SUPABASE_ANON_KEY;
+  const FROM = process.env.MAIL_FROM;
+  const missing = [];
+  if (!SB_URL) missing.push('SUPABASE_URL');
+  if (!SB_KEY) missing.push('SUPABASE_ANON_KEY');
+  if (!FROM) missing.push('MAIL_FROM');
+  if (!process.env.RESEND_API_KEY && !process.env.SENDGRID_API_KEY) {
+    missing.push('RESEND_API_KEY หรือ SENDGRID_API_KEY');
+  }
+  if (missing.length) {
+    return res.status(503).json({
+      ok: false,
+      error: 'ระบบส่งอีเมลยังตั้งค่าไม่ครบ',
+      missing,
+      hint: 'ตั้งค่าที่ Vercel -> Settings -> Environment Variables (Production) แล้ว deploy ใหม่'
+    });
+  }
+
+  let body = req.body;
+  if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
+  body = body || {};
+
+  const reportId = String(body.reportId || '').trim();
+  const submissionNo = String(body.submissionNo || '').trim();
+  if (!reportId && !submissionNo) {
+    return res.status(400).json({ ok: false, error: 'ต้องระบุ reportId หรือ submissionNo' });
+  }
+
+  try {
+    // ---------- อ่านใบรายงานจากฐานข้อมูล ----------
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(reportId);
+    const col = isUuid ? 'id' : 'submission_no';
+    const key = isUuid ? reportId : (submissionNo || reportId);
+
+    const H = { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY };
+    const q = `${SB_URL}/rest/v1/reports?${col}=eq.${encodeURIComponent(key)}` +
+              `&select=*,report_items(*)&limit=1`;
+    const r = await fetch(q, { headers: H });
+    if (!r.ok) {
+      const t = await r.text().catch(() => '');
+      throw new Error('อ่านฐานข้อมูลไม่สำเร็จ ' + r.status + ': ' + t.slice(0, 200));
+    }
+    const rows = await r.json();
+    const rep = Array.isArray(rows) ? rows[0] : null;
+    if (!rep) return res.status(404).json({ ok: false, error: 'ไม่พบใบรายงานนี้' });
+
+    // ---------- ผู้รับมาจากใบเท่านั้น ----------
+    const to = String(rep.recipient_email || '').trim();
+    if (!to) {
+      return res.status(422).json({
+        ok: false,
+        error: 'ใบนี้ยังไม่มีอีเมลผู้รับผล',
+        hint: 'กรอกอีเมลในช่อง "อีเมลรับผลตรวจ" ของใบนี้ก่อน แล้วกดส่งอีกครั้ง'
+      });
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+      return res.status(422).json({ ok: false, error: 'รูปแบบอีเมลผู้รับไม่ถูกต้อง: ' + to });
+    }
+
+    const items = (rep.report_items || []).slice()
+      .sort((a, b) => (a.item_no || 0) - (b.item_no || 0));
+
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const proto = req.headers['x-forwarded-proto'] || 'https';
+    const base = (process.env.PUBLIC_BASE_URL || (host ? `${proto}://${host}` : '')).replace(/\/+$/, '');
+    const reportUrl = base ? `${base}/report_view.html?id=${encodeURIComponent(rep.id)}` : '';
+
+    const waiting = OPEN_STATUSES.includes(String(rep.status || '').toLowerCase());
+    const subject = `[${rep.submission_no}] ${waiting ? 'แจ้งรับตัวอย่าง — อยู่ระหว่างรอผล' : 'ผลการตรวจวิเคราะห์สิ่งแวดล้อม'} · ${rep.department || ''}`.trim();
+
+    const sent = await sendMail({
+      to,
+      subject,
+      html: buildHtml(rep, items, reportUrl),
+      text: buildText(rep, items, reportUrl),
+      from: FROM,
+      replyTo: process.env.MAIL_REPLY_TO || null
+    });
+
+    return res.status(200).json({
+      ok: true,
+      to,
+      submission_no: rep.submission_no,
+      items: items.length,
+      waiting,
+      provider: sent.provider,
+      messageId: sent.id
+    });
+
+  } catch (err) {
+    return res.status(502).json({ ok: false, error: String(err && err.message || err) });
+  }
+};

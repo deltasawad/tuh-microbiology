@@ -463,6 +463,18 @@
               <input type="text" id="sub-department" list="department-list" placeholder="พิมพ์หรือเลือกหน่วยงาน" required class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden">
             </div>
 
+            <!-- Field: อีเมลรับผลตรวจ — อยู่ในกริดร่วม จึงแสดงครบทุกบริการ
+                 ไม่บังคับกรอก ใครอยากได้ผลทางเมลค่อยกรอก -->
+            <div id="sub-email-container">
+              <label class="block font-semibold text-xs text-[#342838] mb-1.5" for="sub-recipient-email">
+                อีเมลรับผลตรวจ <span class="text-[10px] font-normal text-[#78687e]">(ไม่บังคับ)</span>
+              </label>
+              <input type="email" id="sub-recipient-email" placeholder="name@tu.ac.th"
+                     autocomplete="email" inputmode="email"
+                     class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#6c5070] focus:outline-hidden">
+              <p class="text-[10px] text-[#78687e] mt-1 leading-snug">ใช้แจ้งเตือนและส่งใบรายงานผลเมื่อออกผลแล้ว</p>
+            </div>
+
             <!-- Field 3: ประเภทสิ่งส่งตรวจ -->
             <div id="sub-specimen-type-container">
               <label class="block font-semibold text-xs text-[#342838] mb-1.5" for="sub-specimen-type-input" id="sub-specimen-type-label">

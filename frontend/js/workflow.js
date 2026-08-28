@@ -1875,8 +1875,13 @@ async function handleSubmissionFormSubmit(e) {
   };
   const targetWard = items.length > 0 ? (items[0].drug_name || items[0].food_name || items[0].location_name || items[0].ward_name || department) : department;
 
+  // อีเมลผู้รับผล — ไม่บังคับกรอก ปล่อยว่างแล้วส่งเป็น null
+  // ห้ามส่งสตริงว่าง เพราะจะทำให้ปุ่มส่งเมลเข้าใจว่ามีผู้รับแล้วทั้งที่ไม่มี
+  const recipientEmail = (document.getElementById('sub-recipient-email')?.value || '').trim() || null;
+
   const reportPayload = {
     submission_no: submissionNo,
+    recipient_email: recipientEmail,
     service_code: serviceCode,
     service_name: srvObj.name,
     department: department,
@@ -2572,6 +2577,8 @@ async function editReportRecord(reportId) {
       + '<input id="ed-ward" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.ward_room || '') + '"></div>'
       + '<div><label class="block font-semibold text-slate-700 mb-1">ผู้เก็บตัวอย่าง / ผู้ส่งตรวจ</label>'
       + '<input id="ed-sampler-name" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.sampler_name || '') + '"></div>'
+      + '<div><label class="block font-semibold text-slate-700 mb-1">อีเมลรับผลตรวจ <span class="font-normal text-slate-400">(ไม่บังคับ)</span></label>'
+      + '<input type="email" id="ed-recipient-email" placeholder="name@tu.ac.th" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.recipient_email || '') + '"></div>'
       + '<div class="grid grid-cols-2 gap-3">'
       + '<div><label class="block font-semibold text-slate-700 mb-1">วันที่เก็บตัวอย่าง</label>'
       + '<input type="date" id="ed-sampling" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs" value="' + (rep.sampling_date || '') + '"></div>'
@@ -2598,6 +2605,7 @@ async function editReportRecord(reportId) {
         department: dept,
         ward_room: document.getElementById('ed-ward').value.trim(),
         sampler_name: document.getElementById('ed-sampler-name').value.trim(),
+        recipient_email: document.getElementById('ed-recipient-email').value.trim() || null,
         sampling_date: document.getElementById('ed-sampling').value,
         status: document.getElementById('ed-status').value,
         remarks: document.getElementById('ed-remarks').value.trim()

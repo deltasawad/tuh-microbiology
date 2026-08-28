@@ -663,7 +663,9 @@ const ReportDB = {
           // ช่องเฉพาะของแบบฟอร์มงานผลิตยา (DRG-07 / DRG-08)
           'preparation_date', 'sample_date', 'receipt_date', 'analysis_date',
           'production_date', 'lot_no', 'prepared_medicine', 'prepared_medicine_header',
-          'operator_name', 'sender_name', 'volume'
+          'operator_name', 'sender_name', 'volume',
+          // อีเมลผู้รับผลตรวจ ใช้กับปุ่มส่งผลทางเมลในหน้ารายงานผล
+          'recipient_email'
         ];
 
         // คอลัมน์วันที่และตัวเลขรับค่าว่างไม่ได้ ต้องส่ง null แทน
