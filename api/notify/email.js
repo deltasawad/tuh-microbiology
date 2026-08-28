@@ -362,7 +362,29 @@ async function sendMail({ to, subject, html, text, from, replyTo, refId }) {
       body: JSON.stringify(body)
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error('Resend ตอบกลับ ' + r.status + ': ' + JSON.stringify(d).slice(0, 300));
+    if (!r.ok) {
+      const msg = String((d && d.message) || '');
+
+      // โหมดทดสอบของ Resend: ยังไม่ได้ยืนยันโดเมน จึงส่งได้เฉพาะอีเมลเจ้าของบัญชี
+      // ข้อความดิบที่ Resend ส่งกลับเป็นภาษาอังกฤษล้วน เจ้าหน้าที่อ่านแล้วไม่รู้ต้องทำอะไร
+      if (r.status === 403 && /testing emails|verify a domain/i.test(msg)) {
+        const e = new Error('ยังส่งอีเมลหาผู้รับรายนี้ไม่ได้ — ระบบส่งเมลอยู่ในโหมดทดสอบ');
+        e.hint = 'ตอนนี้ผู้ส่งเป็นที่อยู่ทดสอบของ Resend จึงส่งได้เฉพาะอีเมลเจ้าของบัญชี Resend เท่านั้น ' +
+                 'ต้องยืนยันโดเมนของโรงพยาบาลที่ resend.com/domains แล้วเปลี่ยนค่า MAIL_FROM ' +
+                 'เป็นอีเมลของโดเมนนั้น จึงจะส่งหาทุกหน่วยงานได้';
+        throw e;
+      }
+
+      // โดเมนใน MAIL_FROM ยังไม่ได้ยืนยัน
+      if (r.status === 403 && /domain is not verified|not verified/i.test(msg)) {
+        const e = new Error('โดเมนของผู้ส่งยังไม่ได้ยืนยันกับ Resend');
+        e.hint = 'เข้า resend.com/domains แล้วทำตามขั้นตอนเพิ่ม DNS record ให้ครบ ' +
+                 'จนสถานะขึ้น Verified แล้วจึงส่งได้';
+        throw e;
+      }
+
+      throw new Error('Resend ตอบกลับ ' + r.status + ': ' + JSON.stringify(d).slice(0, 300));
+    }
     return { provider: 'Resend', id: d.id || null };
   }
 
@@ -511,6 +533,10 @@ module.exports = async (req, res) => {
     });
 
   } catch (err) {
-    return res.status(502).json({ ok: false, error: String(err && err.message || err) });
+    return res.status(502).json({
+      ok: false,
+      error: String((err && err.message) || err),
+      hint: (err && err.hint) || undefined
+    });
   }
 };
