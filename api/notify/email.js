@@ -192,8 +192,8 @@ function buildHtml(rep, items, reportUrl) {
       </div>` : ''}
 
       ${reportUrl ? `<div style="margin-top:24px;text-align:center;">
-        <a href="${esc(reportUrl)}" style="display:inline-block;background:#6c5070;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:12px 26px;border-radius:12px;">เปิดระบบส่งตรวจสิ่งแวดล้อม</a>
-        <div style="color:#94a3b8;font-size:11px;margin-top:8px;">ต้องเข้าสู่ระบบด้วยบัญชีหน่วยงานจึงจะใช้งานได้</div>
+        <a href="${esc(reportUrl)}" style="display:inline-block;background:#6c5070;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:12px 26px;border-radius:12px;">เปิดใบรายงานผลฉบับเต็ม</a>
+        <div style="color:#94a3b8;font-size:11px;margin-top:8px;">ต้องเข้าสู่ระบบด้วยบัญชีหน่วยงานจึงจะเปิดดูได้</div>
       </div>` : ''}
     </td></tr>
 
@@ -229,7 +229,7 @@ function buildText(rep, items, reportUrl) {
   });
   if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
   if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
-  if (reportUrl) lines.push('', `ระบบส่งตรวจสิ่งแวดล้อม: ${reportUrl}`);
+  if (reportUrl) lines.push('', `ใบรายงานผลฉบับเต็ม: ${reportUrl}`);
   return lines.join('\n');
 }
 
@@ -347,14 +347,16 @@ module.exports = async (req, res) => {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const base = (process.env.PUBLIC_BASE_URL || (host ? `${proto}://${host}` : '')).replace(/\/+$/, '');
-    // ปลายทางของปุ่มตามที่ผู้ดูแลระบบกำหนด: หน้าส่งตรวจของบริการนั้น
+    // ปุ่มท้ายอีเมลพาไปที่ "ใบรายงานผลฉบับเต็ม" ของใบนั้นโดยตรง
     //
     // ⚠️ ใช้โดเมนหลัก (tuh-microbiology.vercel.app) ไม่ใช่ URL ของ deployment ใดเฉพาะ
     //    URL แบบ tuh-microbiology-<hash>-...vercel.app ผูกกับ deployment ตัวนั้นตลอดไป
     //    deploy ครั้งถัดไปจะไม่อัปเดตตาม อีเมลเป็นเอกสารถาวร ลิงก์ที่ฝังไปจึงต้องเป็น
     //    โดเมนที่ชี้ไปยังเวอร์ชันล่าสุดเสมอ
-    const svc = encodeURIComponent(String(rep.service_code || '').toUpperCase());
-    const reportUrl = base ? `${base}/workflow?tab=submission&service=${svc}` : '';
+    //
+    // ใช้ /report_view (ไม่ใส่ .html) เพราะ vercel.json เปิด cleanUrls ไว้
+    // ถ้าใส่ .html จะโดน 308 redirect หนึ่งจังหวะก่อนถึงหน้าจริง
+    const reportUrl = base ? `${base}/report_view?id=${encodeURIComponent(rep.id)}` : '';
 
     const waiting = OPEN_STATUSES.includes(String(rep.status || '').toLowerCase());
 
