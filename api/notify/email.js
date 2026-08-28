@@ -34,6 +34,44 @@
 
 const OPEN_STATUSES = ['draft', 'pending', 'waiting_for_testing', 'in_progress', 'received', 'submitted'];
 
+/**
+ * เกณฑ์มาตรฐานประจำแต่ละบริการ
+ * ------------------------------------------------------------------------------
+ * ยกมาจาก report_view.html ให้ตรงกันคำต่อคำ เพราะเป็นเอกสารคุณภาพชุดเดียวกัน
+ * ถ้าสองที่เขียนไม่ตรงกัน คนอ่านจะไม่รู้ว่าจะเชื่อฉบับไหน
+ *
+ * รายการย่อยส่วนใหญ่ในฐานข้อมูลไม่ได้เก็บ standard_criteria ไว้ ช่องนี้จึงขึ้น "-"
+ * ทั้งที่บริการนั้นมีเกณฑ์ชัดเจนอยู่ ใช้ค่าประจำบริการเป็นตัวสำรองแทน
+ */
+const SERVICE_STANDARD = {
+  AIR_01: { unit: 'CFU/m³', std: 'Total Bacteria < 500 CFU/m³, Fungi < 100 CFU/m³',
+            perItem: 'แบคทีเรีย < 500 · เชื้อรา < 100 CFU/m³' },
+  STR_02: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพ (Sterile / No Growth)',
+            perItem: 'ไม่พบเชื้อจุลชีพ' },
+  WTS_03: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพก่อโรค (No Growth after 3 days)',
+            perItem: 'ไม่พบเชื้อจุลชีพก่อโรค' },
+  WTO_04: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพก่อโรค (No Growth after 3 days)',
+            perItem: 'ไม่พบเชื้อจุลชีพก่อโรค' },
+  WTM_05: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพก่อโรค (No Growth after 3 days)',
+            perItem: 'ไม่พบเชื้อจุลชีพก่อโรค' },
+  FOD_06: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อ E.coli และ P.aeruginosa (NEGATIVE / NO GROWTH)',
+            perItem: 'ไม่พบ E.coli / P.aeruginosa' },
+  DRG_07: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพ (No growth at 72 hrs)',
+            perItem: 'ไม่พบเชื้อจุลชีพ' },
+  DRG_08: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลินทรีย์ปนเปื้อน (No growth at 72 hrs)',
+            perItem: 'ไม่พบเชื้อปนเปื้อน' }
+};
+
+const stdOf = (rep) => SERVICE_STANDARD[String(rep.service_code || '').toUpperCase()] || null;
+
+/**
+ * หน่วยงานที่เข้าไปเก็บสิ่งส่งตรวจ
+ * ไม่ใช่หน่วยงานผู้ส่งตรวจ — AIR-01 กับ WTS-03 งานอาชีวอนามัย/IC เป็นผู้ส่ง
+ * แต่ไปเก็บตัวอย่างที่หอผู้ป่วยอื่น ค่าที่ถูกต้องจึงอยู่ที่ระดับรายการย่อยก่อน
+ * ใช้ลำดับเดียวกับ report_view.html
+ */
+const itemWard = (it, rep) => it.ward_name || rep.ward_room || rep.department || '-';
+
 const esc = (v) => String(v == null ? '' : v)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -92,23 +130,27 @@ function buildHtml(rep, items, reportUrl) {
       <td style="padding:6px 0;color:#342838;font-size:13px;font-weight:600;">${esc(value)}</td>
     </tr>`;
 
+  const S = stdOf(rep);
+
   const itemRows = items.map((it, i) => `
     <tr>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;color:#78687e;font-size:12px;">${it.item_no || i + 1}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;font-weight:600;">${esc(itemWard(it, rep))}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${esc(dash(it.location_name || it.sample_description))}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#342838;font-size:12px;">${itemResult(it)}</td>
-      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#78687e;font-size:12px;">${esc(dash(it.standard_criteria || it.standard_limit))}</td>
+      <td style="padding:8px 6px;border-bottom:1px solid #eee;color:#78687e;font-size:12px;">${esc(dash(it.standard_criteria || it.standard_limit || (S && S.perItem)))}</td>
       <td style="padding:8px 6px;border-bottom:1px solid #eee;text-align:center;font-size:12px;">${itemBadge(it)}</td>
     </tr>`).join('');
 
   const itemsTable = items.length ? `
     <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:8px;">
       <tr style="background:#f7f2f8;">
-        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:40px;">ลำดับ</th>
-        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">รายการ / ตำแหน่ง</th>
+        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:36px;">ลำดับ</th>
+        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">หน่วยงาน</th>
+        <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">ตำแหน่งที่เก็บ</th>
         <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">ผลการตรวจ</th>
         <th style="padding:8px 6px;text-align:left;color:#6c5070;font-size:12px;">เกณฑ์มาตรฐาน</th>
-        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:60px;">สถานะ</th>
+        <th style="padding:8px 6px;text-align:center;color:#6c5070;font-size:12px;width:56px;">สถานะ</th>
       </tr>
       ${itemRows}
     </table>`
@@ -139,6 +181,9 @@ function buildHtml(rep, items, reportUrl) {
       </table>
 
       <div style="margin-top:22px;color:#6c5070;font-size:14px;font-weight:700;">ผลการตรวจวิเคราะห์</div>
+      ${S ? `<div style="color:#78687e;font-size:11px;margin-top:3px;">
+        <strong>หน่วยวัด:</strong> ${esc(S.unit)} &nbsp;|&nbsp; <strong>เกณฑ์มาตรฐาน:</strong> ${esc(S.std)}
+      </div>` : ''}
       ${itemsTable}
 
       ${rep.remarks ? `<div style="margin-top:18px;padding:12px 14px;background:#faf7fb;border:1px solid #e6d9ea;border-radius:12px;">
@@ -147,8 +192,8 @@ function buildHtml(rep, items, reportUrl) {
       </div>` : ''}
 
       ${reportUrl ? `<div style="margin-top:24px;text-align:center;">
-        <a href="${esc(reportUrl)}" style="display:inline-block;background:#6c5070;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:12px 26px;border-radius:12px;">เปิดใบรายงานผลฉบับเต็ม</a>
-        <div style="color:#94a3b8;font-size:11px;margin-top:8px;">ต้องเข้าสู่ระบบด้วยบัญชีหน่วยงานจึงจะเปิดดูได้</div>
+        <a href="${esc(reportUrl)}" style="display:inline-block;background:#6c5070;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:12px 26px;border-radius:12px;">เปิดระบบส่งตรวจสิ่งแวดล้อม</a>
+        <div style="color:#94a3b8;font-size:11px;margin-top:8px;">ต้องเข้าสู่ระบบด้วยบัญชีหน่วยงานจึงจะใช้งานได้</div>
       </div>` : ''}
     </td></tr>
 
@@ -175,13 +220,16 @@ function buildText(rep, items, reportUrl) {
     '',
     'ผลการตรวจวิเคราะห์'
   ];
+  const S = stdOf(rep);
+  if (S) lines.push(`หน่วยวัด: ${S.unit} | เกณฑ์มาตรฐาน: ${S.std}`);
   items.forEach((it, i) => {
-    lines.push(`  ${it.item_no || i + 1}. ${dash(it.location_name || it.sample_description)} — ` +
-      itemResult(it).replace(/<[^>]+>/g, ''));
+    const std = it.standard_criteria || it.standard_limit || (S && S.perItem) || '-';
+    lines.push(`  ${it.item_no || i + 1}. [${itemWard(it, rep)}] ${dash(it.location_name || it.sample_description)}`);
+    lines.push(`      ผล: ${itemResult(it).replace(/<[^>]+>/g, '')}  |  เกณฑ์: ${std}`);
   });
   if (!items.length) lines.push('  (ยังไม่มีรายการผลการตรวจในใบนี้)');
   if (rep.remarks) lines.push('', `ความเห็นทางเทคนิค: ${rep.remarks}`);
-  if (reportUrl) lines.push('', `ใบรายงานผลฉบับเต็ม: ${reportUrl}`);
+  if (reportUrl) lines.push('', `ระบบส่งตรวจสิ่งแวดล้อม: ${reportUrl}`);
   return lines.join('\n');
 }
 
@@ -299,7 +347,14 @@ module.exports = async (req, res) => {
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const base = (process.env.PUBLIC_BASE_URL || (host ? `${proto}://${host}` : '')).replace(/\/+$/, '');
-    const reportUrl = base ? `${base}/report_view.html?id=${encodeURIComponent(rep.id)}` : '';
+    // ปลายทางของปุ่มตามที่ผู้ดูแลระบบกำหนด: หน้าส่งตรวจของบริการนั้น
+    //
+    // ⚠️ ใช้โดเมนหลัก (tuh-microbiology.vercel.app) ไม่ใช่ URL ของ deployment ใดเฉพาะ
+    //    URL แบบ tuh-microbiology-<hash>-...vercel.app ผูกกับ deployment ตัวนั้นตลอดไป
+    //    deploy ครั้งถัดไปจะไม่อัปเดตตาม อีเมลเป็นเอกสารถาวร ลิงก์ที่ฝังไปจึงต้องเป็น
+    //    โดเมนที่ชี้ไปยังเวอร์ชันล่าสุดเสมอ
+    const svc = encodeURIComponent(String(rep.service_code || '').toUpperCase());
+    const reportUrl = base ? `${base}/workflow?tab=submission&service=${svc}` : '';
 
     const waiting = OPEN_STATUSES.includes(String(rep.status || '').toLowerCase());
     const subject = `[${rep.submission_no}] ${waiting ? 'แจ้งรับตัวอย่าง — อยู่ระหว่างรอผล' : 'ผลการตรวจวิเคราะห์สิ่งแวดล้อม'} · ${rep.department || ''}`.trim();
