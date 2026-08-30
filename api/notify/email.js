@@ -58,10 +58,10 @@ const SERVICE_STANDARD = {
             perItem: 'ไม่พบเชื้อจุลชีพก่อโรค' },
   FOD_06: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อ E.coli และ P.aeruginosa (NEGATIVE / NO GROWTH)',
             perItem: 'ไม่พบ E.coli / P.aeruginosa' },
-  DRG_07: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพ (No growth at 72 hrs)',
-            perItem: 'ไม่พบเชื้อจุลชีพ' },
-  DRG_08: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลินทรีย์ปนเปื้อน (No growth at 72 hrs)',
-            perItem: 'ไม่พบเชื้อปนเปื้อน' }
+  DRG_07: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลินทรีย์ปนเปื้อน (No growth at 72 hrs)',
+            perItem: 'ไม่พบเชื้อปนเปื้อน' },
+  DRG_08: { unit: 'Growth / No growth', std: 'ไม่พบเชื้อจุลชีพ (No growth at 72 hrs)',
+            perItem: 'ไม่พบเชื้อจุลชีพ' }
 };
 
 const stdOf = (rep) => SERVICE_STANDARD[String(rep.service_code || '').toUpperCase()] || null;

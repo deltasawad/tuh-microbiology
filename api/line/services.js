@@ -63,18 +63,18 @@ const SERVICES = [
     std: 'E. coli Negative, Salmonella ไม่พบ, S. aureus < 100 CFU/g' },
 
   { code: 'DRG_07', label: 'DRG-07', icon: '💊', accent: '#7e22ce',
-    name: 'Drug — ยาปลอดเชื้อ',
-    forWho: 'งานผลิตยา',
-    what: 'ความปราศจากเชื้อของผลิตภัณฑ์ยา',
-    unit: 'Growth / No growth',
-    std: 'USP <71> Sterility Tests (FTM & TSB)' },
-
-  { code: 'DRG_08', label: 'DRG-08', icon: '🧪', accent: '#a16207',
     name: 'Drug — การปนเปื้อน',
-    forWho: 'ยาผลิตปราศจากเชื้อ',
+    forWho: 'งานผลิตยา',
     what: 'ปริมาณเชื้อและการปนเปื้อนในยาไม่ปราศจากเชื้อ',
     unit: 'Growth / No growth',
-    std: 'USP <61> TAMC/TYMC และ USP <62>' }
+    std: 'USP <61> TAMC/TYMC และ USP <62>' },
+
+  { code: 'DRG_08', label: 'DRG-08', icon: '🧪', accent: '#a16207',
+    name: 'Drug — ยาปลอดเชื้อ',
+    forWho: 'ยาผลิตปราศจากเชื้อ',
+    what: 'ความปราศจากเชื้อของผลิตภัณฑ์ยา',
+    unit: 'Growth / No growth',
+    std: 'USP <71> Sterility Tests (FTM & TSB)' }
 ];
 
 const TAT = '3–5 วันทำการ';

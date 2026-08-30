@@ -117,7 +117,7 @@ if (document.readyState === 'loading') {
 
 
 // ==============================================================================
-// รายการยาที่ส่งตรวจเพาะเชื้อประจำ (DRG-07 งานผลิตยา)
+// รายการยาที่ส่งตรวจเพาะเชื้อประจำ (DRG-08 ยาผลิตปราศจากเชื้อ — แบบฟอร์มปลอดเชื้อ)
 // ------------------------------------------------------------------------------
 // คัดจากแบบฟอร์มกระดาษ "ผลเพาะเชื้อ" ที่งานผลิตยาใช้อยู่ เรียงตามลำดับเดิม
 // ใช้เป็นตัวเลือกในช่อง "ชนิดของยา" แต่ยังพิมพ์ชื่ออื่นเองได้
@@ -165,12 +165,12 @@ Object.assign(window, { DRUG_SAMPLE_LIST, fillStandardDrugList, ensureDrugDatali
 
 
 // ==============================================================================
-// รายการยาเตรียมประจำ (DRG-08 ยาผลิตปราศจากเชื้อ)
+// รายการยาเตรียมประจำ (DRG-07 งานผลิตยา — แบบฟอร์มการปนเปื้อน)
 // ------------------------------------------------------------------------------
 // คัดจากแบบฟอร์มกระดาษของหน่วยงาน เรียงตามลำดับเดิม
 // ใช้เป็นตัวเลือกทั้งช่อง "ยาเตรียม" ของแต่ละแถว และช่องหัวตาราง
 //
-// เป็นคนละชุดกับ DRUG_SAMPLE_LIST ของ DRG-07 สองหน่วยงานส่งยาคนละกลุ่มกัน
+// เป็นคนละชุดกับ DRUG_SAMPLE_LIST ของ DRG-08 สองหน่วยงานส่งยาคนละกลุ่มกัน
 // ใช้ datalist ไม่ใช่ select เพราะรายการยาเปลี่ยนได้ ไม่ควรบังคับให้เลือกเฉพาะที่มี
 // ==============================================================================
 const PREPARED_MEDICINE_LIST = [
@@ -821,8 +821,8 @@ async function handleDayClick(dateStr, thaiDateStr) {
               <option value="WTO_04" ${defaultService === 'WTO_04' ? 'selected' : ''}>WTO-04 : Water (OR)</option>
               <option value="WTM_05" ${defaultService === 'WTM_05' ? 'selected' : ''}>WTM-05 : Water (THAMC)</option>
               <option value="FOD_06" ${defaultService === 'FOD_06' ? 'selected' : ''}>FOD-06 : Food Sanitation</option>
-              <option value="DRG_07" ${defaultService === 'DRG_07' ? 'selected' : ''}>DRG_07 : Drug (ปลอดเชื้อ)</option>
-              <option value="DRG_08" ${defaultService === 'DRG_08' ? 'selected' : ''}>DRG_08 : Drug (การปนเปื้อน)</option>
+              <option value="DRG_07" ${defaultService === 'DRG_07' ? 'selected' : ''}>DRG_07 : Drug (การปนเปื้อน)</option>
+              <option value="DRG_08" ${defaultService === 'DRG_08' ? 'selected' : ''}>DRG_08 : Drug (ปลอดเชื้อ)</option>
             </select>
           </div>
           <div>
@@ -1064,9 +1064,9 @@ function initSubmissionForm() {
       specimenTypeInput.value = 'น้ำล้างไต';
     } else if (srvSelect?.value === 'FOD_06') {
       specimenTypeInput.value = 'อาหาร';
-    } else if (srvSelect?.value === 'DRG_08') {
-      specimenTypeInput.value = 'ยาเตรียม';
     } else if (srvSelect?.value === 'DRG_07') {
+      specimenTypeInput.value = 'ยาเตรียม';
+    } else if (srvSelect?.value === 'DRG_08') {
       specimenTypeInput.value = 'ยาปราศจากเชื้อ';
     }
   }
@@ -1263,7 +1263,9 @@ function buildSampleItemsMatrix(rowCount = 10) {
   const senderNameContainer = document.getElementById('sub-sender-name-container');
 
   // Toggle Drug Extra Fields
-  if (serviceCode === 'DRG_08') {
+  // ⚠️ แบบฟอร์มการปนเปื้อนย้ายมาอยู่กับ DRG-07 แล้ว (สลับกับ DRG-08)
+  //    ชื่อหน่วยงานและคำนำหน้าเลขเอกสารยังผูกกับรหัสบริการเดิม ไม่ได้สลับตาม
+  if (serviceCode === 'DRG_07') {
     receiptDateContainer?.classList.remove('hidden');
     analysisDateContainer?.classList.remove('hidden');
     drug2HeaderContainer?.classList.remove('hidden');
@@ -1275,7 +1277,7 @@ function buildSampleItemsMatrix(rowCount = 10) {
     prepDateContainer?.classList.add('hidden');
     sampleDateContainer?.classList.add('hidden');
     operatorContainer?.classList.add('hidden');
-  } else if (serviceCode === 'DRG_07') {
+  } else if (serviceCode === 'DRG_08') {
     prepDateContainer?.classList.remove('hidden');
     sampleDateContainer?.classList.remove('hidden');
     operatorContainer?.classList.remove('hidden');
@@ -1302,20 +1304,20 @@ function buildSampleItemsMatrix(rowCount = 10) {
   }
 
   // =========================================================================
-  // 1A. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_08 - ยาผลิตปราศจากเชื้อ)
+  // 1A. แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์ (DRG_07 - งานผลิตยา)
   // =========================================================================
-  if (serviceCode === 'DRG_08') {
+  if (serviceCode === 'DRG_07') {
     if (titleEl) {
       titleEl.innerHTML = `<i class="fas fa-flask text-[#df6a6a]"></i> <span>แบบรายงานผลการวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์</span>`;
     }
     if (descEl) {
-      descEl.textContent = 'สำหรับยาผลิตปราศจากเชื้อ โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ';
+      descEl.textContent = 'สำหรับงานผลิตยา โรงพยาบาลธรรมศาสตร์เฉลิมพระเกียรติ';
     }
     if (deptLabel) {
       deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
     }
     if (deptInput && !deptInput.value) {
-      deptInput.value = 'ยาผลิตปราศจากเชื้อ';
+      deptInput.value = 'งานผลิตยา';
     }
     if (specimenTypeInput && !specimenTypeInput.value) {
       specimenTypeInput.value = 'ยาเตรียม';
@@ -1437,20 +1439,20 @@ function buildSampleItemsMatrix(rowCount = 10) {
   }
 
   // =========================================================================
-  // 1C. ตรวจเพาะเชื้อจากยาปลอดเชื้อ (DRG_07 - งานผลิตยา ปลอดเชื้อ)
+  // 1C. ตรวจเพาะเชื้อจากยาปลอดเชื้อ (DRG_08 - ยาผลิตปราศจากเชื้อ)
   // =========================================================================
-  if (serviceCode === 'DRG_07') {
+  if (serviceCode === 'DRG_08') {
     if (titleEl) {
       titleEl.innerHTML = `<i class="fas fa-pills text-[#df6a6a]"></i> <span>แบบฟอร์มส่งตรวจ</span>`;
     }
     if (descEl) {
-      descEl.textContent = 'ระบบส่งตรวจเพาะเชื้อจากยา (สำหรับงานผลิตยา)';
+      descEl.textContent = 'ระบบส่งตรวจเพาะเชื้อจากยา (สำหรับยาผลิตปราศจากเชื้อ)';
     }
     if (deptLabel) {
       deptLabel.innerHTML = `หน่วยงานส่งตรวจ <span class="text-[#df6a6a]">*</span>`;
     }
     if (deptInput && !deptInput.value) {
-      deptInput.value = 'งานผลิตยา';
+      deptInput.value = 'ยาผลิตปราศจากเชื้อ';
     }
     if (specimenTypeInput && !specimenTypeInput.value) {
       specimenTypeInput.value = 'ยา';
@@ -1759,7 +1761,7 @@ async function handleSubmissionFormSubmit(e) {
                      || currentLoggedUser?.displayName || currentLoggedUser?.name || '';
 
   rows.forEach((tr, idx) => {
-    if (serviceCode === 'DRG_08') {
+    if (serviceCode === 'DRG_07') {
       const drug = tr.querySelector('.sub-item-drug2')?.value.trim() || drug2Header || `รายการยาเตรียมที่ ${idx + 1}`;
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
@@ -1776,7 +1778,7 @@ async function handleSubmissionFormSubmit(e) {
         item_result: 'pending',
         notes: notes
       });
-    } else if (serviceCode === 'DRG_07') {
+    } else if (serviceCode === 'DRG_08') {
       const drug = tr.querySelector('.sub-item-drug')?.value.trim() || `รายการยาที่ ${idx + 1}`;
       const culture = tr.querySelector('.sub-item-culture')?.value.trim() || 'No growth';
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
@@ -1869,8 +1871,8 @@ async function handleSubmissionFormSubmit(e) {
   });
 
   const srvObj = window.SERVICES_CONFIG[serviceCode] || { 
-    name: (serviceCode === 'DRG_08' ? 'Drug (สำหรับยาผลิตปราศจากเชื้อ) การปนเปื้อนเชื้อจุลินทรีย์' : 
-          (serviceCode === 'DRG_07' ? 'Drug (สำหรับงานผลิตยา) ปลอดเชื้อ' : 
+    name: (serviceCode === 'DRG_07' ? 'Drug (สำหรับงานผลิตยา) การปนเปื้อนเชื้อจุลินทรีย์' : 
+          (serviceCode === 'DRG_08' ? 'Drug (สำหรับยาผลิตปราศจากเชื้อ) ปลอดเชื้อ' : 
           (serviceCode === 'FOD_06' ? 'Food Sanitation (สำหรับงานโภชนาการ)' : 'ตรวจวิเคราะห์สิ่งแวดล้อม')))
   };
   const targetWard = items.length > 0 ? (items[0].drug_name || items[0].food_name || items[0].location_name || items[0].ward_name || department) : department;
@@ -1904,9 +1906,9 @@ async function handleSubmissionFormSubmit(e) {
     overall_result: 'pending',
     specimen_type: specimenType,
     suspected_organism: suspectedOrganism,
-    remarks: (serviceCode === 'DRG_08')
+    remarks: (serviceCode === 'DRG_07')
       ? 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอผลการตรวจวิเคราะห์การปนเปื้อนเชื้อจุลินทรีย์'
-      : ((serviceCode === 'DRG_07') 
+      : ((serviceCode === 'DRG_08') 
           ? 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอผลตรวจเพาะเชื้อยาที่ 72 ชม.'
           : (serviceCode === 'FOD_06' ? 'นำส่งตัวอย่างอาหารแล้ว อยู่ระหว่างรอผลเพาะเชื้อ E.coli และ P.aeruginosa' : 'นำส่งตัวอย่างแล้ว อยู่ระหว่างรอห้องปฏิบัติการเพาะเชื้อและดำเนินการตรวจวิเคราะห์'))
   };
@@ -2186,8 +2188,9 @@ function renderReportsArchiveTable(reports) {
   const thead = document.getElementById('rep-archive-thead');
   if (!tbody) return;
 
-  const isDrug2View = (currentLoggedUser && currentLoggedUser.username === 'pharma') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_08' || (r.service_name && r.service_name.includes('ปนเปื้อน'))));
-  const isDrug1View = !isDrug2View && ((currentLoggedUser && currentLoggedUser.username === 'compounding') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_07' || (r.service_name && r.service_name.includes('ปลอดเชื้อ')))));
+  // แบบฟอร์มการปนเปื้อนย้ายมาอยู่กับ DRG-07 แล้ว เลย์เอาต์ตารางจึงสลับตาม
+  const isDrug2View = (currentLoggedUser && currentLoggedUser.username === 'compounding') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_07' || (r.service_name && r.service_name.includes('ปนเปื้อน'))));
+  const isDrug1View = !isDrug2View && ((currentLoggedUser && currentLoggedUser.username === 'pharma') || (reports && reports.length > 0 && reports.every(r => r.service_code === 'DRG_08' || (r.service_name && r.service_name.includes('ปลอดเชื้อ')))));
   const isNutritionView = !isDrug2View && !isDrug1View && ((currentLoggedUser && currentLoggedUser.username === 'nutrition') || (adminDeptFilter && (adminDeptFilter.includes('โภชนาการ') || adminDeptFilter.includes('อาหาร'))) || (reports && reports.length > 0 && reports.every(r => r.service_code === 'FOD_06' || r.department === 'งานโภชนาการ')));
   const isWaterSurfaceView = !isDrug2View && !isDrug1View && !isNutritionView && ((currentLoggedUser && (currentLoggedUser.username === 'icn' || currentLoggedUser.serviceCode === 'WTS_03')) || (adminDeptFilter && (adminDeptFilter.includes('ควบคุมโรค') || adminDeptFilter.includes('IC'))) || (reports && reports.length > 0 && reports.every(r => r.service_code === 'WTS_03' || (r.department && r.department.includes('ควบคุมโรค')))));
 
@@ -2260,7 +2263,7 @@ function renderReportsArchiveTable(reports) {
     return;
   }
 
-  // View: ยาผลิตปราศจากเชื้อ (DRG_08) -> 5 Columns Table Layout
+  // View: งานผลิตยา (DRG_07) การปนเปื้อน -> 5 Columns Table Layout
   if (isDrug2View) {
     tbody.innerHTML = reports.map((r, idx) => {
       const formattedDate = r.formatted_date || r.sampling_date || '23/07/2569';
@@ -2300,7 +2303,7 @@ function renderReportsArchiveTable(reports) {
     return;
   }
 
-  // View: งานผลิตยา (DRG_07) -> Card Layout
+  // View: ยาผลิตปราศจากเชื้อ (DRG_08) ปลอดเชื้อ -> Card Layout
   if (isDrug1View) {
     tbody.innerHTML = reports.map((r, idx) => {
       const formattedDate = r.formatted_date || r.sampling_date || '24/05/2569';
@@ -2924,12 +2927,12 @@ const GRID_SCHEMAS = {
     results: [{ key: 'bacteria_count', label: 'ผลเพาะเชื้อ', type: 'growth', width: 'w-56' }]
   },
   DRG_07: {
-    subjects: [{ key: 'location_name', label: 'ชนิดยา', width: '' }],
-    results: [{ key: 'bacteria_count', label: 'ผลการตรวจเพาะเชื้อที่ 72 ชม.', type: 'growth', width: 'w-56' }]
-  },
-  DRG_08: {
     subjects: [{ key: 'location_name', label: 'ยาเตรียม', width: '' }],
     results: [{ key: 'bacteria_count', label: 'ผล 72 ชม. (Growth/No growth)', type: 'growth', width: 'w-56' }]
+  },
+  DRG_08: {
+    subjects: [{ key: 'location_name', label: 'ชนิดยา', width: '' }],
+    results: [{ key: 'bacteria_count', label: 'ผลการตรวจเพาะเชื้อที่ 72 ชม.', type: 'growth', width: 'w-56' }]
   }
 };
 GRID_SCHEMAS.WTO_04 = GRID_SCHEMAS.WTS_03;

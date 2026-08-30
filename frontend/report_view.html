@@ -364,9 +364,10 @@
       };
 
       const isAir           = guess(['AIR_01'], ['Air Sampling', 'อากาศ'], ['อาชีวอนามัย']);
-      const isDrugBioburden = guess(['DRG_08'], ['ปนเปื้อน'], []);
+      // แบบฟอร์มการปนเปื้อนย้ายมาอยู่กับ DRG-07 แล้ว (สลับกับ DRG-08)
+      const isDrugBioburden = guess(['DRG_07'], ['ปนเปื้อน'], []);
       const isDrugSterility = !isDrugBioburden &&
-                              guess(['DRG_07'], ['Drug', 'ยา', 'Compounding'], ['ผลิตยา', 'เภสัช']);
+                              guess(['DRG_08'], ['Drug', 'ยา', 'Compounding'], ['ผลิตยา', 'เภสัช']);
       const isDrug = isDrugBioburden || isDrugSterility;
       const isFood = !isDrug && guess(['FOD_06'], ['Food', 'อาหาร', 'โภชนาการ'], ['โภชนาการ']);
       const isWaterSurface = !isDrug && !isFood &&

@@ -50,8 +50,8 @@ const SERVICES = [
   { label: 'WTO-04', icon: '🚿', name: 'Water OR',          who: 'ห้องผ่าตัด',          accent: '#4338ca' },
   { label: 'WTM-05', icon: '💧', name: 'Water THAMC',       who: 'ศูนย์การแพทย์',       accent: '#0e7490' },
   { label: 'FOD-06', icon: '🍲', name: 'Food Sanitation',   who: 'โภชนาการ',            accent: '#047857' },
-  { label: 'DRG-07', icon: '💊', name: 'Drug ปลอดเชื้อ',    who: 'งานผลิตยา',           accent: '#7e22ce' },
-  { label: 'DRG-08', icon: '🧪', name: 'Drug ปนเปื้อน',     who: 'ยาผลิตปราศจากเชื้อ',  accent: '#a16207' }
+  { label: 'DRG-07', icon: '💊', name: 'Drug ปนเปื้อน',     who: 'งานผลิตยา',           accent: '#7e22ce' },
+  { label: 'DRG-08', icon: '🧪', name: 'Drug ปลอดเชื้อ',    who: 'ยาผลิตปราศจากเชื้อ',  accent: '#a16207' }
 ];
 
 /** กล่องมุมมน */
