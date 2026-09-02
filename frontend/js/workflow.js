@@ -1719,6 +1719,15 @@ function buildSampleItemsMatrix(rowCount = 10) {
  */
 async function handleSubmissionFormSubmit(e) {
   e.preventDefault();
+
+  // ⚠️ ต้องมีสิทธิ์เขียนก่อนเริ่ม ไม่งั้นจะได้ใบเปล่าค้างในระบบ
+  // ------------------------------------------------------------------------
+  // ถ้า session ฝั่ง Supabase หลุด คำขอจะออกไปเป็น anon ซึ่ง
+  //   หัวใบ        -> insert ผ่าน (นโยบาย "Sender submit new test request" เปิดให้)
+  //   รายการย่อย   -> ถูกปฏิเสธ 401 (anon ไม่มีสิทธิ์กับ report_items)
+  //   ลบหัวใบทิ้ง  -> ทำไม่ได้ (anon ไม่มีสิทธิ์ลบ) จึงเหลือใบเปล่าที่ลงผลไม่ได้
+  // เกิดจริงมาแล้ว 2 ใบ ดักตั้งแต่ต้นทางดีกว่าไปตามเก็บกวาดทีหลัง
+  if (!(await requireWriteSession())) return;
   
   const submissionNo = document.getElementById('sub-submission-no')?.value;
   const srvSelect = document.getElementById('sub-service-select');
@@ -1946,10 +1955,31 @@ async function handleSubmissionFormSubmit(e) {
     }
 
     // 3. บันทึกผ่าน ReportDB (Supabase / Local)
+    //    ต้องดูค่าที่คืนมาด้วย เดิมกลืนผลลัพธ์ทิ้งแล้วขึ้นว่าสำเร็จเสมอ
+    //    ทั้งที่ฐานข้อมูลกลางอาจบันทึกไม่สำเร็จ ผู้ใช้เลยไม่รู้ว่าต้องส่งใหม่
+    let saveRes = null;
     try {
-      await window.ReportDB.createReport(reportPayload, items, []);
+      saveRes = await window.ReportDB.createReport(reportPayload, items, []);
     } catch (dbErr) {
-      console.warn('ReportDB create notice:', dbErr);
+      saveRes = { supabaseError: dbErr, savedLocallyOnly: true };
+    }
+
+    if (saveRes && (saveRes.savedLocallyOnly || saveRes.supabaseError)) {
+      const msg = (saveRes.supabaseError && saveRes.supabaseError.message) || 'ไม่ทราบสาเหตุ';
+      await Swal.fire({
+        icon: 'error',
+        title: 'บันทึกขึ้นฐานข้อมูลกลางไม่สำเร็จ',
+        html: '<div class="text-xs text-left text-slate-600 space-y-2">'
+            + '<div>ใบ <b class="font-mono text-[#6c5070]">' + submissionNo + '</b> ยังไม่ถูกบันทึกขึ้นระบบกลาง '
+            + 'ห้องปฏิบัติการจะยังไม่เห็นใบนี้</div>'
+            + '<div class="font-mono text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 break-all">'
+            + msg + '</div>'
+            + '<div class="text-[11px] text-slate-500">กรุณาออกจากระบบแล้วเข้าใหม่ จากนั้นส่งตรวจใบนี้อีกครั้ง</div>'
+            + '</div>',
+        confirmButtonColor: '#6c5070',
+        customClass: { popup: 'k-swal' }
+      });
+      return;
     }
 
     // ตามข้อกำหนด: กดบันทึกแบบฟอร์มส่งตรวจ "ไม่ต้อง" แจ้งเตือน LINE / Telegram
@@ -2962,6 +2992,16 @@ function buildGridField(field, value) {
     + ' class="grid-input w-full px-2.5 py-1.5 border border-emerald-300 rounded-lg font-mono text-center font-bold text-emerald-950 text-xs">';
 }
 
+/**
+ * วันที่วันนี้รูปแบบ YYYY-MM-DD ตามเวลาเครื่องผู้ใช้
+ * ห้ามใช้ toISOString() เพราะแปลงเป็น UTC ก่อน ทำให้ก่อนเจ็ดโมงเช้าได้วันย้อนหลังไปหนึ่งวัน
+ */
+function todayISO() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 async function loadSubmissionIntoAdminGrid(reportId) {
   const tbody = document.getElementById('admin-grid-tbody');
   const thead = document.getElementById('admin-grid-thead');
@@ -2988,6 +3028,22 @@ async function loadSubmissionIntoAdminGrid(reportId) {
   }
 
   activeSubmissionData = report;
+
+  // วันที่รายงานผล
+  // ------------------------------------------------------------------------
+  // เดิมไม่เคยตั้งค่าช่องนี้เลย เจ้าหน้าที่ต้องพิมพ์วันที่เองทุกใบ ลืมเมื่อไหร่
+  // ใบรายงานก็ออกโดยไม่มีวันที่รายงานผล
+  //
+  // ใบที่ยังรอตรวจ -> ตั้งเป็นวันนี้ เพราะกำลังจะลงผลวันนี้
+  //   (ค่า reported_date ที่ติดมากับใบรอตรวจคือวันที่ส่งตรวจ ไม่ใช่วันที่ออกผล)
+  // ใบที่ออกผลไปแล้ว -> คงวันที่เดิมไว้ ห้ามเขียนทับวันที่บนเอกสารที่ออกไปแล้ว
+  const reportedDateEl = document.getElementById('grid-reported-date');
+  if (reportedDateEl) {
+    const saved = String(report.reported_date || '').slice(0, 10);
+    const hasSaved = /^\d{4}-\d{2}-\d{2}$/.test(saved);
+    reportedDateEl.value = (hasSaved && !isWaitingReport(report)) ? saved : todayISO();
+  }
+
   const schema = getGridSchema(report.service_code);
   const statusLabel = isWaitingReport(report) ? '⏳ รอตรวจ' : '✅ ตรวจแล้ว';
 

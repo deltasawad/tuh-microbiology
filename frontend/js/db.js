@@ -776,6 +776,18 @@ const ReportDB = {
         }
 
         if (insertedReport) {
+          // ใบที่ไม่มีรายการตัวอย่างเลย ห้องแล็บลงผลไม่ได้ ไม่ควรมีอยู่ในระบบ
+          if (!items || items.length === 0) {
+            const cleanup = await window.supabaseClient
+              .from('reports').delete().eq('id', insertedReport.id).select();
+            const cleaned = !cleanup.error && (cleanup.data || []).length > 0;
+            return {
+              data: newReport, error: null, savedLocallyOnly: true,
+              supabaseError: new Error('ใบส่งตรวจนี้ไม่มีรายการตัวอย่าง จึงไม่ถูกบันทึก'),
+              orphanReportNo: cleaned ? null : insertedReport.submission_no
+            };
+          }
+
           if (items && items.length > 0) {
             const itemsPayload = items.map((item, idx) => ({
               report_id: insertedReport.id,
@@ -794,9 +806,24 @@ const ReportDB = {
             const { error: itemsErr } = await window.supabaseClient.from('report_items').insert(itemsPayload);
             if (itemsErr) {
               console.error('❌ บันทึกรายการตัวอย่าง (report_items) ไม่สำเร็จ:', itemsErr);
-              // ลบ header ทิ้ง ไม่ให้เหลือใบส่งตรวจเปล่า ๆ ที่ไม่มีรายการตัวอย่างค้างในระบบ
-              await window.supabaseClient.from('reports').delete().eq('id', insertedReport.id);
-              return { data: newReport, error: null, supabaseError: itemsErr, savedLocallyOnly: true };
+
+              // ลบ header ทิ้ง ไม่ให้เหลือใบส่งตรวจเปล่า ๆ ค้างในระบบ
+              // ⚠️ ต้องนับแถวที่ลบจริง เพราะกรณีที่ทำให้มาถึงตรงนี้บ่อยที่สุดคือ
+              //    สิทธิ์เขียนหลุดจนกลายเป็น anon ซึ่ง "ลบไม่ได้เหมือนกัน"
+              //    RLS ปฏิเสธ DELETE โดยตอบ 204 ลบ 0 แถว ไม่คืน error
+              //    ถ้าไม่นับ จะเข้าใจว่าเก็บกวาดเรียบร้อยทั้งที่ใบเปล่ายังอยู่
+              const cleanup = await window.supabaseClient
+                .from('reports').delete().eq('id', insertedReport.id).select();
+              const cleaned = !cleanup.error && (cleanup.data || []).length > 0;
+              if (!cleaned) {
+                console.error('❌ ลบใบเปล่าทิ้งไม่สำเร็จ เหลือค้างในระบบ:', insertedReport.submission_no);
+              }
+
+              return {
+                data: newReport, error: null, savedLocallyOnly: true,
+                supabaseError: itemsErr,
+                orphanReportNo: cleaned ? null : insertedReport.submission_no
+              };
             }
           }
 
