@@ -1789,7 +1789,8 @@ async function handleSubmissionFormSubmit(e) {
 
   rows.forEach((tr, idx) => {
     if (serviceCode === 'DRG_07') {
-      const drug = tr.querySelector('.sub-item-drug2')?.value.trim() || drug2Header || `รายการยาเตรียมที่ ${idx + 1}`;
+      const drug = tr.querySelector('.sub-item-drug2')?.value.trim() || drug2Header;
+      if (!drug) return;   // แถวที่ไม่ได้กรอก ไม่นับเป็นรายการส่งตรวจ
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
       items.push({
@@ -1806,7 +1807,8 @@ async function handleSubmissionFormSubmit(e) {
         notes: notes
       });
     } else if (serviceCode === 'DRG_08') {
-      const drug = tr.querySelector('.sub-item-drug')?.value.trim() || `รายการยาที่ ${idx + 1}`;
+      const drug = tr.querySelector('.sub-item-drug')?.value.trim();
+      if (!drug) return;
       const culture = tr.querySelector('.sub-item-culture')?.value.trim() || 'No growth';
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
@@ -1823,7 +1825,8 @@ async function handleSubmissionFormSubmit(e) {
         notes: notes
       });
     } else if (serviceCode === 'FOD_06') {
-      const food = tr.querySelector('.sub-item-food')?.value.trim() || `ตัวอย่างอาหารที่ ${idx + 1}`;
+      const food = tr.querySelector('.sub-item-food')?.value.trim();
+      if (!food) return;
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
       items.push({
@@ -1840,7 +1843,8 @@ async function handleSubmissionFormSubmit(e) {
         notes: notes
       });
     } else if (serviceCode === 'WTS_03' || serviceCode === 'WTO_04' || serviceCode === 'WTM_05') {
-      const loc = tr.querySelector('.sub-item-loc')?.value.trim() || `จุดตรวจที่ ${idx + 1}`;
+      const loc = tr.querySelector('.sub-item-loc')?.value.trim();
+      if (!loc) return;
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
       items.push({
@@ -1865,7 +1869,8 @@ async function handleSubmissionFormSubmit(e) {
 
       if (exprid) selectedTypes.push(`exprid: ${exprid}`);
       const productTypeStr = selectedTypes.join(', ') || 'PRC';
-      const bloodBagDisplay = bloodBag || `ถุงเลือดที่ ${idx + 1}`;
+      if (!bloodBag) return;
+      const bloodBagDisplay = bloodBag;
 
       items.push({
         item_no: idx + 1,
@@ -1881,7 +1886,8 @@ async function handleSubmissionFormSubmit(e) {
       });
     } else {
       const ward = tr.querySelector('.sub-item-ward')?.value.trim() || department;
-      const loc = tr.querySelector('.sub-item-loc')?.value.trim() || `จุดตรวจที่ ${idx + 1}`;
+      const loc = tr.querySelector('.sub-item-loc')?.value.trim();
+      if (!loc) return;
       const notes = tr.querySelector('.sub-item-notes')?.value.trim() || '';
 
       items.push({
@@ -1889,6 +1895,9 @@ async function handleSubmissionFormSubmit(e) {
         ward_name: ward,
         location_name: loc,
         sample_description: `${ward} - ${loc}`,
+        // ตาราง report_items ไม่มีคอลัมน์ ward_name ค่านี้จึงถูกทิ้งตอนบันทึก
+        // ฝากไว้ใน raw_data เพื่อให้ใบรายงานผลแสดงหน่วยงานรายแถวได้ถูกต้อง
+        raw_data: { ward_name: ward },
         bacteria_count: '-',
         fungus_count: '-',
         item_result: 'pending',
@@ -1897,12 +1906,34 @@ async function handleSubmissionFormSubmit(e) {
     }
   });
 
+  // ⚠️ เดิมแถวที่เว้นว่างจะถูกแต่งชื่อให้เอง เช่น "จุดตรวจที่ 1" "รายการยาที่ 3"
+  //    กลายเป็นตำแหน่งเก็บตัวอย่างที่ไม่มีใครกรอก ติดไปบนใบรายงานผลจริง
+  //    ตอนนี้ข้ามแถวที่ไม่ได้กรอกไปเลย แล้วเรียงเลขใหม่ให้ต่อเนื่อง
+  items.forEach((it, i) => { it.item_no = i + 1; });
+
+  if (items.length === 0) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'ยังไม่ได้กรอกรายการตัวอย่าง',
+      html: '<div class="text-sm text-slate-600 leading-relaxed">กรุณากรอกอย่างน้อย 1 แถว '
+          + 'ก่อนกดส่งตรวจ<br><span class="text-xs text-slate-400">ระบบไม่เติมชื่อจุดเก็บตัวอย่างให้เอง '
+          + 'เพราะเป็นข้อมูลบนเอกสารผลตรวจ</span></div>',
+      confirmButtonColor: '#6c5070',
+      customClass: { popup: 'k-swal' }
+    });
+    return;
+  }
+
   const srvObj = window.SERVICES_CONFIG[serviceCode] || { 
     name: (serviceCode === 'DRG_07' ? 'Drug (สำหรับงานผลิตยา) การปนเปื้อนเชื้อจุลินทรีย์' : 
           (serviceCode === 'DRG_08' ? 'Drug (สำหรับยาผลิตปราศจากเชื้อ) ปลอดเชื้อ' : 
           (serviceCode === 'FOD_06' ? 'Food Sanitation (สำหรับงานโภชนาการ)' : 'ตรวจวิเคราะห์สิ่งแวดล้อม')))
   };
-  const targetWard = items.length > 0 ? (items[0].drug_name || items[0].food_name || items[0].location_name || items[0].ward_name || department) : department;
+  // สถานที่/จุดเก็บตัวอย่างของทั้งใบ
+  // ⚠️ เดิมหยิบ location_name ของแถวแรกมาใส่ ทำให้หัวใบขึ้นชื่อจุดตรวจจุดเดียว
+  //    ทั้งที่ใบหนึ่งมีหลายจุด และถ้าแถวแรกเป็นชื่อที่ระบบแต่งขึ้น หัวใบก็เพี้ยนตาม
+  //    ใช้หน่วยงานที่เข้าไปเก็บตัวอย่างแทน ซึ่งเป็นค่าเดียวกันทั้งใบ
+  const targetWard = (items[0] && items[0].ward_name) || department;
 
   // อีเมลผู้รับผล — ไม่บังคับกรอก ปล่อยว่างแล้วส่งเป็น null
   // ห้ามส่งสตริงว่าง เพราะจะทำให้ปุ่มส่งเมลเข้าใจว่ามีผู้รับแล้วทั้งที่ไม่มี

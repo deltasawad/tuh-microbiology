@@ -838,7 +838,10 @@
           tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-slate-400">ไม่มีรายการย่อยในรายงานนี้</td></tr>`;
         } else {
           tbody.innerHTML = items.map((it, idx) => {
-            const ward = it.ward_name || rep.ward_room || rep.department || '-';
+            // ward_name ไม่มีคอลัมน์ในตาราง report_items จึงถูกฝากไว้ใน raw_data
+            // ต้องอ่านจากตรงนั้นด้วย ไม่งั้นจะตกไปใช้ ward_room ของทั้งใบ
+            const ward = it.ward_name || (it.raw_data && it.raw_data.ward_name)
+                      || rep.ward_room || rep.department || '-';
             const loc = it.location_name || it.sample_description || ('จุดตรวจที่ ' + (idx + 1));
             const itWaiting = isPending || !it.item_result || String(it.item_result).toLowerCase() === 'pending';
             const bacCount = itWaiting ? '⏳ รอตรวจ' : ((it.bacteria_count !== undefined && it.bacteria_count !== '-' && it.bacteria_count !== '') ? it.bacteria_count : '0');

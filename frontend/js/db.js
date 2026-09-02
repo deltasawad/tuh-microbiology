@@ -799,7 +799,9 @@ const ReportDB = {
               microorganism_found: item.microorganism_found || '',
               standard_limit: item.standard_limit || '',
               item_result: item.item_result || 'pass',
-              raw_data: item.raw_data || { notes: item.notes || item.remarks || '-' },
+              // รวมสองอย่างเข้าด้วยกัน เดิมถ้ามี raw_data มาแล้วจะเขียนทับ notes ทิ้ง
+              // raw_data ใช้เก็บค่าที่ไม่มีคอลัมน์รองรับ เช่น ward_name (หน่วยงานรายแถว)
+              raw_data: { ...(item.raw_data || {}), notes: item.notes || item.remarks || '-' },
               remarks: item.remarks || item.notes || ''
             }));
 
