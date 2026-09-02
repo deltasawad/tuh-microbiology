@@ -35,10 +35,26 @@ const THAI_DAYS = [
   'วันอาทิตย์', 'วันจันทร์', 'วันอังคาร', 'วันพุธ', 'วันพฤหัสบดี', 'วันศุกร์', 'วันเสาร์'
 ];
 
+/**
+ * วันที่วันนี้รูปแบบ YYYY-MM-DD ตามเวลาเครื่องผู้ใช้
+ * ------------------------------------------------------------------------------
+ * ห้ามใช้ toISOString() เพราะแปลงเป็น UTC ก่อน ไทยเป็น UTC+7
+ * เปิดหน้าก่อนเจ็ดโมงเช้าจะได้วันของเมื่อวาน ทำให้วงกลม "วันนี้" ไปอยู่ผิดวัน
+ * และวันนี้ถูกนับเป็นวันที่ผ่านมาแล้วจนจองไม่ได้
+ */
+function todayISO() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 // State Variables
 let currentActiveTab = 'calendar'; // 'calendar', 'submission', 'reports', 'result-grid'
-let calYear = 2026; // ปี พ.ศ. 2569
-let calMonth = 8;   // สิงหาคม (August 2569)
+// ปฏิทินเปิดที่เดือนปัจจุบันเสมอ
+// เดิมกำหนดเป็นสิงหาคม 2026 ไว้ตายตัว พอถึงเดือนถัดไปผู้ใช้ต้องกดลูกศร
+// เลื่อนเดือนเองทุกครั้งที่เข้าหน้านี้ และมีสิทธิ์จองผิดเดือนโดยไม่ทันสังเกต
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth() + 1;
 let cachedBookings = [];
 let cachedHolidays = [];
 let activeSubmissionData = null;
@@ -498,7 +514,7 @@ async function renderCalendar(year, month) {
   const firstDayIndex = new Date(year, month - 1, 1).getDay();
   const daysInMonth = new Date(year, month, 0).getDate();
   const daysInPrevMonth = new Date(year, month - 1, 0).getDate();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayISO();
 
   let html = '';
 
@@ -686,7 +702,7 @@ window.refreshCalendar = () => {
 };
 
 async function handleDayClick(dateStr, thaiDateStr) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = todayISO();
   if (dateStr < todayStr) {
     Swal.fire({
       icon: 'info',
@@ -2992,16 +3008,6 @@ function buildGridField(field, value) {
     + ' class="grid-input w-full px-2.5 py-1.5 border border-emerald-300 rounded-lg font-mono text-center font-bold text-emerald-950 text-xs">';
 }
 
-/**
- * วันที่วันนี้รูปแบบ YYYY-MM-DD ตามเวลาเครื่องผู้ใช้
- * ห้ามใช้ toISOString() เพราะแปลงเป็น UTC ก่อน ทำให้ก่อนเจ็ดโมงเช้าได้วันย้อนหลังไปหนึ่งวัน
- */
-function todayISO() {
-  const d = new Date();
-  const p = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-
 async function loadSubmissionIntoAdminGrid(reportId) {
   const tbody = document.getElementById('admin-grid-tbody');
   const thead = document.getElementById('admin-grid-thead');
@@ -3176,7 +3182,7 @@ async function handleAdminSaveResults() {
     const updatePayload = {
       status: 'completed',
       overall_result: overallResult,
-      reported_date: new Date().toISOString().split('T')[0],
+      reported_date: todayISO(),
       reporter_name: document.getElementById('grid-reporter-name')?.value || 'ทนพ.มานพ นันตาบุตร',
       approver_name: document.getElementById('grid-approver-name')?.value || 'ทนพญ.ปราญชลี หรั่งอ่อน',
       remarks: document.getElementById('grid-remarks')?.value || (overallResult === 'pass' ? 'ผลการตรวจวิเคราะห์คุณภาพอากาศ (Settle Plate) เป็นไปตามเกณฑ์มาตรฐานความปลอดภัยทางชีวภาพ' : 'พบปริมาณเชื้อแบคทีเรียหรือเชื้อราเกินเกณฑ์มาตรฐาน แนะนำทำความสะอาดและตรวจสอบระบบระบายอากาศ')
