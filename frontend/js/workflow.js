@@ -3189,8 +3189,17 @@ async function handleAdminSaveResults() {
       const res = field.item_result || 'pass';
       if (res === 'fail') hasFail = true;
 
-      const ward = field.ward_name || activeSubmissionData.ward_room || activeSubmissionData.department || '';
-      const loc = field.location_name || `จุดตรวจที่ ${idx + 1}`;
+      // ค่าที่บันทึกไว้ตอนส่งตรวจ ใช้เป็นตัวยืนเมื่อช่องในตารางถูกล้าง
+      // ⚠️ ห้ามแต่งชื่อ "จุดตรวจที่ N" ขึ้นมาใหม่ เพราะจะทับตำแหน่งจริง
+      //    ที่หน่วยงานกรอกไว้ตอนส่งตรวจ ด้วยชื่อที่ไม่มีใครเคยกรอก
+      const itemNo = parseInt(tr.dataset.itemNo, 10) || idx + 1;
+      const saved = (activeSubmissionData.report_items || activeSubmissionData.items || [])
+        .find(x => (x.item_no || 0) === itemNo) || {};
+
+      const ward = field.ward_name || saved.ward_name
+                || (saved.raw_data && saved.raw_data.ward_name)
+                || activeSubmissionData.ward_room || activeSubmissionData.department || '';
+      const loc = field.location_name || saved.location_name || '';
 
       updatedItems.push({
         item_no: parseInt(tr.dataset.itemNo, 10) || idx + 1,
